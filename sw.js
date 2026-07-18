@@ -1,6 +1,6 @@
 /* ESE2027 Study OS — Service Worker
    Cache-first for app shell, network-first for Supabase, offline-ready. */
-const VERSION = "ese2027-v13";
+const VERSION = "ese2027-v14";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -27,6 +27,22 @@ self.addEventListener("activate", (event) => {
     caches.keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
+  );
+});
+
+// Web Push — fires even when the app is fully closed.
+self.addEventListener("push", (event) => {
+  let d = { title: "ESE2027", body: "Time to study." };
+  try { d = event.data.json(); } catch (e) {}
+  event.waitUntil(
+    self.registration.showNotification(d.title, {
+      body: d.body,
+      icon: "./icons/icon-192.png",
+      badge: "./icons/icon-192.png",
+      tag: d.tag || "ese-push",
+      renotify: true,
+      vibrate: [120, 60, 120]
+    })
   );
 });
 

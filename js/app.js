@@ -174,11 +174,26 @@ function toggleNotif(){
 if(!notifSupported()){ toast("Notifications not supported on this browser"); return; }
 if(!notifOn()){
 askNotifPermission().then(p=>{
-if(p==="granted"){ state.notif=true; saveJSON(NOTIF_KEY,true); toast("Session notifications on"); notify("Notifications enabled","You'll be pinged when a session or break ends."); }
+if(p==="granted"){ state.notif=true; saveJSON(NOTIF_KEY,true); subscribePush(); toast("Session notifications on"); notify("Notifications enabled","You'll be pinged when a session or break ends."); }
 else if(p==="denied") toast("Blocked by browser — allow notifications in site settings");
 else toast("Notifications not available");
 render(); });
 }else{ state.notif=false; saveJSON(NOTIF_KEY,false); toast("Session notifications off"); render(); } }
+
+/* ── web push (closed-app notifications) ──────────────── */
+const VAPID_PUBLIC="BF0fC7HEttfCmKd6cBrI92_fJI2eYRJDF3qoPaOvJ3FpLfiyhla2oc3G_G1sYMki5gBLfN176y6ShsDvvFv-eu0";
+function b64ToU8(s){ const p="=".repeat((4-s.length%4)%4), b=(s+p).replace(/-/g,"+").replace(/_/g,"/");
+const raw=atob(b), a=new Uint8Array(raw.length); for(let i=0;i<raw.length;i++) a[i]=raw.charCodeAt(i); return a; }
+async function subscribePush(){
+try{
+if(!("serviceWorker" in navigator)||!("PushManager" in window)) return null;
+if(Notification.permission!=="granted") return null;
+const reg=await navigator.serviceWorker.ready;
+let sub=await reg.pushManager.getSubscription();
+if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(VAPID_PUBLIC)});
+if(window._sbSavePush) window._sbSavePush(sub.toJSON());
+return sub;
+}catch(e){ return null; } }
 
 /* ── plan slot notifications (scheduled study reminders) ─ */
 const SLOT_NOTIF_KEY="ese_slot_notified_v1";
@@ -1319,6 +1334,8 @@ window.addEventListener("resize",()=>{ updateLandscape(); });
 window.addEventListener("orientationchange",()=>setTimeout(()=>{ updateLandscape(); renderTimerOnly(); },120));
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"){ syncPomoState(); render(); } else{ if(strictActive()){ logDistraction(); notify("Focus broken 🚨","You left mid-session. It's logged. Get back in."); } releaseWakeLock(); saveJSON(POMO_KEY,state.pomo); } });
 window.addEventListener("pageshow",()=>{ syncPomoState(); render(); });
+/* re-assert push subscription on every launch (tokens can rotate) */
+if("Notification" in window&&Notification.permission==="granted") setTimeout(subscribePush,2500);
 
 /* ── service worker ───────────────────────────────────── */
 if("serviceWorker" in navigator && location.protocol!=="file:"){
@@ -1358,6 +1375,9 @@ var p=mode==="up"?sb.auth.signUp({email:em,password:pw}):sb.auth.signInWithPassw
 p.then(function(r){ if(r.error){ m.style.color="var(--rose)"; m.textContent=r.error.message; } }); }; }
 function loading(){ card('<div style="text-align:center;padding:20px 0;font-size:14px;color:var(--ink-3)">Loading your progress…</div>'); }
 function push(){ if(!user) return; sb.from("user_progress").upsert({user_id:user.id,data:snap(),updated_at:new Date().toISOString()}).then(function(){}); }
+window._sbSavePush=function(subJson){
+if(!user||!subJson||!subJson.endpoint) return;
+sb.from("push_subs").upsert({endpoint:subJson.endpoint,user_id:user.id,sub:subJson,updated_at:new Date().toISOString()},{onConflict:"endpoint"}).then(function(){}); };
 function afterLogin(session){
 user=session.user; loading();
 sb.from("user_progress").select("data,updated_at").eq("user_id",user.id).maybeSingle().then(function(res){
