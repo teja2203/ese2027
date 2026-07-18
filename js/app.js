@@ -231,6 +231,9 @@ e.distract=(e.distract||0)+1; state.log[k]=e; saveJSON(LOG_KEY,state.log); }
 function holdToConfirm(btn,secs,action,label){
 let t=null,start=0,raf=null;
 const orig=btn.innerHTML;
+/* stop the browser long-press menu (share/download/select) from stealing the hold */
+btn.oncontextmenu=e=>{ e.preventDefault(); return false; };
+Object.assign(btn.style,{webkitTouchCallout:"none",webkitUserSelect:"none",userSelect:"none",touchAction:"none"});
 function tick(){
 const p=Math.min(1,(Date.now()-start)/(secs*1000));
 btn.innerHTML=`${label} ${Math.ceil(secs-p*secs)}s`;
@@ -238,6 +241,7 @@ if(p<1) raf=requestAnimationFrame(tick); }
 function cancel(){ if(t){ clearTimeout(t); t=null; } if(raf) cancelAnimationFrame(raf);
 btn.innerHTML=orig; }
 btn.onpointerdown=e=>{ e.preventDefault();
+try{ btn.setPointerCapture(e.pointerId); }catch(_){}
 if(!strictActive()){ action(); return; }
 start=Date.now(); tick();
 t=setTimeout(()=>{ t=null; cancel(); action(); },secs*1000); };

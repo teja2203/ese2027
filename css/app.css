@@ -217,7 +217,8 @@ select{ font-family:inherit; appearance:none; -webkit-appearance:none;
 
 /* ── landscape flip clock (kept, restyled) ────────────── */
 .wfc-overlay{display:none}
-.wfc-overlay.active{display:flex;position:fixed;inset:0;z-index:2147482600;align-items:center;justify-content:center;gap:34px;flex-direction:column;background:var(--bg);font-family:Inter,system-ui,sans-serif;animation:wfcIn .45s var(--spring) both}
+.wfc-overlay.active{display:flex;position:fixed;inset:0;z-index:2147482600;align-items:center;justify-content:center;gap:34px;flex-direction:column;background:var(--bg);font-family:Inter,system-ui,sans-serif;animation:wfcIn .45s var(--spring) both;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.wfc-end{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:none}
 @keyframes wfcIn{ from{ opacity:0; transform:scale(1.04); } to{ opacity:1; transform:scale(1); } }
 .wfc-overlay.active .wfc{ animation:wfcCardIn .55s var(--spring) both; }
 .wfc-overlay.active .wfc:nth-child(3){ animation-delay:.08s; }
