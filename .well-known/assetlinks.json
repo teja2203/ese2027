@@ -1,12 +1,8 @@
-[
-  {
-    "relation": ["delegate_permission/common.handle_all_urls"],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "REPLACE_WITH_PACKAGE_ID_FROM_PWABUILDER",
-      "sha256_cert_fingerprints": [
-        "REPLACE_WITH_SHA256_FINGERPRINT_FROM_PWABUILDER"
-      ]
-    }
-  }
-]
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.ese2027.twa",
+        "sha256_cert_fingerprints": ["51:2F:2C:E2:36:49:39:60:1F:11:23:CF:FC:19:E5:33:30:C5:EE:1C:A3:63:5D:80:C5:63:66:21:D6:BD:1C:58"]
+      }
+    }]
