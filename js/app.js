@@ -4,6 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
+const APP_VERSION="v16";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -182,6 +183,12 @@ try{ new Notification(title,opts); }catch(_){}
 }).catch(()=>{ try{ new Notification(title,opts); }catch(_){} });
 }else new Notification(title,opts);
 }catch(e){ try{ new Notification(title,{body,icon:"./icons/icon-192.png"}); }catch(_){} } }
+/* Permissions API observer — fires even when requestPermission's promise doesn't */
+if("permissions" in navigator&&navigator.permissions.query){
+navigator.permissions.query({name:"notifications"}).then(st=>{
+st.onchange=()=>{ if(st.state==="granted"&&state.notif){ subscribePush(); render(); } };
+}).catch(()=>{}); }
+
 function notifOn(){ return state.notif&&notifSupported()&&Notification.permission==="granted"; }
 function toggleNotif(){
 if(!notifSupported()){ toast("Notifications not supported on this browser"); return; }
@@ -979,6 +986,22 @@ row("Dark theme","Easier on the eyes for long sessions",toggleUI(state.theme==="
 inner.appendChild(section("Timer",[
 row("Auto loop","Cycle focus → break automatically",toggleUI(state.pomo.loop),toggleLoop),
 row("Session notifications","Ping when a focus session or break ends",toggleUI(notifOn()),toggleNotif),
+row("Notification status",
+`App ${APP_VERSION} · permission: <b>${notifSupported()?Notification.permission:"unsupported"}</b> · pref: ${state.notif?"on":"off"}${notifSupported()&&Notification.permission==="denied"?"<br>Blocked by the system — tap to see the fix":""}`,
+"ⓘ",()=>{
+if(!notifSupported()){ toast("This browser has no Notification API"); return; }
+if(Notification.permission==="granted"){ notify("Test notification 🔔","If you can read this, notifications work."); toast("Test sent — did it appear?"); }
+else if(Notification.permission==="denied"){
+guideSheet("Unblock notifications",
+G_NOTE("Android is blocking notifications for this app — the in-app switch can't override it.")+
+G_HEAD("If installed as an app (APK)")+
+G_STEP(1,"Long-press the ESE2027 icon → App info (ⓘ)")+
+G_STEP(2,"Notifications → turn <b>ON</b> and allow all")+
+G_STEP(3,"Also open Chrome → ⋮ → Settings → Site settings → Notifications → find your vercel.app URL → <b>Allow</b> (a TWA app follows Chrome's site permission)")+
+G_STEP(4,"Reopen this app and toggle Session notifications on")+
+G_HEAD("If using in the browser")+
+G_STEP(1,"Tap the lock icon in the address bar → Permissions → Notifications → Allow")); }
+else{ askNotifPermission().then(()=>render()); toast("Permission dialog requested"); } }),
 ]));
 inner.appendChild(section("Data",[
 row("Backup data","Download all progress as JSON","⬇",exportData),
