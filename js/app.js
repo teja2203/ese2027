@@ -4,13 +4,14 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v16";
+const APP_VERSION="v17";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
       NAV_KEY="ese_planner_nav_v1", POMO_KEY="ese_planner_pomo_v5",
       LOG_KEY="ese_planner_log_v1", THEME_KEY="THEME", EXP_KEY="expandedSessions",
-      ACH_KEY="ese_achievements_v1", CELEB_KEY="ese_celebrated_days_v1", NOTIF_KEY="ese_notif_v1", BLOCK_KEY="ese_block_v1";
+      ACH_KEY="ese_achievements_v1", CELEB_KEY="ese_celebrated_days_v1", NOTIF_KEY="ese_notif_v1", BLOCK_KEY="ese_block_v1",
+      MOCK_KEY="ese_mocks_v1", SHAKY_KEY="ese_shaky_v1", RATE_KEY="ese_ratings_v1", FREEZE_KEY="ese_freeze_v1", BKUP_KEY="ese_last_backup_v1";
 function loadJSON(k,f){ try{ const r=localStorage.getItem(k); return r===null?f:JSON.parse(r);}catch(e){ return f; } }
 function saveJSON(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 
@@ -68,6 +69,10 @@ achievements:loadJSON(ACH_KEY,{}),
 celebratedDays:loadJSON(CELEB_KEY,{}),
 notif:loadJSON(NOTIF_KEY,true),
 block:loadJSON(BLOCK_KEY,{strict:false}),
+mocks:loadJSON(MOCK_KEY,[]),
+shaky:loadJSON(SHAKY_KEY,{}),
+ratings:loadJSON(RATE_KEY,{}),
+freeze:loadJSON(FREEZE_KEY,{}),
 };
 if(state.index<0||state.index>=SCHED.length) state.index=0;
 
@@ -94,10 +99,102 @@ let streak=0; const d=new Date();
 for(;;){ const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
 const e=state.log[k];
 if(e&&(e.minutes>0||e.sessions>0)) streak++;
+else if(state.freeze[k]) streak++;                      /* frozen day keeps the chain */
 else if(streak===0&&k===todayKey()){ /* today not started yet — look back */ }
 else break;
 d.setDate(d.getDate()-1); }
 return streak; }
+/* one streak-freeze token per calendar month, auto-spent on a missed day */
+function maybeSpendFreeze(){
+const y=new Date(); y.setDate(y.getDate()-1);
+const yk=`${y.getFullYear()}-${fmt(y.getMonth()+1)}-${fmt(y.getDate())}`;
+const e=state.log[yk];
+if(e&&(e.minutes>0||e.sessions>0)) return;              /* yesterday was studied */
+if(state.freeze[yk]) return;                            /* already frozen */
+/* was there a streak worth saving before yesterday? */
+const b=new Date(y); b.setDate(b.getDate()-1);
+const bk=`${b.getFullYear()}-${fmt(b.getMonth()+1)}-${fmt(b.getDate())}`;
+const be=state.log[bk];
+if(!(be&&(be.minutes>0||be.sessions>0))&&!state.freeze[bk]) return;
+const mon=yk.slice(0,7);
+const used=Object.keys(state.freeze).some(k=>k.slice(0,7)===mon);
+if(used) return;                                        /* token already spent this month */
+state.freeze[yk]=true; saveJSON(FREEZE_KEY,state.freeze);
+setTimeout(()=>toast("🧊 Streak freeze used for "+yk.slice(5)+" — one per month"),1200); }
+
+/* ── mock test scores ─────────────────────────────────── */
+function addMockSheet(){
+const prevFocus=document.activeElement;
+const scrim=el("div"); scrim.className="scrim";
+scrim.setAttribute("role","dialog"); scrim.setAttribute("aria-modal","true"); scrim.setAttribute("aria-label","Log mock score");
+const sheet=el("div"); sheet.className="sheet";
+const inp=(id,ph,type,attrs)=>`<input id="${id}" type="${type||"text"}" placeholder="${ph}" ${attrs||""} style="width:100%;box-sizing:border-box;margin-top:10px;padding:13px 15px;border-radius:13px;border:1px solid var(--line-2);background:var(--card-2);color:var(--ink);font-size:14px;outline:none">`;
+sheet.innerHTML=`<div style="padding:22px">
+<div class="display" style="font-size:19px;font-weight:800;color:var(--ink)">Log mock score</div>
+${inp("mkName","Mock name (e.g. GT-3 Full Syllabus)")}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+${inp("mkScore","Marks scored","number",'inputmode="decimal"')}
+${inp("mkMax","Out of (e.g. 200)","number",'inputmode="decimal" value="200"')}
+</div>
+${inp("mkNeg","Marks lost to negatives (optional)","number",'inputmode="decimal"')}
+${inp("mkNote","Weak areas noted (optional)")}
+<div id="mkErr" style="font-size:12px;color:var(--rose);margin-top:8px;min-height:15px"></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+<button id="mkCancel" class="btn btn-ghost press">Cancel</button>
+<button id="mkSave" class="btn btn-acc press">Save</button>
+</div></div>`;
+function close(){ scrim.classList.remove("in"); setTimeout(()=>{ scrim.remove(); if(prevFocus&&prevFocus.focus) prevFocus.focus(); },200); }
+sheet.querySelector("#mkCancel").onclick=close;
+scrim.onclick=e=>{ if(e.target===scrim) close(); };
+sheet.querySelector("#mkSave").onclick=()=>{
+const name=sheet.querySelector("#mkName").value.trim();
+const sc=parseFloat(sheet.querySelector("#mkScore").value);
+const mx=parseFloat(sheet.querySelector("#mkMax").value)||200;
+const ng=parseFloat(sheet.querySelector("#mkNeg").value)||0;
+const note=sheet.querySelector("#mkNote").value.trim();
+if(!name||isNaN(sc)){ sheet.querySelector("#mkErr").textContent="Name and marks are required"; return; }
+state.mocks.push({name,score:sc,max:mx,neg:ng,note,date:todayKey()});
+saveJSON(MOCK_KEY,state.mocks); close(); render(); toast("Mock logged 📊"); };
+scrim.appendChild(sheet); document.body.appendChild(scrim);
+requestAnimationFrame(()=>{ scrim.classList.add("in"); sheet.querySelector("#mkName").focus(); }); }
+function deleteMock(i){ if(!confirm("Delete this mock entry?")) return;
+state.mocks.splice(i,1); saveJSON(MOCK_KEY,state.mocks); render(); }
+
+/* ── weak-topic (shaky) flags ─────────────────────────── */
+function toggleShaky(si,ti){
+const k=`${state.index}-${si}-${ti}`;
+if(state.shaky[k]) delete state.shaky[k];
+else state.shaky[k]={t:SCHED[state.index].sessions[si].tasks[ti],subj:SCHED[state.index].subject,d:SCHED[state.index].date};
+saveJSON(SHAKY_KEY,state.shaky);
+toast(state.shaky[k]?"Marked shaky — added to revision queue":"Removed from revision queue");
+render(); }
+
+/* ── daily self-rating ────────────────────────────────── */
+function maybeAskRating(){
+const k=todayKey();
+if(state.ratings[k]!==undefined) return;
+const e=state.log[k];
+if(!e||!e.minutes) return;                              /* nothing studied — nothing to rate */
+if(new Date().getHours()<21) return;                    /* only from 9pm */
+const prevFocus=document.activeElement;
+const scrim=el("div"); scrim.className="scrim";
+scrim.setAttribute("role","dialog"); scrim.setAttribute("aria-modal","true"); scrim.setAttribute("aria-label","Rate today");
+const sheet=el("div"); sheet.className="sheet";
+sheet.innerHTML=`<div style="padding:24px;text-align:center">
+<div class="display" style="font-size:19px;font-weight:800;color:var(--ink)">How was today's study?</div>
+<div style="font-size:12px;color:var(--ink-3);margin-top:6px">${e.minutes} min · ${e.sessions} sessions — honest rating, just for you</div>
+<div style="display:flex;gap:8px;justify-content:center;margin-top:18px">
+${[1,2,3,4,5].map(n=>`<button data-r="${n}" class="press" style="width:52px;height:52px;border-radius:16px;border:1px solid var(--line-2);background:var(--card-2);font-size:22px;cursor:pointer">${["😞","😕","😐","🙂","🔥"][n-1]}</button>`).join("")}
+</div>
+<button id="rtSkip" style="margin-top:16px;background:none;border:none;color:var(--ink-4);font-size:12px;cursor:pointer;font-weight:600">Skip tonight</button>
+</div>`;
+function close(){ scrim.classList.remove("in"); setTimeout(()=>{ scrim.remove(); if(prevFocus&&prevFocus.focus) prevFocus.focus(); },200); }
+sheet.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{
+state.ratings[k]=parseInt(b.dataset.r,10); saveJSON(RATE_KEY,state.ratings); close(); toast("Logged. Rest well."); });
+sheet.querySelector("#rtSkip").onclick=()=>{ state.ratings[k]=null; saveJSON(RATE_KEY,state.ratings); close(); };
+scrim.onclick=e=>{ if(e.target===scrim) close(); };
+scrim.appendChild(sheet); document.body.appendChild(scrim);
+requestAnimationFrame(()=>scrim.classList.add("in")); }
 function greeting(){ const h=new Date().getHours();
 if(h<5) return "Late night grind"; if(h<12) return "Good morning";
 if(h<17) return "Good afternoon"; if(h<21) return "Good evening"; return "Night session"; }
@@ -389,11 +486,13 @@ view.style.opacity="1"; view.style.transform="translateY(0)";
 
 /* ── export / import ──────────────────────────────────── */
 function exportData(){
-const payload={checked:state.checked,log:state.log,pomo:state.pomo,theme:state.theme,achievements:state.achievements,celebratedDays:state.celebratedDays,exportedAt:new Date().toISOString()};
+const payload={checked:state.checked,log:state.log,pomo:state.pomo,theme:state.theme,achievements:state.achievements,celebratedDays:state.celebratedDays,mocks:state.mocks,shaky:state.shaky,ratings:state.ratings,freeze:state.freeze,exportedAt:new Date().toISOString()};
 const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
 const url=URL.createObjectURL(blob); const a=document.createElement("a");
 a.href=url; a.download="ese2027-backup-"+todayKey()+".json"; a.click();
-setTimeout(()=>URL.revokeObjectURL(url),4000); toast("Backup downloaded"); }
+setTimeout(()=>URL.revokeObjectURL(url),4000);
+saveJSON(BKUP_KEY,todayKey());
+toast("Backup downloaded"); }
 function handleImportFile(e){
 const f=e.target.files[0]; if(!f) return;
 const rd=new FileReader();
@@ -404,8 +503,13 @@ if(d.log) state.log=d.log;
 if(d.theme) state.theme=d.theme;
 if(d.achievements) state.achievements=d.achievements;
 if(d.celebratedDays) state.celebratedDays=d.celebratedDays;
+if(d.mocks) state.mocks=d.mocks;
+if(d.shaky) state.shaky=d.shaky;
+if(d.ratings) state.ratings=d.ratings;
+if(d.freeze) state.freeze=d.freeze;
 saveJSON(STORAGE_KEY,state.checked); saveJSON(LOG_KEY,state.log); saveJSON(THEME_KEY,state.theme);
 saveJSON(ACH_KEY,state.achievements); saveJSON(CELEB_KEY,state.celebratedDays);
+saveJSON(MOCK_KEY,state.mocks); saveJSON(SHAKY_KEY,state.shaky); saveJSON(RATE_KEY,state.ratings); saveJSON(FREEZE_KEY,state.freeze);
 render(); toast("Backup restored");
 }catch(err){ toast("Invalid backup file"); } };
 rd.readAsText(f); e.target.value=""; }
@@ -612,11 +716,13 @@ card.appendChild(top);
 if(expanded){
 const tl=el("div",{marginTop:"12px",paddingTop:"10px",borderTop:"1px solid var(--line)"});
 s.tasks.forEach((task,ti)=>{
-const k=`${state.index}-${si}-${ti}`, on=!!state.checked[k];
+const k=`${state.index}-${si}-${ti}`, on=!!state.checked[k], shk=!!state.shaky[k];
 const row=el("div"); row.className="taskrow"+(on?" done":"");
 row.setAttribute("role","checkbox"); row.setAttribute("aria-checked",on?"true":"false"); row.tabIndex=0;
-row.innerHTML=`<span class="chk${on?" on":""}" style="color:var(--acc-ink)">${on?IC.check:""}</span><span class="txt">${task}</span>`;
+row.innerHTML=`<span class="chk${on?" on":""}" style="color:var(--acc-ink)">${on?IC.check:""}</span><span class="txt" style="flex:1">${task}</span>
+<button class="shakybtn press" aria-label="${shk?"Remove shaky flag":"Mark as shaky"}" title="Mark topic as shaky" style="border:none;background:none;cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0;opacity:${shk?"1":".28"};filter:${shk?"none":"grayscale(1)"}">⚠️</button>`;
 row.onclick=()=>toggleTask(si,ti);
+row.querySelector(".shakybtn").onclick=e=>{ e.stopPropagation(); toggleShaky(si,ti); };
 row.onkeydown=e=>{ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); toggleTask(si,ti); } };
 tl.appendChild(row); });
 card.appendChild(tl); }
@@ -716,17 +822,28 @@ const loop=html(`<button class="card press" style="width:100%;padding:14px;borde
 loop.onclick=toggleLoop;
 inner.appendChild(loop);
 
-/* current session hint */
+/* current session hint — prefer the slot matching the time of day */
 const today=SCHED[state.index];
 let cur=null,curSi=-1;
+(function(){
+const nowM=new Date().getHours()*60+new Date().getMinutes();
+const starts=slotStarts();
+let live=-1;
+for(let i=0;i<today.sessions.length;i++){ const st=starts[i];
+if(st!=null&&nowM>=st&&nowM<st+150) live=i; }
+if(live>=0){ const s=today.sessions[live];
+const dn=s.tasks.filter((_,ti)=>state.checked[`${state.index}-${live}-${ti}`]).length;
+if(dn<s.tasks.length){ cur=s; curSi=live; return; } }
 today.sessions.some((s,i)=>{ const dn=s.tasks.filter((_,ti)=>state.checked[`${state.index}-${i}-${ti}`]).length;
 if(dn<s.tasks.length){ cur=s; curSi=i; return true; } return false; });
+})();
 if(cur){
 const t=tagOf(cur.tag);
+const slot=SLOTS[curSi]||{label:"Session",time:""};
 const card=html(`<div class="card lift press" style="padding:16px;border-radius:var(--r);margin-top:14px;cursor:pointer">
 <div style="display:flex;align-items:center;gap:10px">
 <span class="pill" style="background:${t.s};color:${t.c}">${t.label}</span>
-<span style="font-size:10px;color:var(--ink-3);font-weight:700">Up next</span>
+<span style="font-size:10px;color:var(--ink-3);font-weight:700">${slot.label}${slot.time?" · "+slot.time:""}</span>
 </div>
 <div style="font-size:14px;font-weight:700;color:var(--ink);margin-top:8px;line-height:1.4">${cur.title}</div>
 <div style="display:flex;align-items:center;gap:6px;margin-top:8px;color:var(--acc);font-size:12px;font-weight:700">Open in plan ${IC.right}</div>
@@ -903,6 +1020,60 @@ sh+=`<div style="margin-bottom:12px">
 <div class="track" style="height:6px"><div class="fill" style="width:${pc}%"></div></div></div>`; });
 subj.innerHTML=sh;
 inner.appendChild(subj);
+
+/* mock test tracker */
+const mk=el("div"); mk.className="card";
+Object.assign(mk.style,{padding:"18px",borderRadius:"var(--r)",marginBottom:"14px"});
+let mh=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<span style="font-size:12px;font-weight:700;color:var(--ink-2)">Mock scores</span>
+<button id="mkAdd" class="btn btn-acc press" style="padding:8px 16px;font-size:12px">+ Log mock</button></div>`;
+if(!state.mocks.length){
+mh+=`<div style="font-size:12.5px;color:var(--ink-3);text-align:center;padding:14px 0">No mocks logged yet.<br>Score every mock — the trend tells you more than the hours do.</div>`;
+}else{
+const last=state.mocks.slice(-8);
+const pcts=last.map(m=>Math.round(m.score/m.max*100));
+const mmax=Math.max(...pcts,1);
+mh+=`<div style="display:flex;align-items:flex-end;gap:6px;height:70px;margin-bottom:10px">`;
+last.forEach((m,i)=>{ const h=Math.max(6,Math.round(pcts[i]/mmax*64));
+const up=i>0&&pcts[i]>=pcts[i-1];
+mh+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px" title="${m.name} · ${m.score}/${m.max}">
+<span class="mono" style="font-size:9px;font-weight:800;color:${up?"var(--acc)":"var(--rose)"}">${pcts[i]}%</span>
+<div style="width:100%;height:${h}px;border-radius:6px 6px 3px 3px;background:${up?"var(--acc)":"var(--rose)"};opacity:${i===last.length-1?1:.55}"></div></div>`; });
+mh+=`</div>`;
+const lastM=state.mocks[state.mocks.length-1];
+const trend=state.mocks.length>1?(pcts[pcts.length-1]-pcts[pcts.length-2]):0;
+mh+=`<div style="font-size:11.5px;color:var(--ink-3);font-weight:600">Latest: <b style="color:var(--ink)">${lastM.name}</b> — ${lastM.score}/${lastM.max}${lastM.neg?` · ${lastM.neg} lost to negatives`:""}${state.mocks.length>1?` · <b style="color:${trend>=0?"var(--acc)":"var(--rose)"}">${trend>=0?"+":""}${trend}%</b> vs previous`:""}</div>`;
+mh+=`<div style="margin-top:10px;max-height:130px;overflow-y:auto">`;
+state.mocks.slice().reverse().forEach((m,ri)=>{ const i=state.mocks.length-1-ri;
+mh+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:12px">
+<span class="mono" style="color:var(--ink-4);font-size:10px">${m.date.slice(5)}</span>
+<span style="flex:1;color:var(--ink-2);font-weight:600">${m.name}</span>
+<span class="mono" style="font-weight:800;color:var(--ink)">${m.score}/${m.max}</span>
+<button data-di="${i}" class="press" style="border:none;background:none;color:var(--ink-4);cursor:pointer;font-size:13px">✕</button></div>`; });
+mh+=`</div>`; }
+mk.innerHTML=mh;
+mk.querySelector("#mkAdd").onclick=addMockSheet;
+mk.querySelectorAll("[data-di]").forEach(b=>b.onclick=()=>deleteMock(parseInt(b.dataset.di,10)));
+inner.appendChild(mk);
+
+/* revision queue — shaky topics */
+const shakyKeys=Object.keys(state.shaky);
+if(shakyKeys.length){
+const sq=el("div"); sq.className="card";
+Object.assign(sq.style,{padding:"18px",borderRadius:"var(--r)",marginBottom:"14px"});
+let qh=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<span style="font-size:12px;font-weight:700;color:var(--ink-2)">⚠️ Revision queue</span>
+<span class="pill" style="background:var(--amber-soft);color:var(--amber)">${shakyKeys.length} shaky</span></div>
+<div style="max-height:180px;overflow-y:auto">`;
+shakyKeys.forEach(k=>{ const s=state.shaky[k];
+qh+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid var(--line)">
+<div style="flex:1;min-width:0"><div style="font-size:12.5px;color:var(--ink-2);font-weight:600;line-height:1.4">${s.t}</div>
+<div style="font-size:10px;color:var(--ink-4);margin-top:2px;font-weight:600">${s.subj} · ${s.d}</div></div>
+<button data-sk="${k}" class="press" style="border:1px solid var(--line-2);background:var(--card-2);color:var(--mint);border-radius:9px;padding:5px 10px;cursor:pointer;font-size:10.5px;font-weight:700;flex-shrink:0">Solid now</button></div>`; });
+qh+=`</div>`;
+sq.innerHTML=qh;
+sq.querySelectorAll("[data-sk]").forEach(b=>b.onclick=()=>{ delete state.shaky[b.dataset.sk]; saveJSON(SHAKY_KEY,state.shaky); render(); toast("Cleared — well recovered"); });
+inner.appendChild(sq); }
 
 /* achievements — Regain-style hex medals */
 const m=achMetrics();
@@ -1388,11 +1559,17 @@ if(!window.supabase||!window.supabase.createClient) return;
 var sb=window.supabase.createClient(SB_URL,SB_KEY);
 window.sbAuth=sb.auth;
 var CHANGE="ese_last_change"; var user=null,lastSnap=null;
-function snap(){ return {checked:state.checked,log:state.log,theme:state.theme}; }
+function snap(){ return {checked:state.checked,log:state.log,theme:state.theme,achievements:state.achievements,celebratedDays:state.celebratedDays,mocks:state.mocks,shaky:state.shaky,ratings:state.ratings,freeze:state.freeze}; }
 function restore(d){ if(!d) return;
 if(d.checked){ state.checked=d.checked; saveJSON(STORAGE_KEY,state.checked); }
 if(d.log){ state.log=d.log; saveJSON(LOG_KEY,state.log); }
-if(d.theme){ state.theme=d.theme; saveJSON(THEME_KEY,state.theme); } }
+if(d.theme){ state.theme=d.theme; saveJSON(THEME_KEY,state.theme); }
+if(d.achievements){ state.achievements=d.achievements; saveJSON(ACH_KEY,state.achievements); }
+if(d.celebratedDays){ state.celebratedDays=d.celebratedDays; saveJSON(CELEB_KEY,state.celebratedDays); }
+if(d.mocks){ state.mocks=d.mocks; saveJSON(MOCK_KEY,state.mocks); }
+if(d.shaky){ state.shaky=d.shaky; saveJSON(SHAKY_KEY,state.shaky); }
+if(d.ratings){ state.ratings=d.ratings; saveJSON(RATE_KEY,state.ratings); }
+if(d.freeze){ state.freeze=d.freeze; saveJSON(FREEZE_KEY,state.freeze); } }
 var ov=document.createElement("div");
 ov.style.cssText="position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);font-family:Inter,system-ui,sans-serif";
 function card(inner){ ov.innerHTML='<div class="card" style="max-width:400px;width:100%;border-radius:24px;padding:30px">'+inner+"</div>"; if(!ov.parentNode) document.body.appendChild(ov); }
@@ -1446,3 +1623,28 @@ setInterval(()=>{ if(state.nav==="home"&&!document.hidden) render(); },60000);
 /* plan slot reminders — check now and every minute */
 checkSlotNotifications();
 setInterval(checkSlotNotifications,60000);
+/* streak freeze + evening rating + weekly backup nudge + sunday summary */
+maybeSpendFreeze();
+setTimeout(maybeAskRating,4000);
+setInterval(maybeAskRating,10*60000);
+(function(){
+const last=loadJSON(BKUP_KEY,null);
+if(last){ const days=(Date.now()-new Date(last).getTime())/864e5;
+if(days>7) setTimeout(()=>toast("💾 Last backup was "+Math.floor(days)+" days ago — Settings → Backup"),6000); }
+else if(Object.keys(state.log).length>5) setTimeout(()=>toast("💾 No backup yet — Settings → Backup data"),6000);
+})();
+(function(){
+const now=new Date();
+if(now.getDay()!==0||now.getHours()<19) return;         /* Sunday from 7pm */
+const wk="wksum-"+todayKey();
+if(loadJSON(wk,false)) return; saveJSON(wk,true);
+let mins=0,sess=0,mins2=0;
+for(let i=0;i<7;i++){ const d=new Date(); d.setDate(d.getDate()-i);
+const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
+const e=state.log[k]||{}; mins+=e.minutes||0; sess+=e.sessions||0; }
+for(let i=7;i<14;i++){ const d=new Date(); d.setDate(d.getDate()-i);
+const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
+mins2+=(state.log[k]||{}).minutes||0; }
+const diff=mins-mins2, h=Math.floor(mins/60);
+setTimeout(()=>notify("📈 Week in review",`${h}h ${mins%60}m across ${sess} sessions — ${diff>=0?"up":"down"} ${Math.abs(Math.round(diff/60*10)/10)}h vs last week. ${diff>=0?"Keep the slope.":"Reset tomorrow morning."}`),8000);
+})();

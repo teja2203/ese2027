@@ -60,6 +60,9 @@
 #splash .sub{ font-family:'Inter',system-ui,sans-serif; font-size:11px; font-weight:700;
   letter-spacing:.28em; text-transform:uppercase; color:#878D84; margin-top:-14px;
   animation:spChar .7s ease 2.15s both; }
+#splash .cd{ font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700;
+  color:#C9F24E; margin-top:2px; letter-spacing:.06em;
+  animation:spChar .7s ease 2.5s both, spBreathe 2.6s ease-in-out 3.4s infinite; }
 @media (prefers-reduced-motion: reduce){
   #splash .disc img,#splash .ring,#splash .halo,#splash .t span,#splash .sub{ animation:none !important; opacity:1; } }
 </style>
@@ -75,7 +78,15 @@
   </div>
   <div class="t"><span>E</span><span>S</span><span>E</span><span class="lime">2</span><span class="lime">0</span><span class="lime">2</span><span class="lime">7</span></div>
   <div class="sub">Study OS</div>
+  <div class="cd" id="spCd"></div>
 </div>
+<script>
+(function(){
+  var d=Math.max(0,Math.ceil((new Date("2027-01-31T09:00:00")-Date.now())/864e5));
+  var el=document.getElementById("spCd");
+  if(el) el.textContent=d+" days to ESE";
+})();
+</script>
 <div id="app">
   <main id="view" aria-live="polite"></main>
   <nav id="nav" aria-label="Main navigation"></nav>
