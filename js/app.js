@@ -160,24 +160,40 @@ function notifSupported(){ return "Notification" in window; }
 function askNotifPermission(){
 if(!notifSupported()) return Promise.resolve("unsupported");
 if(Notification.permission!=="default") return Promise.resolve(Notification.permission);
-return Notification.requestPermission(); }
+return new Promise(res=>{
+let done=false;
+const finish=()=>{ if(done) return; done=true; res(Notification.permission); };
+try{
+const r=Notification.requestPermission(finish);      /* old callback style */
+if(r&&r.then) r.then(finish).catch(finish);          /* promise style */
+}catch(e){ finish(); }
+/* some Android WebViews never settle the promise — poll the real value */
+let n=0; const iv=setInterval(()=>{ n++;
+if(Notification.permission!=="default"||n>40){ clearInterval(iv); finish(); } },500);
+}); }
 function notify(title,body){
 if(!state.notif||!notifSupported()||Notification.permission!=="granted") return;
+const opts={body,icon:"./icons/icon-192.png",badge:"./icons/icon-192.png",tag:"ese-session",renotify:true,vibrate:[120,60,120]};
 try{
-const opts={body,icon:"./icon.png",badge:"./icon.png",tag:"ese-session",renotify:true,vibrate:[120,60,120]};
-if(navigator.serviceWorker&&navigator.serviceWorker.ready){
-navigator.serviceWorker.ready.then(reg=>reg.showNotification(title,opts)).catch(()=>{ new Notification(title,opts); });
+if(navigator.serviceWorker){
+navigator.serviceWorker.getRegistration().then(reg=>{
+if(reg&&reg.showNotification) return reg.showNotification(title,opts);
+try{ new Notification(title,opts); }catch(_){}
+}).catch(()=>{ try{ new Notification(title,opts); }catch(_){} });
 }else new Notification(title,opts);
-}catch(e){ try{ new Notification(title,{body,icon:"./icon.png"}); }catch(_){} } }
+}catch(e){ try{ new Notification(title,{body,icon:"./icons/icon-192.png"}); }catch(_){} } }
 function notifOn(){ return state.notif&&notifSupported()&&Notification.permission==="granted"; }
 function toggleNotif(){
 if(!notifSupported()){ toast("Notifications not supported on this browser"); return; }
 if(!notifOn()){
+/* opt in first, so the switch works even if the permission event is flaky */
+state.notif=true; saveJSON(NOTIF_KEY,true);
 askNotifPermission().then(p=>{
-if(p==="granted"){ state.notif=true; saveJSON(NOTIF_KEY,true); subscribePush(); toast("Session notifications on"); notify("Notifications enabled","You'll be pinged when a session or break ends."); }
-else if(p==="denied") toast("Blocked by browser — allow notifications in site settings");
-else toast("Notifications not available");
+if(p==="granted"){ subscribePush(); toast("Session notifications on"); notify("Notifications enabled","You'll be pinged when a session or break ends."); }
+else if(p==="denied"){ state.notif=false; saveJSON(NOTIF_KEY,false); toast("Blocked — enable notifications for this app in Android Settings"); }
+else toast("Waiting for permission…");
 render(); });
+render();
 }else{ state.notif=false; saveJSON(NOTIF_KEY,false); toast("Session notifications off"); render(); } }
 
 /* ── web push (closed-app notifications) ──────────────── */
