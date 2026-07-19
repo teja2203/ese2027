@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v17";
+const APP_VERSION="v19";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -252,7 +252,10 @@ if(r<=0){ completePhase(); return; }
 renderTimerOnly(); }
 function logSession(mins){
 const k=todayKey(); const e=state.log[k]||{sessions:0,minutes:0};
-e.sessions+=1; e.minutes+=mins; state.log[k]=e; saveJSON(LOG_KEY,state.log); }
+e.sessions+=1; e.minutes+=mins;
+const si=currentSlotIndex();
+if(si>=0){ e.slotHits=e.slotHits||{}; e.slotHits[si]=true; }
+state.log[k]=e; saveJSON(LOG_KEY,state.log); }
 /* ── session notifications ────────────────────────────── */
 function notifSupported(){ return "Notification" in window; }
 function askNotifPermission(){
@@ -327,6 +330,35 @@ let t=(+m[1])*60+(+m[2]);
 while(t<=prev) t+=720;              /* times ascend through the day → am/pm rollover */
 prev=t; return t; });
 return _slotStarts; }
+let _slotEnds=null;
+function slotEnds(){
+if(_slotEnds) return _slotEnds;
+const starts=slotStarts();
+_slotEnds=SLOTS.map((s,i)=>{
+const st=starts[i]; if(st==null) return null;
+const m=/–(\d{1,2}):(\d{2})/.exec(s.time||""); if(!m) return st+120;
+let t=(+m[1])*60+(+m[2]);
+while(t<=st) t+=720;                /* end is after start, rolling into pm if needed */
+return t; });
+return _slotEnds; }
+/* which scheduled slot are we inside right now? −1 if none (15 min grace after end) */
+function currentSlotIndex(){
+const now=new Date(), mins=now.getHours()*60+now.getMinutes();
+const st=slotStarts(), en=slotEnds();
+for(let i=0;i<SLOTS.length;i++){
+if(st[i]!=null&&mins>=st[i]&&mins<en[i]+15) return i; }
+return -1; }
+/* session streak — consecutive days with a focus session completed INSIDE a slot window */
+function computeSessionStreak(){
+let streak=0; const d=new Date();
+for(;;){ const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
+const e=state.log[k];
+const hit=e&&e.slotHits&&Object.keys(e.slotHits).length>0;
+if(hit) streak++;
+else if(streak===0&&k===todayKey()){ /* today's slots may still be ahead */ }
+else break;
+d.setDate(d.getDate()-1); }
+return streak; }
 function checkSlotNotifications(){
 if(!notifOn()) return;
 const today=todayDateLabel(); const di=SCHED.findIndex(d=>d.date===today);
@@ -402,7 +434,15 @@ else releaseWakeLock(); }
 function completePhase(){
 stopPomoInterval();
 const wasWork=state.pomo.phase==="work";
-if(wasWork) logSession(state.pomo.workMins);
+if(wasWork){
+const preHits=(state.log[todayKey()]||{}).slotHits||{};
+const preCount=Object.keys(preHits).length;
+logSession(state.pomo.workMins);
+const postHits=(state.log[todayKey()]||{}).slotHits||{};
+if(Object.keys(postHits).length>preCount){
+const si=currentSlotIndex(), slot=SLOTS[si]||{label:"slot"};
+setTimeout(()=>toast(`🎯 ${slot.label} secured — session streak alive`),600);
+} }
 try{ navigator.vibrate&&navigator.vibrate([120,60,120]); }catch(e){}
 notify(wasWork?"Focus session complete 🎉":"Break over ⏰",
 wasWork?`${state.pomo.workMins} min of deep work logged.${state.pomo.loop?` ${state.pomo.breakMins} min break starts now.`:" Take a breather."}`
@@ -580,13 +620,14 @@ hero.onclick=()=>{ jumpTo(focusIdx); setNav("plan"); };
 inner.appendChild(hero);
 
 /* stat tiles */
-const tiles=el("div",{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px",marginBottom:"14px"});
+const tiles=el("div",{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"14px"});
 [[IC.flame,streak,"day streak","var(--amber)","var(--amber-soft)"],
- [IC.bolt,(tlog.minutes>=60?Math.floor(tlog.minutes/60)+"h "+(tlog.minutes%60)+"m":tlog.minutes+"m"),"today","var(--acc)","var(--acc-dim)"],
+ ["🎯",computeSessionStreak(),"session streak","var(--acc)","var(--acc-dim)"],
+ [IC.bolt,(tlog.minutes>=60?Math.floor(tlog.minutes/60)+"h "+(tlog.minutes%60)+"m":tlog.minutes+"m"),"today","var(--sky)","var(--sky-soft)"],
  [IC.trophy,doneDaysCount(),"days cleared","var(--mint)","var(--mint-soft)"]
 ].forEach(([ic,big,label,c,s])=>{
 tiles.appendChild(html(`<div class="card lift" style="padding:14px 10px;text-align:center;border-radius:var(--r)">
-<div style="display:inline-flex;width:32px;height:32px;border-radius:10px;background:${s};color:${c};align-items:center;justify-content:center">${ic}</div>
+<div style="display:inline-flex;width:32px;height:32px;border-radius:10px;background:${s};color:${c};align-items:center;justify-content:center;font-size:15px">${ic}</div>
 <div class="display" style="font-size:22px;font-weight:800;color:var(--ink);margin-top:8px">${big}</div>
 <div style="font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-top:4px">${label}</div>
 </div>`)); });
@@ -961,6 +1002,7 @@ ${ring(118,11,ov.pct,"var(--acc)")}
 <div style="flex:1;display:flex;flex-direction:column;gap:10px">
 <div><div class="display" style="font-size:20px;font-weight:800;color:var(--mint)">${doneDaysCount()}</div><div style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">days cleared</div></div>
 <div><div class="display" style="font-size:20px;font-weight:800;color:var(--amber)">${computeStreak()}</div><div style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">day streak</div></div>
+<div><div class="display" style="font-size:20px;font-weight:800;color:var(--acc)">${computeSessionStreak()}</div><div style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">session streak</div></div>
 <div><div class="display" style="font-size:20px;font-weight:800;color:var(--sky)">${ov.dn}</div><div style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">tasks done</div></div>
 </div>`;
 inner.appendChild(top);
