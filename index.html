@@ -82,7 +82,10 @@
 </div>
 <script>
 (function(){
-  var d=Math.max(0,Math.ceil((new Date("2027-01-31T09:00:00")-Date.now())/864e5));
+  var now=new Date();
+  var today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  var exam=new Date(2027,0,31);
+  var d=Math.max(0,Math.round((exam-today)/864e5));
   var el=document.getElementById("spCd");
   if(el) el.textContent=d+" days to ESE";
 })();
