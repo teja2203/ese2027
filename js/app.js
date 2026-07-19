@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v19";
+const APP_VERSION="v20";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -218,7 +218,7 @@ home:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 plan:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="3"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/><path d="m9 15 2 2 4-4"/></svg>',
 focus:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9.5V13l2.5 2.5"/><path d="M9.5 2.5h5"/></svg>',
 stats:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>',
-settings:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.5-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.5 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.5 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.5-2-1.5c.07-.4.1-.8.1-1.2Z"/></svg>',
+settings:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg>',
 check:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 12.5 5 5 10-11"/></svg>',
 flame:'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c4.4 0 7.5-2.9 7.5-7.2 0-3.4-2.1-5.6-3.7-7.4C14.3 5.7 13 4.3 13 2c-3.5 1.6-5 4.6-5 7 0 1.1.3 2 .3 2S6 10 6 7.5C4.7 9.1 4 11.6 4 13.6 4 18.6 7.6 22 12 22Z"/></svg>',
 bolt:'<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>',
@@ -633,42 +633,43 @@ tiles.appendChild(html(`<div class="card lift" style="padding:14px 10px;text-ali
 </div>`)); });
 inner.appendChild(tiles);
 
-/* countdowns */
-const cds=el("div",{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"14px"});
-[["APTRANSCO",apt,"Aug 22, 2026","var(--rose)","var(--rose-soft)"],
- ["ESE 2027",ese,"Jan 31, 2027","var(--sky)","var(--sky-soft)"]].forEach(([name,t,date,c,s])=>{
-cds.appendChild(html(`<div class="card lift" style="padding:16px;border-radius:var(--r)">
-<div style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:50%;background:${c}"></span>
-<span style="font-size:9.5px;color:${c};font-weight:800;letter-spacing:.08em;text-transform:uppercase">${name}</span></div>
-<div class="display mono" style="font-size:24px;font-weight:800;color:var(--ink);margin-top:10px">${t.d}<span style="font-size:12px;color:var(--ink-3)">d</span> ${t.h}<span style="font-size:12px;color:var(--ink-3)">h</span></div>
-<div style="font-size:10.5px;color:var(--ink-3);margin-top:5px;font-weight:600">${date}</div>
-</div>`)); });
-inner.appendChild(cds);
+/* countdowns — single compact strip */
+inner.appendChild(html(`<div class="card" style="padding:13px 16px;border-radius:var(--r);margin-bottom:14px;display:flex;align-items:center;gap:12px">
+<div style="flex:1;display:flex;align-items:center;gap:8px">
+<span style="width:7px;height:7px;border-radius:50%;background:var(--rose);flex-shrink:0"></span>
+<div><div style="font-size:9px;color:var(--rose);font-weight:800;letter-spacing:.06em;text-transform:uppercase">APTRANSCO</div>
+<div class="display mono" style="font-size:17px;font-weight:800;color:var(--ink)">${apt.d}<span style="font-size:10px;color:var(--ink-3)">d</span> ${apt.h}<span style="font-size:10px;color:var(--ink-3)">h</span></div></div>
+</div>
+<div style="width:1px;height:32px;background:var(--line-2)"></div>
+<div style="flex:1;display:flex;align-items:center;gap:8px">
+<span style="width:7px;height:7px;border-radius:50%;background:var(--sky);flex-shrink:0"></span>
+<div><div style="font-size:9px;color:var(--sky);font-weight:800;letter-spacing:.06em;text-transform:uppercase">ESE 2027</div>
+<div class="display mono" style="font-size:17px;font-weight:800;color:var(--ink)">${ese.d}<span style="font-size:10px;color:var(--ink-3)">d</span> ${ese.h}<span style="font-size:10px;color:var(--ink-3)">h</span></div></div>
+</div>
+</div>`));
 
-/* next achievement teaser — the carrot */
+/* next achievement teaser — the carrot (tap → Profile) */
 const nx=nextAchievement();
 if(nx){
-const t=html(`<div class="card lift press" style="padding:16px;border-radius:var(--r);margin-bottom:14px;cursor:pointer;display:flex;align-items:center;gap:14px;border:1px solid var(--line-2)">
-<div style="width:46px;height:46px;border-radius:16px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:22px;filter:grayscale(1);opacity:.8;flex-shrink:0">${nx.a.icon}</div>
+const t=html(`<div class="card lift press" style="padding:12px 16px;border-radius:var(--r);margin-bottom:14px;cursor:pointer;display:flex;align-items:center;gap:12px;border:1px solid var(--line-2)">
+<div style="width:36px;height:36px;border-radius:12px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:17px;filter:grayscale(1);opacity:.8;flex-shrink:0">${nx.a.icon}</div>
 <div style="flex:1;min-width:0">
-<div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--amber)">Next badge · ${nx.pct}%</div>
-<div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-top:3px">${nx.a.title}</div>
-<div class="track" style="height:5px;margin-top:8px"><div class="fill" style="width:${nx.pct}%;background:var(--amber)"></div></div>
-<div style="font-size:10px;color:var(--ink-4);margin-top:5px;font-weight:600">${nx.have} of ${nx.a.goal} — ${nx.a.desc}</div>
+<div style="display:flex;justify-content:space-between;align-items:center">
+<span style="font-size:12px;font-weight:700;color:var(--ink)">${nx.a.title}</span>
+<span class="mono" style="font-size:10px;font-weight:800;color:var(--amber)">${nx.pct}%</span></div>
+<div class="track" style="height:4px;margin-top:6px"><div class="fill" style="width:${nx.pct}%;background:var(--amber)"></div></div>
 </div>
-<span style="color:var(--ink-4)">${IC.right}</span>
 </div>`);
-t.onclick=()=>setNav("stats");
+t.onclick=()=>setNav("settings");
 inner.appendChild(t); }
 
-/* overall progress */
-inner.appendChild(html(`<div class="card" style="padding:18px;border-radius:var(--r);margin-bottom:14px">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-<span style="font-size:12px;font-weight:700;color:var(--ink-2)">Full syllabus</span>
-<span class="mono" style="font-size:12px;font-weight:800;color:var(--acc)">${ov.pct}%</span>
+/* overall progress — compact strip */
+inner.appendChild(html(`<div class="card" style="padding:13px 16px;border-radius:var(--r);margin-bottom:14px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+<span style="font-size:11.5px;font-weight:700;color:var(--ink-2)">Full syllabus · ${ov.dn}/${ov.tot}</span>
+<span class="mono" style="font-size:11.5px;font-weight:800;color:var(--acc)">${ov.pct}%</span>
 </div>
-<div class="track" style="height:10px"><div class="fill" style="width:${ov.pct}%"></div></div>
-<div style="font-size:11px;color:var(--ink-3);margin-top:10px;font-weight:500">${ov.dn} of ${ov.tot} tasks · ${SCHED.length}-day plan · ends Jan 31</div>
+<div class="track" style="height:7px"><div class="fill" style="width:${ov.pct}%"></div></div>
 </div>`));
 
 /* quick actions */
@@ -1063,14 +1064,25 @@ sh+=`<div style="margin-bottom:12px">
 subj.innerHTML=sh;
 inner.appendChild(subj);
 
-/* mock test tracker */
-const mk=el("div"); mk.className="card";
-Object.assign(mk.style,{padding:"18px",borderRadius:"var(--r)",marginBottom:"14px"});
-let mh=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-<span style="font-size:12px;font-weight:700;color:var(--ink-2)">Mock scores</span>
+/* pointer to profile for badges & mocks */
+const pf=html(`<div class="card lift press" style="padding:14px 16px;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;gap:12px">
+<span style="font-size:18px">🏅</span>
+<div style="flex:1;min-width:0">
+<div style="font-size:13px;font-weight:700;color:var(--ink)">Badges, mocks & revision queue</div>
+<div style="font-size:11px;color:var(--ink-3);margin-top:2px">Moved to your Profile tab</div>
+</div><span style="color:var(--ink-4)">${IC.right}</span></div>`);
+pf.onclick=()=>setNav("settings");
+inner.appendChild(pf);
+
+wrap.appendChild(inner); wireTheme(wrap); return wrap; }
+
+/* ── profile building blocks (shared) ─────────────────── */
+function buildMockCard(){
+const mk=el("div");
+let mh=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
 <button id="mkAdd" class="btn btn-acc press" style="padding:8px 16px;font-size:12px">+ Log mock</button></div>`;
 if(!state.mocks.length){
-mh+=`<div style="font-size:12.5px;color:var(--ink-3);text-align:center;padding:14px 0">No mocks logged yet.<br>Score every mock — the trend tells you more than the hours do.</div>`;
+mh+=`<div style="font-size:12.5px;color:var(--ink-3);text-align:center;padding:8px 0 4px">No mocks logged yet.<br>Score every mock — the trend tells you more than the hours do.</div>`;
 }else{
 const last=state.mocks.slice(-8);
 const pcts=last.map(m=>Math.round(m.score/m.max*100));
@@ -1096,17 +1108,14 @@ mh+=`</div>`; }
 mk.innerHTML=mh;
 mk.querySelector("#mkAdd").onclick=addMockSheet;
 mk.querySelectorAll("[data-di]").forEach(b=>b.onclick=()=>deleteMock(parseInt(b.dataset.di,10)));
-inner.appendChild(mk);
-
-/* revision queue — shaky topics */
+return mk; }
+function buildShakyCard(){
 const shakyKeys=Object.keys(state.shaky);
-if(shakyKeys.length){
-const sq=el("div"); sq.className="card";
-Object.assign(sq.style,{padding:"18px",borderRadius:"var(--r)",marginBottom:"14px"});
-let qh=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-<span style="font-size:12px;font-weight:700;color:var(--ink-2)">⚠️ Revision queue</span>
-<span class="pill" style="background:var(--amber-soft);color:var(--amber)">${shakyKeys.length} shaky</span></div>
-<div style="max-height:180px;overflow-y:auto">`;
+const sq=el("div");
+if(!shakyKeys.length){
+sq.innerHTML=`<div style="font-size:12.5px;color:var(--ink-3);text-align:center;padding:8px 0 4px">Nothing flagged. Tap ⚠️ on any task in the Plan to queue it for revision.</div>`;
+return sq; }
+let qh=`<div style="max-height:200px;overflow-y:auto">`;
 shakyKeys.forEach(k=>{ const s=state.shaky[k];
 qh+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid var(--line)">
 <div style="flex:1;min-width:0"><div style="font-size:12.5px;color:var(--ink-2);font-weight:600;line-height:1.4">${s.t}</div>
@@ -1115,19 +1124,13 @@ qh+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;borde
 qh+=`</div>`;
 sq.innerHTML=qh;
 sq.querySelectorAll("[data-sk]").forEach(b=>b.onclick=()=>{ delete state.shaky[b.dataset.sk]; saveJSON(SHAKY_KEY,state.shaky); render(); toast("Cleared — well recovered"); });
-inner.appendChild(sq); }
-
-/* achievements — Regain-style hex medals */
+return sq; }
+function buildAchievements(){
 const m=achMetrics();
-const unlockedCount=ACHIEVEMENTS.filter(a=>state.achievements[a.id]).length;
 const nx=nextAchievement();
-const ach=el("div"); ach.className="card";
-Object.assign(ach.style,{padding:"18px",borderRadius:"var(--r)",marginBottom:"14px"});
+const ach=el("div");
 function fmtUnlockDate(iso){ try{ const d=new Date(iso); return MON[d.getMonth()]+" "+d.getDate()+", "+d.getFullYear(); }catch(e){ return ""; } }
-let ah=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-<span style="font-size:12px;font-weight:700;color:var(--ink-2)">Achievements</span>
-<span class="pill" style="background:var(--acc-dim);color:var(--acc)">${unlockedCount} / ${ACHIEVEMENTS.length} collected</span></div>
-<div class="hex-grid">`;
+let ah=`<div class="hex-grid">`;
 ACHIEVEMENTS.forEach(a=>{
 const rec=state.achievements[a.id], on=!!rec;
 const have=achProgress(a,m), pct=Math.round(have/a.goal*100);
@@ -1144,36 +1147,56 @@ ${on?`<div class="hdate">${fmtUnlockDate(rec.at)}</div>`
 </div>`; });
 ah+="</div>";
 ach.innerHTML=ah;
-inner.appendChild(ach);
+return ach; }
 
-/* backup row */
-const bk=el("div",{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"});
-const b1=html(`<button class="btn btn-ghost press" style="width:100%">Backup</button>`);
-b1.onclick=exportData;
-const b2=html(`<button class="btn btn-ghost press" style="width:100%">Restore</button>`);
-b2.onclick=()=>document.getElementById("importFile").click();
-bk.appendChild(b1); bk.appendChild(b2);
-inner.appendChild(bk);
-
-wrap.appendChild(inner); wireTheme(wrap); return wrap; }
-
-/* ════════════════ SETTINGS ════════════════ */
+/* ════════════════ PROFILE ════════════════ */
+let profExp=loadJSON("ese_prof_exp_v1",{badges:true});
 function renderSettings(){
 const wrap=el("div"); wrap.className="screen view";
 const inner=el("div"); inner.className="stagger";
-inner.appendChild(header("Settings",""));
-function section(title,rows){
-const s=el("div"); s.className="card";
-Object.assign(s.style,{borderRadius:"var(--r)",overflow:"hidden",marginBottom:"14px"});
-s.appendChild(html(`<div style="padding:14px 18px 6px;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">${title}</div>`));
-rows.forEach(r=>s.appendChild(r));
-return s; }
+inner.appendChild(header("Profile",""));
+
+/* identity card */
+const streak=computeStreak(), sstreak=computeSessionStreak();
+const unlockedCount=ACHIEVEMENTS.filter(a=>state.achievements[a.id]).length;
+const ese=cd(ESE_DATE);
+const totMin=Object.values(state.log).reduce((a,e)=>a+(e.minutes||0),0);
+inner.appendChild(html(`<div class="card" style="padding:20px;border-radius:var(--r-lg);margin-bottom:14px;border:1px solid var(--line-2)">
+<div style="display:flex;align-items:center;gap:14px">
+<div style="width:58px;height:58px;border-radius:50%;background:var(--acc);color:var(--acc-ink);display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;flex-shrink:0">T</div>
+<div style="flex:1;min-width:0">
+<div class="display" style="font-size:20px;font-weight:800;color:var(--ink)">Teja</div>
+<div style="font-size:11.5px;color:var(--ink-3);font-weight:600;margin-top:2px">ESE 2027 aspirant · ${ese.d} days to go</div>
+</div></div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px">
+<div style="text-align:center"><div class="display" style="font-size:17px;font-weight:800;color:var(--amber)">${streak}</div><div style="font-size:8.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em">streak</div></div>
+<div style="text-align:center"><div class="display" style="font-size:17px;font-weight:800;color:var(--acc)">${sstreak}</div><div style="font-size:8.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em">sessions</div></div>
+<div style="text-align:center"><div class="display" style="font-size:17px;font-weight:800;color:var(--sky)">${Math.floor(totMin/60)}h</div><div style="font-size:8.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em">studied</div></div>
+<div style="text-align:center"><div class="display" style="font-size:17px;font-weight:800;color:var(--mint)">${unlockedCount}</div><div style="font-size:8.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em">badges</div></div>
+</div></div>`));
+
+/* accordion */
+function acc(id,icon,title,badge,build){
+const open=!!profExp[id];
+const card=el("div"); card.className="card";
+Object.assign(card.style,{borderRadius:"var(--r)",marginBottom:"10px",overflow:"hidden"});
+const head=el("button"); head.className="press";
+Object.assign(head.style,{display:"flex",alignItems:"center",gap:"12px",width:"100%",padding:"15px 16px",border:"none",background:"transparent",cursor:"pointer",textAlign:"left"});
+head.innerHTML=`<span style="font-size:16px;width:22px;text-align:center">${icon}</span>
+<span style="flex:1;font-size:13.5px;font-weight:700;color:var(--ink)">${title}</span>
+${badge?`<span class="pill" style="background:var(--card-2);color:var(--ink-3);font-size:9px">${badge}</span>`:""}
+<span style="color:var(--ink-4);transform:rotate(${open?"90deg":"0deg"});transition:transform .25s var(--spring)">${IC.right}</span>`;
+head.onclick=()=>{ profExp[id]=!open; saveJSON("ese_prof_exp_v1",profExp); render(); };
+card.appendChild(head);
+if(open){ const body=el("div",{padding:"0 16px 16px"}); body.appendChild(build()); card.appendChild(body); }
+return card; }
+function rows(list){ const d=el("div"); list.forEach(r=>d.appendChild(r)); return d; }
 function row(label,desc,right,onclick){
 const r=el("button"); r.className="press";
 Object.assign(r.style,{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",width:"100%",
-padding:"14px 18px",border:"none",borderTop:"1px solid var(--line)",background:"transparent",cursor:onclick?"pointer":"default",textAlign:"left"});
+padding:"13px 2px",border:"none",borderTop:"1px solid var(--line)",background:"transparent",cursor:onclick?"pointer":"default",textAlign:"left"});
 r.innerHTML=`<div style="flex:1;min-width:0">
-<div style="font-size:13.5px;font-weight:700;color:var(--ink)">${label}</div>
+<div style="font-size:13px;font-weight:700;color:var(--ink)">${label}</div>
 ${desc?`<div style="font-size:11px;color:var(--ink-3);margin-top:3px;line-height:1.4">${desc}</div>`:""}</div>
 <div style="flex-shrink:0;color:var(--ink-3)">${right||""}</div>`;
 if(onclick) r.onclick=onclick;
@@ -1182,21 +1205,11 @@ function toggleUI(on){
 return `<span style="display:inline-block;width:44px;height:26px;border-radius:999px;background:${on?"var(--acc)":"var(--card-2)"};position:relative;transition:background .2s">
 <span style="position:absolute;top:3px;left:${on?"21px":"3px"};width:20px;height:20px;border-radius:50%;background:${on?"var(--acc-ink)":"var(--ink-4)"};transition:left .25s var(--spring)"></span></span>`; }
 
-inner.appendChild(section("App",[
-isStandalone()
-? row("Installed as app","Running in standalone mode — you're all set","✓")
-: row("Install app","Add ESE2027 to your home screen — full screen, offline, notifications","⬇",installApp),
-row("Offline ready","Everything is cached — works with zero network","✓"),
-]));
-inner.appendChild(section("Blocking",[
-row("Strict focus lock","During focus: Stop / Pause / Back need a 5-second hold, Esc is blocked, leaving the app is logged as a distraction",toggleUI(state.block.strict),toggleStrict),
-row("Block adult sites — whole device","Free, built into Android & Windows via DNS. Tap for 2-min setup","→",showBlockGuide),
-row("Block distracting apps","Uses Android Focus Mode / Windows Focus — tap for setup","→",showAppBlockGuide),
-]));
-inner.appendChild(section("Appearance",[
-row("Dark theme","Easier on the eyes for long sessions",toggleUI(state.theme==="dark"),()=>{ state.theme=state.theme==="dark"?"light":"dark"; saveJSON(THEME_KEY,state.theme); render(); }),
-]));
-inner.appendChild(section("Timer",[
+const shakyCount=Object.keys(state.shaky).length;
+inner.appendChild(acc("badges","🏅","Achievements",`${unlockedCount} / ${ACHIEVEMENTS.length}`,buildAchievements));
+inner.appendChild(acc("mocks","📊","Mock scores",state.mocks.length?`${state.mocks.length} logged`:"",buildMockCard));
+inner.appendChild(acc("shaky","⚠️","Revision queue",shakyCount?`${shakyCount} shaky`:"",buildShakyCard));
+inner.appendChild(acc("timer","⏱","Timer & notifications","",()=>rows([
 row("Auto loop","Cycle focus → break automatically",toggleUI(state.pomo.loop),toggleLoop),
 row("Session notifications","Ping when a focus session or break ends",toggleUI(notifOn()),toggleNotif),
 row("Notification status",
@@ -1215,26 +1228,30 @@ G_STEP(4,"Reopen this app and toggle Session notifications on")+
 G_HEAD("If using in the browser")+
 G_STEP(1,"Tap the lock icon in the address bar → Permissions → Notifications → Allow")); }
 else{ askNotifPermission().then(()=>render()); toast("Permission dialog requested"); } }),
-]));
-inner.appendChild(section("Data",[
+])));
+inner.appendChild(acc("blocking","🔒","Blocking & strict mode",state.block.strict?"armed":"",()=>rows([
+row("Strict focus lock","During focus: Stop / Pause / Back need a 5-second hold, Esc is blocked, leaving the app is logged as a distraction",toggleUI(state.block.strict),toggleStrict),
+row("Block adult sites — whole device","Free, built into Android & Windows via DNS. Tap for 2-min setup","→",showBlockGuide),
+row("Block distracting apps","Uses Android Focus Mode / Windows Focus — tap for setup","→",showAppBlockGuide),
+])));
+inner.appendChild(acc("app","⚙️","App & data","",()=>rows([
+row("Dark theme","Easier on the eyes for long sessions",toggleUI(state.theme==="dark"),()=>{ state.theme=state.theme==="dark"?"light":"dark"; saveJSON(THEME_KEY,state.theme); render(); }),
+isStandalone()
+? row("Installed as app","Running standalone · offline ready","✓")
+: row("Install app","Add to home screen — full screen, offline, notifications","⬇",installApp),
 row("Backup data","Download all progress as JSON","⬇",exportData),
 row("Restore backup","Load a previous backup file","⬆",()=>document.getElementById("importFile").click()),
 row("Reset progress","Clears every checked task — cannot be undone","",()=>{
 if(confirm("Reset ALL task progress? This cannot be undone.")){ state.checked={}; saveJSON(STORAGE_KEY,state.checked); render(); toast("Progress reset"); } }),
-]));
-inner.appendChild(section("Account",[
 row("Sign out","Stop syncing on this device","",async()=>{
 if(!confirm("Sign out from ESE2027?")) return;
 try{ if(window.sbAuth) await window.sbAuth.signOut(); }catch(e){}
 toast("Signed out"); }),
-]));
-inner.appendChild(section("Shortcuts",[
-row("Command palette","Ctrl / Cmd + K","⌘K"),
-row("Switch tabs","Keys 1 – 5",""),
-row("Theme · Undo · Timer","T · Z · Space",""),
-]));
+row("Shortcuts","⌘K palette · 1–5 tabs · T theme · Z undo · Space timer",""),
+])));
+
 inner.appendChild(html(`<div style="text-align:center;font-size:11px;color:var(--ink-4);line-height:1.9;padding:8px 0 20px">
-ESE2027 Study OS · v2.0<br>Built for one goal — Jan 31, 2027</div>`));
+ESE2027 Study OS · ${APP_VERSION}<br>Built for one goal — Jan 31, 2027</div>`));
 wrap.appendChild(inner); wireTheme(wrap); return wrap; }
 
 /* ════════════════ ACHIEVEMENTS ════════════════ */
@@ -1401,7 +1418,7 @@ else view.appendChild(renderSettings());
 renderNav(); updateLandscape(); }
 function renderNav(){
 navEl.innerHTML="";
-[["home","Home"],["plan","Plan"],["focus","Focus"],["stats","Stats"],["settings","More"]].forEach(([id,label])=>{
+[["home","Home"],["plan","Plan"],["focus","Focus"],["stats","Stats"],["settings","Profile"]].forEach(([id,label])=>{
 const b=el("button"); b.className="navbtn press"+(state.nav===id?" active":"");
 b.setAttribute("aria-label",label);
 b.setAttribute("aria-current",state.nav===id?"page":"false");
