@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v23";
+const APP_VERSION="v24";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -297,7 +297,14 @@ function playSound(kind){
 if(!state.sound) return;
 const ctx=actx(); if(!ctx) return;
 const t=ctx.currentTime+0.03;
-if(kind==="complete"){
+if(kind==="start"){
+/* quick upward two-note — session begins, lock in */
+tone(ctx,t,392,.14,"sine",.14); tone(ctx,t+.11,587.33,.3,"sine",.17);
+tone(ctx,t+.11,1174.66,.2,"sine",.04);
+}else if(kind==="stop"){
+/* soft downward two-note — winding down */
+tone(ctx,t,587.33,.14,"sine",.14); tone(ctx,t+.11,392,.32,"sine",.15);
+}else if(kind==="complete"){
 /* warm rising triad — session done */
 tone(ctx,t,523.25,.28,"sine",.16); tone(ctx,t+.12,659.25,.28,"sine",.16);
 tone(ctx,t+.24,783.99,.42,"sine",.18); tone(ctx,t+.24,1567.98,.3,"sine",.05);
@@ -552,8 +559,10 @@ function toggleRunning(){
 if(state.pomo.running){
 bankProgress();                    /* pausing — bank what's been earned so far */
 state.pomo.timeLeft=getRemainingPomo(); state.pomo.running=false; state.pomo.targetTs=null; stopPomoInterval();
+playSound("stop");
 }else{
 state.pomo.running=true; state.pomo.targetTs=Date.now()+getRemainingPomo()*1000; startPomoInterval();
+playSound("start");
 clockOn=true;                      /* entering focus → show flip clock */
 requestAppFullscreen();
 if(state.notif&&notifSupported()&&Notification.permission==="default") askNotifPermission();
@@ -562,7 +571,9 @@ saveJSON(POMO_KEY,state.pomo); render(); }
 function resetPomo(){ bankProgress(); const hadMins=(state.pomo.logged||0)>0;
 if(hadMins){ const k=todayKey(); const e=state.log[k]; if(e){ e.sessions+=1; saveJSON(LOG_KEY,state.log); } }
 state.pomo.logged=0;
+const wasRunning=state.pomo.running;
 state.pomo.running=false; state.pomo.targetTs=null; state.pomo.timeLeft=phaseSecs(); stopPomoInterval(); saveJSON(POMO_KEY,state.pomo); render();
+if(wasRunning) playSound("stop");
 if(hadMins) toast("Stopped — partial time logged ✓"); }
 function skipPhase(){ completePhase(); }
 function setPhase(p){ bankProgress(); state.pomo.logged=0; state.pomo.phase=p; state.pomo.running=false; state.pomo.targetTs=null; state.pomo.timeLeft=phaseSecs(); stopPomoInterval(); saveJSON(POMO_KEY,state.pomo); render(); }
