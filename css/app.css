@@ -28,11 +28,11 @@
   --mint:#5BD6A9;   --mint-soft:rgba(91,214,169,.13);
   --lilac:#A78BFA;  --lilac-soft:rgba(167,139,250,.14);
 
-  --heat-0:#E86A6A;      /* nothing studied — red, not blank */
-  --heat-1:#E8B04B;      /* light day — amber */
-  --heat-2:#D6D84B;      /* okay day — yellow-lime */
-  --heat-3:#A8D437;      /* good day — light lime */
-  --heat-4:var(--acc);   /* strong day — lime green */
+  --heat-0:#E86A6A;      /* 0 min — red */
+  --heat-1:#E8834B;      /* under 2h — orange */
+  --heat-2:#E8B04B;      /* 2–5h — amber */
+  --heat-3:#D6D84B;      /* 5–8h — yellow */
+  --heat-4:var(--acc);   /* 8h+ — green. earn it. */
 
   --r-lg:24px; --r:18px; --r-sm:12px;
   --shadow:0 1px 2px rgba(0,0,0,.5), 0 6px 22px rgba(0,0,0,.35);
@@ -67,9 +67,9 @@ body.light{
   --lilac:#6D4FC9;  --lilac-soft:rgba(109,79,201,.10);
 
   --heat-0:#C24040;
-  --heat-1:#B07508;
-  --heat-2:#9BA019;
-  --heat-3:#7AAA14;
+  --heat-1:#C2622E;
+  --heat-2:#B07508;
+  --heat-3:#9BA019;
   --heat-4:#5C8A00;
 
   --shadow:0 1px 2px rgba(24,30,12,.06), 0 6px 20px rgba(24,30,12,.07);

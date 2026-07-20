@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v22";
+const APP_VERSION="v23";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -422,6 +422,17 @@ const st=slotStarts(), en=slotEnds();
 for(let i=0;i<SLOTS.length;i++){
 if(st[i]!=null&&mins>=st[i]&&mins<en[i]+15) return i; }
 return -1; }
+/* per-slot streak — consecutive days this specific slot was secured */
+function slotStreak(si){
+let streak=0; const d=new Date();
+for(;;){ const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
+const e=state.log[k];
+const hit=e&&e.slotHits&&e.slotHits[si];
+if(hit) streak++;
+else if(streak===0&&k===todayKey()){ /* today's slot may still be ahead */ }
+else break;
+d.setDate(d.getDate()-1); }
+return streak; }
 /* session streak — consecutive days with a focus session completed INSIDE a slot window */
 function computeSessionStreak(){
 let streak=0; const d=new Date();
@@ -814,6 +825,7 @@ const isCurrent=!done&&!currentFound; if(isCurrent) currentFound=true;
 const expKey=`${state.index}-${si}`;
 const expanded=state.expandedSessions[expKey]!==undefined?state.expandedSessions[expKey]:!done;
 const slot=SLOTS[si]||{label:"Session",time:"",icon:"•"};
+const sstreak=slotStreak(si);
 const card=el("div"); card.className="card";
 Object.assign(card.style,{borderRadius:"var(--r)",padding:"16px",
 border:isCurrent?"1.5px solid var(--acc)":"1px solid var(--line)",
@@ -825,6 +837,7 @@ top.innerHTML=`
 <div style="flex:1;min-width:0">
 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
 <span style="font-size:10px;color:var(--ink-3);font-weight:700">${slot.label}${slot.time?" · "+slot.time:""}</span>
+${sstreak>0?`<span class="pill" style="background:var(--amber-soft);color:var(--amber);font-size:8.5px;padding:3px 8px">🔥 ${sstreak}</span>`:""}
 <span class="pill" style="background:${t.s};color:${t.c};font-size:8.5px;padding:3px 8px">${t.label}</span>
 ${isCurrent?`<span class="pill" style="background:var(--acc-dim);color:var(--acc);font-size:8.5px;padding:3px 8px">Now</span>`:""}
 ${done?`<span class="pill" style="background:var(--mint-soft);color:var(--mint);font-size:8.5px;padding:3px 8px">Done</span>`:""}
@@ -1092,15 +1105,17 @@ inner.appendChild(top);
 /* 7-day study bars */
 const bars=el("div"); bars.className="card";
 Object.assign(bars.style,{padding:"18px",borderRadius:"var(--r)",marginBottom:"14px"});
-let bh='<div style="font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:14px">Study time · last 7 days</div><div style="display:flex;align-items:flex-end;gap:8px;height:90px">';
+let bh='<div style="font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:14px">Study time · last 7 days</div><div style="display:flex;align-items:flex-end;gap:8px;height:104px">';
 let maxM=1; const days=[];
 for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i);
 const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
 const e=state.log[k]||{minutes:0}; maxM=Math.max(maxM,e.minutes);
 days.push({d,e,isT:i===0}); }
 days.forEach(({d,e,isT})=>{
-const h=Math.max(5,Math.round(e.minutes/maxM*74));
-bh+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+const h=Math.max(5,Math.round(e.minutes/maxM*66));
+const lbl=e.minutes>=60?(Math.floor(e.minutes/60)+"h"+(e.minutes%60?fmt(e.minutes%60):"")):(e.minutes>0?e.minutes+"m":"");
+bh+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+<span class="mono" style="font-size:8.5px;font-weight:800;color:${e.minutes?(isT?"var(--acc)":"var(--ink-3)"):"transparent"};white-space:nowrap">${lbl||"·"}</span>
 <div style="width:100%;height:${h}px;border-radius:8px 8px 4px 4px;background:${e.minutes?(isT?"var(--acc)":"var(--acc-dim)"):"var(--card-2)"};transition:height .6s var(--ease)"></div>
 <span style="font-size:9px;color:${isT?"var(--acc)":"var(--ink-4)"};font-weight:700">${WD[d.getDay()]}</span></div>`; });
 bh+="</div>";
@@ -1117,11 +1132,11 @@ const d=new Date(); d.setDate(d.getDate()-i);
 const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
 const m=(state.log[k]||{minutes:0}).minutes;
 let c="var(--heat-0)";                                   /* 0 min = red — no hiding */
-if(m>0) c="var(--heat-1)"; if(m>=60) c="var(--heat-2)"; if(m>=120) c="var(--heat-3)"; if(m>=240) c="var(--heat-4)";
+if(m>0) c="var(--heat-1)"; if(m>=120) c="var(--heat-2)"; if(m>=300) c="var(--heat-3)"; if(m>=480) c="var(--heat-4)";
 hh+=`<div title="${k} · ${m} min" style="aspect-ratio:1;border-radius:7px;background:${c};${k===tk?"box-shadow:0 0 0 2px var(--acc);":""}"></div>`; }
-hh+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:12px;justify-content:flex-end"><span style="font-size:9px;color:var(--ink-4);font-weight:600">none</span>';
+hh+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:12px;justify-content:flex-end"><span style="font-size:9px;color:var(--ink-4);font-weight:600">0h</span>';
 ["var(--heat-0)","var(--heat-1)","var(--heat-2)","var(--heat-3)","var(--heat-4)"].forEach(c=>hh+=`<span style="width:10px;height:10px;border-radius:3px;background:${c}"></span>`);
-hh+='<span style="font-size:9px;color:var(--ink-4);font-weight:600">strong</span></div>';
+hh+='<span style="font-size:9px;color:var(--ink-4);font-weight:600">8h+</span></div>';
 heat.innerHTML=hh;
 inner.appendChild(heat);
 
