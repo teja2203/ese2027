@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v21";
+const APP_VERSION="v22";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -309,6 +309,21 @@ tone(ctx,t,659.25,.22,"sine",.14); tone(ctx,t+.16,523.25,.34,"sine",.16);
 tone(ctx,t,523.25,.16,"triangle",.15); tone(ctx,t+.1,659.25,.16,"triangle",.15);
 tone(ctx,t+.2,783.99,.16,"triangle",.16); tone(ctx,t+.3,1046.5,.5,"triangle",.2);
 tone(ctx,t+.3,1318.5,.4,"sine",.07); tone(ctx,t+.42,1567.98,.55,"sine",.1);
+}else if(kind==="flip"){
+/* mechanical flip-clock tick — filtered noise snap (debounced: one click per flip pair) */
+if(playSound._ft&&performance.now()-playSound._ft<90) return;
+playSound._ft=performance.now();
+const dur=.045;
+const buf=ctx.createBuffer(1,Math.floor(ctx.sampleRate*dur),ctx.sampleRate);
+const ch=buf.getChannelData(0);
+for(let i=0;i<ch.length;i++) ch[i]=(Math.random()*2-1)*Math.pow(1-i/ch.length,2.4);
+const nsrc=ctx.createBufferSource(); nsrc.buffer=buf;
+const bp=ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=2400; bp.Q.value=1.1;
+const g=ctx.createGain(); g.gain.setValueAtTime(.11,t);
+nsrc.connect(bp); bp.connect(g); g.connect(ctx.destination);
+nsrc.start(t);
+/* soft low thock underneath for body */
+tone(ctx,t+.015,190,.05,"sine",.05);
 }else if(kind==="day"){
 /* big day-conquered chord */
 [523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(ctx,t+i*.06,f,.6,"triangle",.13));
@@ -1028,6 +1043,7 @@ void card.offsetWidth; }
 const from=card._shown; card._shown=val;
 ft.textContent=from; fb.textContent=val;
 card.classList.remove("go"); void card.offsetWidth; card.classList.add("go");
+playSound("flip");
 card._t1=setTimeout(()=>{ top.textContent=val; card._t1=null; },300);
 card._t2=setTimeout(()=>{ bottom.textContent=val; card.classList.remove("go"); card._t2=null; },620); }
 function updateLandscape(){
