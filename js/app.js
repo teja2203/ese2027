@@ -4,14 +4,15 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v20";
+const APP_VERSION="v21";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
       NAV_KEY="ese_planner_nav_v1", POMO_KEY="ese_planner_pomo_v5",
       LOG_KEY="ese_planner_log_v1", THEME_KEY="THEME", EXP_KEY="expandedSessions",
       ACH_KEY="ese_achievements_v1", CELEB_KEY="ese_celebrated_days_v1", NOTIF_KEY="ese_notif_v1", BLOCK_KEY="ese_block_v1",
-      MOCK_KEY="ese_mocks_v1", SHAKY_KEY="ese_shaky_v1", RATE_KEY="ese_ratings_v1", FREEZE_KEY="ese_freeze_v1", BKUP_KEY="ese_last_backup_v1";
+      MOCK_KEY="ese_mocks_v1", SHAKY_KEY="ese_shaky_v1", RATE_KEY="ese_ratings_v1", FREEZE_KEY="ese_freeze_v1", BKUP_KEY="ese_last_backup_v1",
+      SOUND_KEY="ese_sound_v1";
 function loadJSON(k,f){ try{ const r=localStorage.getItem(k); return r===null?f:JSON.parse(r);}catch(e){ return f; } }
 function saveJSON(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 
@@ -53,7 +54,7 @@ return {d:Math.floor(d/864e5),h:Math.floor(d%864e5/36e5),m:Math.floor(d%36e5/6e4
 /* ── state ────────────────────────────────────────────── */
 const PRESETS=[{label:"25 · 5",work:25,brk:5},{label:"50 · 10",work:50,brk:10},{label:"90 · 20",work:90,brk:20}];
 function normalizePomo(p){
-const d={phase:"work",running:false,targetTs:null,timeLeft:50*60,workMins:50,breakMins:10,loop:true};
+const d={phase:"work",running:false,targetTs:null,timeLeft:50*60,workMins:50,breakMins:10,loop:true,logged:0};
 if(!p||typeof p!=="object") return d;
 return Object.assign(d,p);
 }
@@ -73,6 +74,7 @@ mocks:loadJSON(MOCK_KEY,[]),
 shaky:loadJSON(SHAKY_KEY,{}),
 ratings:loadJSON(RATE_KEY,{}),
 freeze:loadJSON(FREEZE_KEY,{}),
+sound:loadJSON(SOUND_KEY,true),
 };
 if(state.index<0||state.index>=SCHED.length) state.index=0;
 
@@ -249,13 +251,70 @@ function stopPomoInterval(){ if(pomoInterval){ clearInterval(pomoInterval); pomo
 function tick(){
 const r=getRemainingPomo();
 if(r<=0){ completePhase(); return; }
+bankProgress();
 renderTimerOnly(); }
-function logSession(mins){
+/* minute-by-minute banking: minutes are logged as they are earned, not on completion.
+   pomo.logged = minutes already banked for the current work phase. */
+function addMinutes(mins){
+if(mins<=0) return;
 const k=todayKey(); const e=state.log[k]||{sessions:0,minutes:0};
-e.sessions+=1; e.minutes+=mins;
+e.minutes+=mins;
 const si=currentSlotIndex();
 if(si>=0){ e.slotHits=e.slotHits||{}; e.slotHits[si]=true; }
 state.log[k]=e; saveJSON(LOG_KEY,state.log); }
+function bankProgress(){
+if(state.pomo.phase!=="work") return;
+const secs=phaseSecs(), remain=getRemainingPomo();
+const elapsed=Math.floor(Math.max(0,secs-remain)/60);
+const delta=elapsed-(state.pomo.logged||0);
+if(delta>0){ addMinutes(delta); state.pomo.logged=elapsed; saveJSON(POMO_KEY,state.pomo); } }
+function logSession(mins){
+const k=todayKey(); const e=state.log[k]||{sessions:0,minutes:0};
+e.sessions+=1;
+const remainder=mins-(state.pomo.logged||0);
+if(remainder>0) e.minutes+=remainder;
+const si=currentSlotIndex();
+if(si>=0){ e.slotHits=e.slotHits||{}; e.slotHits[si]=true; }
+state.log[k]=e; saveJSON(LOG_KEY,state.log);
+state.pomo.logged=0; }
+/* ── sounds (WebAudio synth — no files, works offline) ── */
+let _actx=null;
+function actx(){
+if(!_actx){ try{ _actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+if(_actx&&_actx.state==="suspended"){ try{ _actx.resume(); }catch(e){} }
+return _actx; }
+/* unlock audio on first user gesture (mobile autoplay policy) */
+document.addEventListener("pointerdown",function unlock(){ actx(); document.removeEventListener("pointerdown",unlock); },{once:true,capture:true});
+function tone(ctx,t0,freq,dur,type,vol,dest){
+const o=ctx.createOscillator(), g=ctx.createGain();
+o.type=type||"sine"; o.frequency.value=freq;
+g.gain.setValueAtTime(0.0001,t0);
+g.gain.exponentialRampToValueAtTime(vol||0.18,t0+0.02);
+g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+o.connect(g); g.connect(dest||ctx.destination);
+o.start(t0); o.stop(t0+dur+0.05); }
+function playSound(kind){
+if(!state.sound) return;
+const ctx=actx(); if(!ctx) return;
+const t=ctx.currentTime+0.03;
+if(kind==="complete"){
+/* warm rising triad — session done */
+tone(ctx,t,523.25,.28,"sine",.16); tone(ctx,t+.12,659.25,.28,"sine",.16);
+tone(ctx,t+.24,783.99,.42,"sine",.18); tone(ctx,t+.24,1567.98,.3,"sine",.05);
+}else if(kind==="break"){
+/* gentle two-note descend — break over, back to work */
+tone(ctx,t,659.25,.22,"sine",.14); tone(ctx,t+.16,523.25,.34,"sine",.16);
+}else if(kind==="achievement"){
+/* triumphant fanfare — badge unlocked */
+tone(ctx,t,523.25,.16,"triangle",.15); tone(ctx,t+.1,659.25,.16,"triangle",.15);
+tone(ctx,t+.2,783.99,.16,"triangle",.16); tone(ctx,t+.3,1046.5,.5,"triangle",.2);
+tone(ctx,t+.3,1318.5,.4,"sine",.07); tone(ctx,t+.42,1567.98,.55,"sine",.1);
+}else if(kind==="day"){
+/* big day-conquered chord */
+[523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(ctx,t+i*.06,f,.6,"triangle",.13));
+tone(ctx,t+.35,2093,.5,"sine",.06);
+} }
+
 /* ── session notifications ────────────────────────────── */
 function notifSupported(){ return "Notification" in window; }
 function askNotifPermission(){
@@ -444,6 +503,7 @@ const si=currentSlotIndex(), slot=SLOTS[si]||{label:"slot"};
 setTimeout(()=>toast(`🎯 ${slot.label} secured — session streak alive`),600);
 } }
 try{ navigator.vibrate&&navigator.vibrate([120,60,120]); }catch(e){}
+playSound(wasWork?"complete":"break");
 notify(wasWork?"Focus session complete 🎉":"Break over ⏰",
 wasWork?`${state.pomo.workMins} min of deep work logged.${state.pomo.loop?` ${state.pomo.breakMins} min break starts now.`:" Take a breather."}`
 :`Time to get back to focus${state.pomo.loop?` — ${state.pomo.workMins} min session starting.`:"."}`);
@@ -464,6 +524,7 @@ saveJSON(POMO_KEY,state.pomo); render();
 if(wasWork) checkAchievements(); }
 function toggleRunning(){
 if(state.pomo.running){
+bankProgress();                    /* pausing — bank what's been earned so far */
 state.pomo.timeLeft=getRemainingPomo(); state.pomo.running=false; state.pomo.targetTs=null; stopPomoInterval();
 }else{
 state.pomo.running=true; state.pomo.targetTs=Date.now()+getRemainingPomo()*1000; startPomoInterval();
@@ -472,10 +533,14 @@ requestAppFullscreen();
 if(state.notif&&notifSupported()&&Notification.permission==="default") askNotifPermission();
 }
 saveJSON(POMO_KEY,state.pomo); render(); }
-function resetPomo(){ state.pomo.running=false; state.pomo.targetTs=null; state.pomo.timeLeft=phaseSecs(); stopPomoInterval(); saveJSON(POMO_KEY,state.pomo); render(); }
+function resetPomo(){ bankProgress(); const hadMins=(state.pomo.logged||0)>0;
+if(hadMins){ const k=todayKey(); const e=state.log[k]; if(e){ e.sessions+=1; saveJSON(LOG_KEY,state.log); } }
+state.pomo.logged=0;
+state.pomo.running=false; state.pomo.targetTs=null; state.pomo.timeLeft=phaseSecs(); stopPomoInterval(); saveJSON(POMO_KEY,state.pomo); render();
+if(hadMins) toast("Stopped — partial time logged ✓"); }
 function skipPhase(){ completePhase(); }
-function setPhase(p){ state.pomo.phase=p; state.pomo.running=false; state.pomo.targetTs=null; state.pomo.timeLeft=phaseSecs(); stopPomoInterval(); saveJSON(POMO_KEY,state.pomo); render(); }
-function applyPreset(w,b){ state.pomo.workMins=w; state.pomo.breakMins=b; state.pomo.running=false; state.pomo.targetTs=null; state.pomo.timeLeft=phaseSecs(); stopPomoInterval(); saveJSON(POMO_KEY,state.pomo); render(); }
+function setPhase(p){ bankProgress(); state.pomo.logged=0; state.pomo.phase=p; state.pomo.running=false; state.pomo.targetTs=null; state.pomo.timeLeft=phaseSecs(); stopPomoInterval(); saveJSON(POMO_KEY,state.pomo); render(); }
+function applyPreset(w,b){ bankProgress(); state.pomo.logged=0; state.pomo.workMins=w; state.pomo.breakMins=b; state.pomo.running=false; state.pomo.targetTs=null; state.pomo.timeLeft=phaseSecs(); stopPomoInterval(); saveJSON(POMO_KEY,state.pomo); render(); }
 function adjustDuration(which,delta){
 if(which==="work") state.pomo.workMins=Math.max(5,Math.min(180,state.pomo.workMins+delta));
 else state.pomo.breakMins=Math.max(1,Math.min(60,state.pomo.breakMins+delta));
@@ -1211,6 +1276,7 @@ inner.appendChild(acc("mocks","📊","Mock scores",state.mocks.length?`${state.m
 inner.appendChild(acc("shaky","⚠️","Revision queue",shakyCount?`${shakyCount} shaky`:"",buildShakyCard));
 inner.appendChild(acc("timer","⏱","Timer & notifications","",()=>rows([
 row("Auto loop","Cycle focus → break automatically",toggleUI(state.pomo.loop),toggleLoop),
+row("Sounds","Chimes for session completion & achievements",toggleUI(state.sound),()=>{ state.sound=!state.sound; saveJSON(SOUND_KEY,state.sound); if(state.sound) playSound("complete"); render(); }),
 row("Session notifications","Ping when a focus session or break ends",toggleUI(notifOn()),toggleNotif),
 row("Notification status",
 `App ${APP_VERSION} · permission: <b>${notifSupported()?Notification.permission:"unsupported"}</b> · pref: ${state.notif?"on":"off"}${notifSupported()&&Notification.permission==="denied"?"<br>Blocked by the system — tap to see the fix":""}`,
@@ -1388,12 +1454,14 @@ fireConfetti({count:150,power:1.15});
 setTimeout(()=>fireConfetti({count:60,power:0.7}),450);
 const btn=ov.querySelector(".celebrate-cta"); if(btn) setTimeout(()=>btn.focus(),650); }
 function celebrateBadge(a){
+playSound("achievement");
 const n=nextAchievement();
 const LINES=["That's how ranks are built.","Momentum looks good on you.","The syllabus is shrinking.","Consistency is your superpower.","Another brick in the wall."];
 showCelebration({eyebrow:"Achievement unlocked",icon:a.icon,title:a.title,
 sub:a.desc+". "+LINES[Math.floor(Math.random()*LINES.length)],
 next:n,cta:"Claim it"}); }
 function celebrateDay(){
+playSound("day");
 const day=SCHED[state.index];
 const streak=computeStreak();
 const n=nextAchievement();
@@ -1601,7 +1669,8 @@ if(["home","plan","focus","stats","settings"].includes(h)&&state.nav!==h) setNav
 document.getElementById("importFile").addEventListener("change",handleImportFile);
 window.addEventListener("resize",()=>{ updateLandscape(); });
 window.addEventListener("orientationchange",()=>setTimeout(()=>{ updateLandscape(); renderTimerOnly(); },120));
-document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"){ syncPomoState(); render(); } else{ if(strictActive()){ logDistraction(); notify("Focus broken 🚨","You left mid-session. It's logged. Get back in."); } releaseWakeLock(); saveJSON(POMO_KEY,state.pomo); } });
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"){ syncPomoState(); render(); } else{ bankProgress(); if(strictActive()){ logDistraction(); notify("Focus broken 🚨","You left mid-session. It's logged. Get back in."); } releaseWakeLock(); saveJSON(POMO_KEY,state.pomo); } });
+window.addEventListener("pagehide",()=>{ bankProgress(); saveJSON(POMO_KEY,state.pomo); });
 window.addEventListener("pageshow",()=>{ syncPomoState(); render(); });
 /* re-assert push subscription on every launch (tokens can rotate) */
 if("Notification" in window&&Notification.permission==="granted") setTimeout(subscribePush,2500);
