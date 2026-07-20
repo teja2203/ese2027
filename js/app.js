@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v24";
+const APP_VERSION="v25";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -156,7 +156,7 @@ const ng=parseFloat(sheet.querySelector("#mkNeg").value)||0;
 const note=sheet.querySelector("#mkNote").value.trim();
 if(!name||isNaN(sc)){ sheet.querySelector("#mkErr").textContent="Name and marks are required"; return; }
 state.mocks.push({name,score:sc,max:mx,neg:ng,note,date:todayKey()});
-saveJSON(MOCK_KEY,state.mocks); close(); render(); toast("Mock logged 📊"); };
+saveJSON(MOCK_KEY,state.mocks); close(); render(); toast("Mock logged 📊"); checkAchievements(); };
 scrim.appendChild(sheet); document.body.appendChild(scrim);
 requestAnimationFrame(()=>{ scrim.classList.add("in"); sheet.querySelector("#mkName").focus(); }); }
 function deleteMock(i){ if(!confirm("Delete this mock entry?")) return;
@@ -211,6 +211,26 @@ const QUOTES=[
 "Your future self is watching this session.",
 "Consistency compounds. Keep showing up.",
 "Hard now. Easy on Jan 31.",
+"Somewhere, your competition just hit snooze. You didn't.",
+"The syllabus doesn't shrink by staring at it.",
+"A 90-minute session today is worth more than a 12-hour plan tomorrow.",
+"Toppers aren't smarter. They're just still at the desk.",
+"Every formula you revise tonight is a mark you keep forever.",
+"You can rest after the slot — not instead of it.",
+"The rank list doesn't care about your mood.",
+"Weak topics don't fix themselves. Flag them, face them, finish them.",
+"Mocks don't judge you. They prepare you.",
+"Study like your posting depends on it — because it does.",
+"The chair is the battlefield. Sit down and win.",
+"Distraction is a loan. The interest is due in January.",
+"You've already done harder things than today's session.",
+"Green on the heat map or excuses in your head. Pick one.",
+"An engineer's service begins with a student's discipline.",
+"Nobody remembers the days you almost studied.",
+"The gap between you and the rank closes one session at a time.",
+"Today's 8 hours is tomorrow's interview call.",
+"Don't count the days. Make the days count — then count them anyway.",
+"Your streak is proof you can trust yourself.",
 ];
 function dailyQuote(){ const n=new Date(); return QUOTES[(n.getFullYear()*372+n.getMonth()*31+n.getDate())%QUOTES.length]; }
 
@@ -298,24 +318,32 @@ if(!state.sound) return;
 const ctx=actx(); if(!ctx) return;
 const t=ctx.currentTime+0.03;
 if(kind==="start"){
-/* quick upward two-note — session begins, lock in */
-tone(ctx,t,392,.14,"sine",.14); tone(ctx,t+.11,587.33,.3,"sine",.17);
-tone(ctx,t+.11,1174.66,.2,"sine",.04);
+/* rising three-note arpeggio with shimmer — lock in */
+tone(ctx,t,392,.3,"sine",.13); tone(ctx,t+.14,523.25,.3,"sine",.15);
+tone(ctx,t+.28,783.99,.55,"sine",.17); tone(ctx,t+.28,1567.98,.4,"sine",.05);
+tone(ctx,t+.42,1046.5,.5,"sine",.06);
 }else if(kind==="stop"){
-/* soft downward two-note — winding down */
-tone(ctx,t,587.33,.14,"sine",.14); tone(ctx,t+.11,392,.32,"sine",.15);
+/* mirrored descend with soft tail — winding down */
+tone(ctx,t,783.99,.28,"sine",.14); tone(ctx,t+.14,523.25,.3,"sine",.14);
+tone(ctx,t+.28,392,.65,"sine",.15); tone(ctx,t+.28,196,.6,"sine",.05);
 }else if(kind==="complete"){
-/* warm rising triad — session done */
-tone(ctx,t,523.25,.28,"sine",.16); tone(ctx,t+.12,659.25,.28,"sine",.16);
-tone(ctx,t+.24,783.99,.42,"sine",.18); tone(ctx,t+.24,1567.98,.3,"sine",.05);
+/* full victory phrase: rising triad, resolving chord, sparkle tail */
+tone(ctx,t,523.25,.32,"sine",.15); tone(ctx,t+.16,659.25,.32,"sine",.15);
+tone(ctx,t+.32,783.99,.5,"sine",.17);
+[523.25,659.25,783.99,1046.5].forEach(f=>tone(ctx,t+.55,f,.9,"triangle",.09));
+tone(ctx,t+.75,1567.98,.5,"sine",.07); tone(ctx,t+.95,2093,.6,"sine",.05);
 }else if(kind==="break"){
-/* gentle two-note descend — break over, back to work */
-tone(ctx,t,659.25,.22,"sine",.14); tone(ctx,t+.16,523.25,.34,"sine",.16);
+/* gentle three-note descend, warm tail — breathe */
+tone(ctx,t,783.99,.3,"sine",.13); tone(ctx,t+.18,659.25,.3,"sine",.13);
+tone(ctx,t+.36,523.25,.7,"sine",.15); tone(ctx,t+.36,261.63,.7,"sine",.05);
 }else if(kind==="achievement"){
-/* triumphant fanfare — badge unlocked */
-tone(ctx,t,523.25,.16,"triangle",.15); tone(ctx,t+.1,659.25,.16,"triangle",.15);
-tone(ctx,t+.2,783.99,.16,"triangle",.16); tone(ctx,t+.3,1046.5,.5,"triangle",.2);
-tone(ctx,t+.3,1318.5,.4,"sine",.07); tone(ctx,t+.42,1567.98,.55,"sine",.1);
+/* proper fanfare: call, answer, resolving chord + long sparkles */
+tone(ctx,t,523.25,.18,"triangle",.15); tone(ctx,t+.12,659.25,.18,"triangle",.15);
+tone(ctx,t+.24,783.99,.18,"triangle",.16); tone(ctx,t+.36,1046.5,.4,"triangle",.19);
+tone(ctx,t+.6,783.99,.16,"triangle",.13); tone(ctx,t+.72,1046.5,.16,"triangle",.15);
+tone(ctx,t+.84,1318.5,.7,"triangle",.18);
+[1046.5,1318.5,1567.98].forEach(f=>tone(ctx,t+.84,f,.8,"sine",.06));
+tone(ctx,t+1.1,2093,.5,"sine",.06); tone(ctx,t+1.25,2637,.55,"sine",.04);
 }else if(kind==="flip"){
 /* mechanical flip-clock tick — filtered noise snap (debounced: one click per flip pair) */
 if(playSound._ft&&performance.now()-playSound._ft<90) return;
@@ -332,9 +360,11 @@ nsrc.start(t);
 /* soft low thock underneath for body */
 tone(ctx,t+.015,190,.05,"sine",.05);
 }else if(kind==="day"){
-/* big day-conquered chord */
-[523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(ctx,t+i*.06,f,.6,"triangle",.13));
-tone(ctx,t+.35,2093,.5,"sine",.06);
+/* day conquered: grand rolled chord, octave answer, long shimmer tail */
+[261.63,329.63,392,523.25].forEach((f,i)=>tone(ctx,t+i*.09,f,1.1,"triangle",.12));
+[523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(ctx,t+.5+i*.07,f,1.0,"triangle",.1));
+tone(ctx,t+.9,1567.98,.7,"sine",.07); tone(ctx,t+1.1,2093,.8,"sine",.06);
+tone(ctx,t+1.35,2637,.7,"sine",.04);
 } }
 
 /* ── session notifications ────────────────────────────── */
@@ -1366,18 +1396,34 @@ wrap.appendChild(inner); wireTheme(wrap); return wrap; }
 const ACHIEVEMENTS=[
 {id:"first_session",icon:"🥇",title:"First Focus Session",desc:"Complete your first timed session",goal:1,type:"sessions",bc:"#E8B04B"},
 {id:"first_day",icon:"🌅",title:"Day One Done",desc:"Clear every task of a day",goal:1,type:"days",bc:"#5BB8E8"},
+{id:"sessions10",icon:"🎬",title:"10 Sessions",desc:"Ten focus sessions in the bank",goal:10,type:"sessions",bc:"#5BD6A9"},
+{id:"sessions50",icon:"🎖",title:"50 Sessions",desc:"Fifty rounds of deep work",goal:50,type:"sessions",bc:"#4BA8E8"},
+{id:"sessions150",icon:"🛡",title:"150 Sessions",desc:"A hundred and fifty battles fought",goal:150,type:"sessions",bc:"#A78BFA"},
 {id:"streak3",icon:"🔥",title:"3-Day Streak",desc:"Study three days in a row",goal:3,type:"streak",bc:"#E8834B"},
 {id:"streak7",icon:"🔥",title:"7-Day Streak",desc:"A full week without breaking",goal:7,type:"streak",bc:"#E86A6A"},
 {id:"streak30",icon:"⚡",title:"30-Day Streak",desc:"One month of pure discipline",goal:30,type:"streak",bc:"#A78BFA"},
+{id:"streak60",icon:"🌪",title:"60-Day Streak",desc:"Two months. Relentless",goal:60,type:"streak",bc:"#E8574B"},
+{id:"streak100",icon:"💫",title:"100-Day Streak",desc:"Triple digits of consistency",goal:100,type:"streak",bc:"#D6B84B"},
+{id:"sstreak3",icon:"🎯",title:"On Schedule ×3",desc:"3-day session streak — in-slot focus",goal:3,type:"sstreak",bc:"#C9F24E"},
+{id:"sstreak7",icon:"🎯",title:"On Schedule ×7",desc:"A week of hitting your slots",goal:7,type:"sstreak",bc:"#A8D437"},
+{id:"sstreak21",icon:"🏹",title:"Slot Sniper",desc:"21 days of in-slot discipline",goal:21,type:"sstreak",bc:"#7AAA14"},
 {id:"hours10",icon:"⏱",title:"10 Study Hours",desc:"Ten hours of tracked focus",goal:10,type:"hours",bc:"#5BD6A9"},
 {id:"hours50",icon:"⏳",title:"50 Study Hours",desc:"Fifty hours — serious momentum",goal:50,type:"hours",bc:"#4BA8E8"},
 {id:"hours100",icon:"🕰",title:"100 Study Hours",desc:"Triple digits. Elite territory",goal:100,type:"hours",bc:"#8B6FD9"},
+{id:"hours250",icon:"🌗",title:"250 Study Hours",desc:"A quarter-thousand hours deep",goal:250,type:"hours",bc:"#E8B04B"},
+{id:"hours500",icon:"🌕",title:"500 Study Hours",desc:"Half a thousand. Rank material",goal:500,type:"hours",bc:"#D6B84B"},
 {id:"tasks100",icon:"📚",title:"100 Tasks Done",desc:"A hundred boxes ticked",goal:100,type:"tasks",bc:"#5BB8E8"},
 {id:"tasks500",icon:"📖",title:"500 Tasks Done",desc:"Five hundred steps closer",goal:500,type:"tasks",bc:"#E8B04B"},
 {id:"tasks1000",icon:"🏛",title:"1000 Tasks Done",desc:"A thousand. Unstoppable",goal:1000,type:"tasks",bc:"#E86A6A"},
+{id:"tasks2000",icon:"🗿",title:"2000 Tasks Done",desc:"Two thousand. Monumental",goal:2000,type:"tasks",bc:"#8B6FD9"},
 {id:"days10",icon:"🏆",title:"10 Days Cleared",desc:"Ten perfect days",goal:10,type:"days",bc:"#D6B84B"},
 {id:"days50",icon:"👑",title:"50 Days Cleared",desc:"Fifty flawless days",goal:50,type:"days",bc:"#E8A04B"},
+{id:"days100",icon:"💎",title:"100 Days Cleared",desc:"One hundred perfect days",goal:100,type:"days",bc:"#5BE8D6"},
+{id:"mock1",icon:"📝",title:"First Mock Logged",desc:"Face the scoreboard once",goal:1,type:"mocks",bc:"#E86A6A"},
+{id:"mock5",icon:"📊",title:"5 Mocks Logged",desc:"Five honest data points",goal:5,type:"mocks",bc:"#5BB8E8"},
+{id:"mock15",icon:"🧪",title:"15 Mocks Logged",desc:"Fifteen tests faced head-on",goal:15,type:"mocks",bc:"#A78BFA"},
 {id:"subject1",icon:"🎓",title:"First Subject Mastered",desc:"Finish 100% of any subject",goal:1,type:"subjects",bc:"#5BD6A9"},
+{id:"subject3",icon:"🧠",title:"Three Subjects Down",desc:"Master three full subjects",goal:3,type:"subjects",bc:"#C9F24E"},
 ];
 function achMetrics(){
 let sessions=0,minutes=0;
@@ -1389,7 +1435,7 @@ if(!bySubj[b]) bySubj[b]={tot:0,dn:0};
 d.sessions.forEach((s,si)=>{ bySubj[b].tot+=s.tasks.length;
 s.tasks.forEach((_,ti)=>{ if(state.checked[`${i}-${si}-${ti}`]) bySubj[b].dn++; }); }); });
 const subjects=Object.values(bySubj).filter(e=>e.tot>=30&&e.dn===e.tot).length;
-return {sessions,hours:Math.floor(minutes/60),tasks,days:doneDaysCount(),streak:computeStreak(),subjects}; }
+return {sessions,hours:Math.floor(minutes/60),tasks,days:doneDaysCount(),streak:computeStreak(),subjects,sstreak:computeSessionStreak(),mocks:state.mocks.length}; }
 function achProgress(a,m){ const v=m[a.type]||0; return Math.min(v,a.goal); }
 function checkAchievements(){
 const m=achMetrics();
