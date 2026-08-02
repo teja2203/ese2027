@@ -54,7 +54,7 @@ return {d:Math.floor(d/864e5),h:Math.floor(d%864e5/36e5),m:Math.floor(d%36e5/6e4
 /* ── state ────────────────────────────────────────────── */
 const PRESETS=[{label:"25 · 5",work:25,brk:5},{label:"50 · 10",work:50,brk:10},{label:"90 · 20",work:90,brk:20}];
 function normalizePomo(p){
-const d={phase:"work",running:false,targetTs:null,timeLeft:50*60,workMins:50,breakMins:10,loop:true,logged:0};
+const d={phase:"work",running:false,targetTs:null,timeLeft:50*60,workMins:50,breakMins:10,loop:true,logged:0,docked:true};
 if(!p||typeof p!=="object") return d;
 return Object.assign(d,p);
 }
@@ -63,14 +63,10 @@ return Object.assign(d,p);
    html[data-theme="<id>"]. Adding one here + a CSS block is
    all that's needed; the picker builds itself from THEMES. */
 const THEMES=[
-{id:"ember", name:"Warm Midnight", desc:"Study-lamp glow", meta:"#0A0E17",
- sw:["#FF6B35","#C89B3C","#0E1320","#F9F6F0"]},
-{id:"forest",name:"Deep Forest",   desc:"Calm and green",  meta:"#08110D",
- sw:["#4ADE80","#D4B063","#0C1913","#EAF3ED"]},
-{id:"ice",   name:"Graphite & Ice",desc:"Cool and clinical",meta:"#0B0D10",
- sw:["#7DD3FC","#CBB994","#12161B","#F1F5F9"]},
-{id:"paper", name:"Paper Light",   desc:"Daylight reading", meta:"#F6F2EA",
- sw:["#B4451F","#9A7524","#FFFDF8","#1C1712"]},
+{id:"ember", name:"Nothing Dark", desc:"Pitch black dot-matrix dark mode", meta:"#000000",
+ sw:["#E52712","#000000","#1A1A1A","#FFFFFF"]},
+{id:"paper", name:"Nothing Light", desc:"Ceramic white dot-matrix light mode", meta:"#FAFAFA",
+ sw:["#E52712","#FAFAFA","#FFFFFF","#0A0A0A"]}
 ];
 const THEME_IDS=THEMES.map(t=>t.id);
 /* migrate the old binary dark/light preference */
@@ -104,6 +100,117 @@ restDayBank:loadJSON(REST_KEY,7),
 restedDays:loadJSON(RESTED_KEY,[]),
 };
 if(state.index<0||state.index>=SCHED.length) state.index=0;
+
+/* ── Web Audio Synth (Focus Sounds) ─────────────────── */
+let audioCtx = null;
+let soundNodes = { noise: null, gain: null, osc1: null, osc2: null };
+let currentSoundMode = loadJSON("ese_sound_mode", "off");
+let soundVolume = loadJSON("ese_sound_vol", 0.4);
+
+function initAudioContext(){
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) audioCtx = new AudioContextClass();
+  }
+  if (audioCtx && audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+}
+
+function stopFocusSound(){
+  try {
+    if (soundNodes.noise) { soundNodes.noise.stop(); soundNodes.noise.disconnect(); soundNodes.noise = null; }
+    if (soundNodes.osc1) { soundNodes.osc1.stop(); soundNodes.osc1.disconnect(); soundNodes.osc1 = null; }
+    if (soundNodes.osc2) { soundNodes.osc2.stop(); soundNodes.osc2.disconnect(); soundNodes.osc2 = null; }
+    if (soundNodes.gain) { soundNodes.gain.disconnect(); soundNodes.gain = null; }
+  } catch(e){}
+}
+
+function playFocusSound(mode, vol){
+  stopFocusSound();
+  if (mode === "off") return;
+  initAudioContext();
+  if (!audioCtx) return;
+  
+  try {
+    const masterGain = audioCtx.createGain();
+    masterGain.gain.value = vol !== undefined ? vol : soundVolume;
+    masterGain.connect(audioCtx.destination);
+    soundNodes.gain = masterGain;
+
+    if (mode === "rain" || mode === "brown") {
+      const bufferSize = audioCtx.sampleRate * 2;
+      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      let lastOut = 0.0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        if (mode === "brown") {
+          output[i] = (lastOut + (0.02 * white)) / 1.02;
+          lastOut = output[i];
+          output[i] *= 3.5;
+        } else {
+          output[i] = white * 0.4;
+        }
+      }
+      const whiteSource = audioCtx.createBufferSource();
+      whiteSource.buffer = noiseBuffer;
+      whiteSource.loop = true;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.value = mode === "rain" ? 900 : 350;
+
+      whiteSource.connect(filter);
+      filter.connect(masterGain);
+      whiteSource.start();
+      soundNodes.noise = whiteSource;
+    } else if (mode === "waves") {
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      osc1.type = "sine";
+      osc2.type = "sine";
+      osc1.frequency.value = 432;
+      osc2.frequency.value = 440;
+
+      const panner1 = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+      const panner2 = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+      if (panner1) panner1.pan.value = -0.8;
+      if (panner2) panner2.pan.value = 0.8;
+
+      if (panner1) osc1.connect(panner1).connect(masterGain);
+      else osc1.connect(masterGain);
+
+      if (panner2) osc2.connect(panner2).connect(masterGain);
+      else osc2.connect(masterGain);
+
+      osc1.start();
+      osc2.start();
+      soundNodes.osc1 = osc1;
+      soundNodes.osc2 = osc2;
+    }
+  } catch(e){ console.error("Audio error:", e); }
+}
+
+function setFocusSoundMode(mode){
+  currentSoundMode = mode;
+  saveJSON("ese_sound_mode", mode);
+  playFocusSound(mode, soundVolume);
+}
+
+const RANKER_QUOTES = [
+  { q: "Consistent daily execution is the difference between an aspirant and Rank 1.", a: "ESE Topper Insight" },
+  { q: "Solve 10 PYQs today. Build momentum. Victory will take care of itself.", a: "Mastery Principle" },
+  { q: "Small daily improvements over time lead to stunning long-term results.", a: "Robin Sharma" },
+  { q: "Focus is a muscle. Train it with 50-minute deep work blocks.", a: "Deep Work Protocol" },
+  { q: "Your future is created by what you do today, not tomorrow.", a: "Robert Kiyosaki" }
+];
+let quoteIndex = loadJSON("ese_quote_idx", 0);
+function nextQuote(){
+  quoteIndex = (quoteIndex + 1) % RANKER_QUOTES.length;
+  saveJSON("ese_quote_idx", quoteIndex);
+  render();
+}
 
 /* ── helpers ──────────────────────────────────────────── */
 const view=document.getElementById("view"), navEl=document.getElementById("nav");
@@ -646,6 +753,7 @@ bankProgress();                    /* pausing — bank what's been earned so far
 state.pomo.timeLeft=getRemainingPomo(); state.pomo.running=false; state.pomo.targetTs=null; stopPomoInterval();
 playSound("stop");
 }else{
+state.pomo.docked=true;
 state.pomo.running=true; state.pomo.targetTs=Date.now()+getRemainingPomo()*1000; startPomoInterval();
 playSound("start");
 clockOn=true;                      /* entering focus → show flip clock */
@@ -653,6 +761,7 @@ requestAppFullscreen();
 if(state.notif&&notifSupported()&&Notification.permission==="default") askNotifPermission();
 }
 saveJSON(POMO_KEY,state.pomo); render(); }
+function toggleDocked(){ state.pomo.docked=!state.pomo.docked; saveJSON(POMO_KEY,state.pomo); render(); }
 function resetPomo(){ bankProgress(); const hadMins=(state.pomo.logged||0)>0;
 if(hadMins){ const k=todayKey(); const e=state.log[k]; if(e){ e.sessions+=1; saveJSON(LOG_KEY,state.log); } }
 state.pomo.logged=0;
@@ -774,7 +883,7 @@ return `<svg width="${size}" height="${size}" style="transform:rotate(-90deg)" a
 stroke-dasharray="${c}" stroke-dashoffset="${c*(1-pct/100)}" style="transition:stroke-dashoffset .8s var(--ease)"/>
 </svg>`; }
 
-/* ════════════════ TODAY ════════════════ */
+/* ════════════════ TODAY (MASTER BENTO COMMAND CENTER) ════════════════ */
 function renderToday(){
 const wrap=el("div"); wrap.className="screen view";
 const today=todayDateLabel();
@@ -784,34 +893,43 @@ const fd=SCHED[focusIdx], st=dayStats(focusIdx);
 const streakObj=computeStreak(), streak=streakObj.count, tlog=state.log[todayKey()]||{sessions:0,minutes:0};
 const inner=el("div"); inner.className="stagger";
 
-inner.appendChild(header(today,`${fd.day} · Day ${focusIdx+1}`));
+/* ── Top Header Command Deck ── */
+const cdDate = cd(ESE_DATE);
+const topDeck = el("div"); topDeck.className = "top-deck";
+topDeck.innerHTML = `
+<div style="display:flex;align-items:center;gap:8px">
+<span class="top-deck-pill press" id="cdPill" title="Target: ESE 2027">⚡ ESE 2027 · ${cdDate.d}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPill" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?'🧊':'🔥'} ${streak}d</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<button class="top-deck-pill press" id="soundPill" title="Toggle Ambient Audio">🎧 ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
+<button class="iconbtn press" id="cmdBtn" style="width:34px;height:34px;border-radius:10px" title="Command Palette">⌘</button>
+<button class="iconbtn press" id="themeBtn" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${state.theme==="dark"?IC.sun:IC.moon}</button>
+</div>
+`;
+topDeck.querySelector("#cdPill").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
+topDeck.querySelector("#streakPill").onclick = () => setNav("progress");
+topDeck.querySelector("#soundPill").onclick = () => toggleDockDrawer();
+topDeck.querySelector("#cmdBtn").onclick = openCmd;
+topDeck.querySelector("#themeBtn").onclick = cycleTheme;
+inner.appendChild(topDeck);
 
-/* greeting */
+/* greeting header */
 inner.appendChild(html(`<div style="margin-bottom:14px">
-<div style="font-size:13px;color:var(--ink-3);font-weight:600">${greeting()}, Teja</div>
-<div style="font-size:13.5px;color:var(--ink-2);margin-top:6px;line-height:1.55;font-style:italic">"${dailyQuote()}"</div>
+<div style="font-size:13px;color:var(--ink-3);font-weight:600;letter-spacing:.04em">${greeting()}, Teja</div>
+<div style="font-family:var(--display-font);font-size:26px;font-weight:800;color:var(--ink);margin-top:2px">${today} · ${fd.day}</div>
 </div>`));
 
-/* segmented day bar — 5 dots showing session progress */
-const dayBar=el("div",{display:"flex",alignItems:"center",gap:"6px",marginBottom:"16px",justifyContent:"center"});
-fd.sessions.forEach((s,si)=>{
-const done=s.tasks.every((_,ti)=>state.checked[`${focusIdx}-${si}-${ti}`]);
-const current=!done&&fd.sessions.slice(0,si).every((ps,psi)=>ps.tasks.every((_,ti)=>state.checked[`${focusIdx}-${psi}-${ti}`]));
-const dot=el("div");
-Object.assign(dot.style,{width:current?"14px":"8px",height:current?"14px":"8px",borderRadius:"50%",
-background:done?"var(--acc)":current?"var(--acc)":"var(--card-2)",transition:"all .3s var(--spring)",
-border:current?"2px solid var(--acc)":"none"});
-dayBar.appendChild(dot); });
-inner.appendChild(dayBar);
+/* ── Bento Grid System ── */
+const bento = el("div"); bento.className = "bento-grid";
 
-/* find current session — first incomplete */
+/* BENTO 1: Master Hero Focus Hub (Span 2) */
 let curSi=-1;
 for(let si=0;si<fd.sessions.length;si++){
 const done=fd.sessions[si].tasks.every((_,ti)=>state.checked[`${focusIdx}-${si}-${ti}`]);
 if(!done){ curSi=si; break; }
 }
-if(curSi===-1) curSi=fd.sessions.length-1; /* all done — show last session */
-
+if(curSi===-1) curSi=fd.sessions.length-1;
 const curSession=fd.sessions[curSi];
 const t=tagOf(curSession.tag);
 const slot=SLOTS[curSi]||{label:"Session",time:"",icon:"•",desc:""};
@@ -820,124 +938,131 @@ const pct=Math.round(tasksDone/curSession.tasks.length*100);
 const allDone=tasksDone===curSession.tasks.length;
 const sstreak=slotStreak(curSi);
 
-/* current slot card */
-const slotCard=el("div"); slotCard.className="card";
-Object.assign(slotCard.style,{borderRadius:"var(--r-lg)",padding:"20px",marginBottom:"14px",border:"2px solid var(--acc)"});
-slotCard.innerHTML=`
-<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-<div style="font-size:22px">${slot.icon}</div>
-<div style="flex:1;min-width:0">
-<div style="font-size:12px;color:var(--ink-3);font-weight:700">${slot.label}${slot.time?" · "+slot.time:""}</div>
-<div style="font-size:16px;font-weight:800;color:var(--ink);margin-top:2px">${curSession.title}</div>
+const heroCard = el("div"); heroCard.className = "card bento-col-full";
+Object.assign(heroCard.style, {
+  padding: "20px",
+  borderRadius: "var(--r-lg)",
+  background: "var(--card)",
+  border: "1px solid var(--border-2)",
+  boxShadow: "var(--shadow-2)"
+});
+heroCard.innerHTML = `
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
+<span class="pill" style="background:${t.s};color:${t.c};font-weight:800">${slot.label} · ${slot.time||'Focus'}</span>
+<span class="pill" style="background:var(--acc-dim);color:var(--acc);font-weight:800">${allDone?'✓ SECURED':'ACTIVE TARGET'}</span>
 </div>
-${sstreak>0?`<span class="pill" style="background:var(--amber-soft);color:var(--amber);font-size:9px;padding:4px 9px">${IC.flame} ${sstreak}</span>`:""}
-<span class="pill" style="background:${t.s};color:${t.c};font-size:9px;padding:4px 9px">${t.label}</span>
+<div style="font-family:var(--display-font);font-size:20px;font-weight:800;color:var(--ink);margin-bottom:6px;line-height:1.3">${curSession.title}</div>
+<div style="font-size:12px;color:var(--ink-3);line-height:1.4;margin-bottom:16px">${slot.desc||'Complete tasks to master this session.'}</div>
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+<div style="position:relative;width:60px;height:60px;flex-shrink:0">
+${ring(60,6,pct,"var(--acc)")}
+<div class="mono" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--ink)">${pct}%</div>
 </div>
-<div style="font-size:11px;color:var(--ink-3);margin-bottom:12px;line-height:1.5">${slot.desc}</div>
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-<span style="font-size:12px;font-weight:700;color:var(--ink-2)">${tasksDone}/${curSession.tasks.length} tasks</span>
-<span class="mono" style="font-size:13px;font-weight:800;color:var(--acc)">${pct}%</span>
-</div>
-<div class="track" style="height:7px;margin-bottom:16px"><div class="fill" style="width:${pct}%"></div></div>`;
-
-/* task list inline */
-const taskList=el("div",{display:"flex",flexDirection:"column",gap:"6px",marginBottom:"16px"});
-curSession.tasks.forEach((task,ti)=>{
-const k=`${focusIdx}-${curSi}-${ti}`, on=!!state.checked[k], shk=!!state.shaky[k];
-const row=el("div"); row.className="taskrow"+(on?" done":"");
-row.setAttribute("role","checkbox"); row.setAttribute("aria-checked",on?"true":"false"); row.tabIndex=0;
-row.innerHTML=`<span class="chk${on?" on":""}" style="color:var(--acc-ink)">${on?IC.check:""}</span><span class="txt" style="flex:1">${task}</span>
-<button class="shakybtn press" aria-label="${shk?"Remove shaky flag":"Mark as shaky"}" title="Mark topic as shaky" style="border:none;background:none;cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0;opacity:${shk?"1":".28"};filter:${shk?"none":"grayscale(1)"}">⚠️</button>`;
-row.onclick=()=>{ state.index=focusIdx; toggleTask(curSi,ti); };
-row.querySelector(".shakybtn").onclick=e=>{ e.stopPropagation(); state.index=focusIdx; toggleShaky(curSi,ti); };
-row.onkeydown=e=>{ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); state.index=focusIdx; toggleTask(curSi,ti); } };
-taskList.appendChild(row); });
-slotCard.appendChild(taskList);
-
-/* ring + start button */
-const actions=el("div",{display:"flex",alignItems:"center",gap:"14px"});
-actions.innerHTML=`
-<div style="position:relative;width:68px;height:68px;flex-shrink:0">
-${ring(68,6,pct,"var(--acc)")}
-<div class="mono" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--ink)">${pct}%</div>
-</div>`;
-const startBtn=html(`<button class="btn ${allDone?"btn-ghost":"btn-acc"} press" style="flex:1">${allDone?"✓ Done":"▶ Start focus"}</button>`);
-if(!allDone) startBtn.onclick=()=>{ if(!state.pomo.running) toggleRunning(); };
-actions.appendChild(startBtn);
-slotCard.appendChild(actions);
-inner.appendChild(slotCard);
-
-/* up next peek — only if not the last session */
-if(curSi<fd.sessions.length-1){
-const nextSi=curSi+1;
-const nextSession=fd.sessions[nextSi];
-const nextSlot=SLOTS[nextSi]||{label:"Session",time:"",icon:"•"};
-const nextTag=tagOf(nextSession.tag);
-const nextCard=html(`<div class="card lift press" style="padding:14px 16px;border-radius:var(--r);margin-bottom:14px;cursor:pointer;border:1px solid var(--line-2)">
-<div style="font-size:10px;color:var(--ink-4);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Up next</div>
-<div style="display:flex;align-items:center;gap:10px">
-<span style="font-size:18px">${nextSlot.icon}</span>
-<div style="flex:1;min-width:0">
-<div style="font-size:11px;color:var(--ink-3);font-weight:600">${nextSlot.label}${nextSlot.time?" · "+nextSlot.time:""}</div>
-<div style="font-size:13px;font-weight:700;color:var(--ink);margin-top:2px">${nextSession.title}</div>
-</div>
-<span class="pill" style="background:${nextTag.s};color:${nextTag.c};font-size:8px;padding:3px 7px">${nextTag.label}</span>
-</div></div>`);
-nextCard.onclick=()=>{ jumpTo(focusIdx); setNav("plan"); };
-inner.appendChild(nextCard);
-}
-
-/* week streak strip with ice/fire indicator */
-const streakBar=el("div"); streakBar.className="card";
-Object.assign(streakBar.style,{padding:"14px 16px",borderRadius:"var(--r)",marginBottom:"14px",display:"flex",alignItems:"center",gap:"12px"});
-const streakIcon=streakObj.hasFrozen?"🧊":"🔥";
-const streakLabel=streakObj.hasFrozen?"frozen":"day";
-streakBar.innerHTML=`
 <div style="flex:1">
-<div style="display:flex;align-items:center;gap:6px">
-<span style="font-size:15px" id="streakIcon">${streakIcon}</span>
-<span class="display" style="font-size:22px;font-weight:800;color:var(--amber)">${streak}</span>
-<span style="font-size:11px;color:var(--ink-3);font-weight:700">${streakLabel} streak</span>
+<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--ink-2);margin-bottom:6px">
+<span>Task Progress</span>
+<span class="mono">${tasksDone}/${curSession.tasks.length}</span>
+</div>
+<div class="track" style="height:6px"><div class="fill" style="width:${pct}%"></div></div>
 </div>
 </div>
-<div style="width:1px;height:28px;background:var(--line-2)"></div>
-<div style="flex:1">
-<div style="display:flex;align-items:center;gap:6px">
-<span style="font-size:15px">🎯</span>
-<span class="display" style="font-size:22px;font-weight:800;color:var(--acc)">${computeSessionStreak()}</span>
-<span style="font-size:11px;color:var(--ink-3);font-weight:700">session</span>
+<div style="display:flex;gap:10px">
+<button class="btn ${allDone?'btn-ghost':'btn-acc'} press" id="heroStartBtn" style="flex:1;padding:12px">${allDone?'✓ Completed':'▶ Launch Focus Space'}</button>
+<button class="btn btn-ghost press" id="heroAudioBtn" style="flex:none;padding:12px" title="Audio Focus">🎧</button>
 </div>
-</div>`;
-inner.appendChild(streakBar);
+`;
+heroCard.querySelector("#heroStartBtn").onclick = () => { if(!state.pomo.running) toggleRunning(); else expandFocusOverlay(); };
+heroCard.querySelector("#heroAudioBtn").onclick = toggleDockDrawer;
+bento.appendChild(heroCard);
 
-/* ice shatter animation — when continuing after freeze */
-if(streakObj.hasFrozen&&tlog.minutes>0){
-const y=new Date(); y.setDate(y.getDate()-1);
-const yk=`${y.getFullYear()}-${fmt(y.getMonth()+1)}-${fmt(y.getDate())}`;
-if(state.freeze[yk]&&!sessionStorage.getItem("shatter-"+todayKey())){
-sessionStorage.setItem("shatter-"+todayKey(),"1");
-setTimeout(()=>{
-const icon=document.getElementById("streakIcon");
-if(!icon) return;
-icon.innerHTML='🧊'; icon.className="ice-shatter";
-setTimeout(()=>{ icon.innerHTML='🔥'; icon.className=""; },850);
-},600);
-}
-}
-
-/* today's stats */
-const statsRow=el("div",{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"14px"});
-const hrs=Math.floor(tlog.minutes/60), mins=tlog.minutes%60;
-statsRow.innerHTML=`
-<div class="card" style="padding:14px;text-align:center;border-radius:var(--r)">
-<div class="display" style="font-size:24px;font-weight:800;color:var(--sky)">${tlog.sessions}</div>
-<div style="font-size:9px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;font-weight:700">Sessions</div>
+/* BENTO 2: Ranker Motivation Carousel (Span 2) */
+const qObj = RANKER_QUOTES[quoteIndex % RANKER_QUOTES.length];
+const quoteBento = el("div"); quoteBento.className = "card bento-col-full press lift";
+Object.assign(quoteBento.style, {
+  padding: "16px",
+  borderRadius: "var(--r-lg)",
+  background: "linear-gradient(135deg, var(--card) 0%, var(--card-2) 100%)",
+  border: "1px solid var(--border-2)",
+  cursor: "pointer"
+});
+quoteBento.innerHTML = `
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+<span style="font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--acc)">🔥 ESE MASTERY MOTIVATION</span>
+<span style="font-size:10px;color:var(--ink-4);font-weight:700">Tap to cycle ↻</span>
 </div>
-<div class="card" style="padding:14px;text-align:center;border-radius:var(--r)">
-<div class="display" style="font-size:24px;font-weight:800;color:var(--mint)">${hrs>0?hrs+"h "+mins+"m":mins+"m"}</div>
-<div style="font-size:9px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;font-weight:700">Studied</div>
-</div>`;
-inner.appendChild(statsRow);
+<div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.45;font-style:italic">"${qObj.q}"</div>
+<div style="font-size:10.5px;font-weight:700;color:var(--ink-3);margin-top:6px;text-align:right">— ${qObj.a}</div>
+`;
+quoteBento.onclick = () => { nextQuote(); toast("Motivation refreshed 💡"); };
+bento.appendChild(quoteBento);
+
+/* BENTO 3 & 4: Quick Metrics Quad (1 Col Each) */
+const isFrozen = streakObj.hasFrozen && tlog.minutes === 0;
+const mCard1 = el("div"); mCard1.className = "card" + (isFrozen ? " ice-frozen-card" : "");
+Object.assign(mCard1.style, { padding: "16px", borderRadius: "var(--r)", textAlign: "center" });
+mCard1.innerHTML = `
+<div style="font-size:15px;margin-bottom:4px" id="streakIcon">${isFrozen ? '🧊' : '🔥'}</div>
+<div class="display ${isFrozen ? 'ice-frozen-text' : ''}" style="font-size:24px;font-weight:800;color:${isFrozen ? '#7DD3FC' : 'var(--amber)'}">${streak}</div>
+<div style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${isFrozen ? '#7DD3FC' : 'var(--ink-3)'}">${isFrozen ? 'FROZEN STREAK' : 'DAY STREAK'}</div>
+`;
+bento.appendChild(mCard1);
+
+const hrs = Math.floor(tlog.minutes / 60), mins = tlog.minutes % 60;
+const mCard2 = el("div"); mCard2.className = "card";
+Object.assign(mCard2.style, { padding: "16px", borderRadius: "var(--r)", textAlign: "center" });
+mCard2.innerHTML = `
+<div style="font-size:15px;margin-bottom:4px">⏱️</div>
+<div class="display" style="font-size:24px;font-weight:800;color:var(--mint)">${hrs > 0 ? hrs + "h " + mins + "m" : mins + "m"}</div>
+<div style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">LOGGED TODAY</div>
+`;
+bento.appendChild(mCard2);
+
+inner.appendChild(bento);
+
+/* BENTO 5: Task Checklist Matrix (Span 2) */
+const taskMatrix = el("div"); taskMatrix.className = "card";
+Object.assign(taskMatrix.style, { padding: "18px", borderRadius: "var(--r-lg)", marginBottom: "16px" });
+taskMatrix.innerHTML = `
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<div style="font-size:13px;font-weight:800;color:var(--ink)">📋 Today's Session Checklist</div>
+<span class="pill" style="background:var(--acc-dim);color:var(--acc)">${tasksDone} / ${curSession.tasks.length}</span>
+</div>
+`;
+const matrixList = el("div", { display: "flex", flexDirection: "column", gap: "8px" });
+curSession.tasks.forEach((task, ti) => {
+const k = `${focusIdx}-${curSi}-${ti}`, on = !!state.checked[k], shk = !!state.shaky[k];
+const row = el("div"); row.className = "taskrow" + (on ? " done" : "");
+row.setAttribute("role", "checkbox"); row.setAttribute("aria-checked", on ? "true" : "false"); row.tabIndex = 0;
+row.innerHTML = `<span class="chk${on ? " on" : ""}" style="color:var(--acc-ink)">${on ? IC.check : ""}</span><span class="txt" style="flex:1">${task}</span>
+<button class="shakybtn press" aria-label="${shk ? "Remove shaky flag" : "Mark as shaky"}" title="Mark topic as shaky" style="border:none;background:none;cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0;opacity:${shk ? "1" : ".28"};filter:${shk ? "none" : "grayscale(1)"}">⚠️</button>`;
+row.onclick = () => { state.index = focusIdx; toggleTask(curSi, ti); };
+row.querySelector(".shakybtn").onclick = e => { e.stopPropagation(); state.index = focusIdx; toggleShaky(curSi, ti); };
+matrixList.appendChild(row);
+});
+taskMatrix.appendChild(matrixList);
+inner.appendChild(taskMatrix);
+
+/* Ice shatter splash trigger when streak resumes */
+if (streakObj.hasFrozen && tlog.minutes > 0) {
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  const yk = `${y.getFullYear()}-${fmt(y.getMonth() + 1)}-${fmt(y.getDate())}`;
+  if (state.freeze[yk] && !sessionStorage.getItem("shatter-" + todayKey())) {
+    sessionStorage.setItem("shatter-" + todayKey(), "1");
+    setTimeout(() => {
+      const icon = document.getElementById("streakIcon");
+      if (!icon) return;
+      playSound("shatter");
+      if (window.confetti) {
+        window.confetti({ particleCount: 90, colors: ["#7DD3FC", "#38BDF8", "#E0F2FE", "#FFFFFF"], spread: 100, origin: { y: 0.5 } });
+      }
+      icon.innerHTML = '🧊'; icon.className = "ice-shatter";
+      setTimeout(() => {
+        icon.innerHTML = '🔥'; icon.className = "";
+        toast("🧊💥 Ice shattered! Streak continued 🔥");
+      }, 850);
+    }, 600);
+  }
+}
 
 wrap.appendChild(inner); wireTheme(wrap); return wrap; }
 
@@ -948,9 +1073,29 @@ const day=SCHED[state.index], st=dayStats(state.index);
 const bs=badgeStyle(day.badge);
 const inner=el("div"); inner.className="stagger";
 
-const head=html(`<header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-<h1 class="display" style="font-size:26px;font-weight:800;color:var(--ink)">Plan</h1>
-<button id="todayBtn" class="btn btn-acc press" style="padding:10px 20px;font-size:12.5px">Today</button>
+/* ── Top Header Command Deck ── */
+const cdDate = cd(ESE_DATE);
+const streakObj = computeStreak(), tlog = state.log[todayKey()]||{minutes:0};
+const topDeck = el("div"); topDeck.className = "top-deck";
+topDeck.innerHTML = `
+<div style="display:flex;align-items:center;gap:8px">
+<span class="top-deck-pill press" id="cdPillPlan" title="Target: ESE 2027">⚡ ESE 2027 · ${cdDate.d}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillPlan" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?'🧊':'🔥'} ${streakObj.count}d</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<button class="top-deck-pill press" id="soundPillPlan" title="Toggle Ambient Audio">🎧 ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
+<button class="iconbtn press" id="themeBtnPlan" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${state.theme==="dark"?IC.sun:IC.moon}</button>
+</div>
+`;
+topDeck.querySelector("#cdPillPlan").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
+topDeck.querySelector("#streakPillPlan").onclick = () => setNav("progress");
+topDeck.querySelector("#soundPillPlan").onclick = () => toggleDockDrawer();
+topDeck.querySelector("#themeBtnPlan").onclick = cycleTheme;
+inner.appendChild(topDeck);
+
+const head=html(`<header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+<h1 class="display" style="font-size:24px;font-weight:800;color:var(--ink)">Plan & Syllabus</h1>
+<button id="todayBtn" class="btn btn-acc press" style="padding:8px 16px;font-size:12px">Jump Today</button>
 </header>`);
 head.querySelector("#todayBtn").onclick=goToday;
 inner.appendChild(head);
@@ -1047,7 +1192,28 @@ wrap.appendChild(inner); return wrap; }
 function renderFocus(){
 const wrap=el("div"); wrap.className="screen view";
 const inner=el("div"); inner.className="stagger";
-inner.appendChild(header("Focus","Deep work timer"));
+
+/* ── Top Header Command Deck ── */
+const cdDate = cd(ESE_DATE);
+const streakObj = computeStreak(), tlog = state.log[todayKey()]||{minutes:0};
+const topDeck = el("div"); topDeck.className = "top-deck";
+topDeck.innerHTML = `
+<div style="display:flex;align-items:center;gap:8px">
+<span class="top-deck-pill press" id="cdPillFocus" title="Target: ESE 2027">⚡ ESE 2027 · ${cdDate.d}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillFocus" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?'🧊':'🔥'} ${streakObj.count}d</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<button class="top-deck-pill press" id="soundPillFocus" title="Toggle Ambient Audio">🎧 ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
+<button class="iconbtn press" id="themeBtnFocus" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${state.theme==="dark"?IC.sun:IC.moon}</button>
+</div>
+`;
+topDeck.querySelector("#cdPillFocus").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
+topDeck.querySelector("#streakPillFocus").onclick = () => setNav("progress");
+topDeck.querySelector("#soundPillFocus").onclick = () => toggleDockDrawer();
+topDeck.querySelector("#themeBtnFocus").onclick = cycleTheme;
+inner.appendChild(topDeck);
+
+inner.appendChild(header("Focus Mode","Deep work immersion hub"));
 
 /* phase switch */
 const seg=el("div",{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px",background:"var(--card-2)",padding:"6px",borderRadius:"999px",marginBottom:"16px"});
@@ -1154,7 +1320,6 @@ card.onclick=()=>setNav("plan");
 inner.appendChild(card); }
 
 /* today's totals */
-const tlog=state.log[todayKey()]||{sessions:0,minutes:0};
 const hrs=Math.floor(tlog.minutes/60), mins=tlog.minutes%60;
 const stats=el("div",{display:"grid",gridTemplateColumns:tlog.distract?"1fr 1fr 1fr":"1fr 1fr",gap:"10px",marginTop:"14px"});
 stats.innerHTML=`
@@ -1262,7 +1427,28 @@ setFlip(ov.querySelector("#wfcSec"),fmt(remain%60),instant); }
 function renderProgress(){
 const wrap=el("div"); wrap.className="screen view";
 const inner=el("div"); inner.className="stagger";
-inner.appendChild(header("Progress","Your numbers, honestly"));
+
+/* ── Top Header Command Deck ── */
+const cdDate = cd(ESE_DATE);
+const streakObj = computeStreak(), tlog = state.log[todayKey()]||{minutes:0};
+const topDeck = el("div"); topDeck.className = "top-deck";
+topDeck.innerHTML = `
+<div style="display:flex;align-items:center;gap:8px">
+<span class="top-deck-pill press" id="cdPillProg" title="Target: ESE 2027">⚡ ESE 2027 · ${cdDate.d}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillProg" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?'🧊':'🔥'} ${streakObj.count}d</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<button class="top-deck-pill press" id="soundPillProg" title="Toggle Ambient Audio">🎧 ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
+<button class="iconbtn press" id="themeBtnProg" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${state.theme==="dark"?IC.sun:IC.moon}</button>
+</div>
+`;
+topDeck.querySelector("#cdPillProg").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
+topDeck.querySelector("#streakPillProg").onclick = () => setNav("progress");
+topDeck.querySelector("#soundPillProg").onclick = () => toggleDockDrawer();
+topDeck.querySelector("#themeBtnProg").onclick = cycleTheme;
+inner.appendChild(topDeck);
+
+inner.appendChild(header("Progress & Analytics","Mastery breakdown"));
 const ov=overall();
 
 /* most recent celebration teaser */
@@ -1298,15 +1484,17 @@ achSection.appendChild(buildAchievements());
 inner.appendChild(achSection);
 
 /* streaks section */
-const streakCard=el("div"); streakCard.className="card";
+const pStreakObj = computeStreak();
+const pIsFrozen = pStreakObj.hasFrozen && (state.log[todayKey()]||{minutes:0}).minutes === 0;
+const streakCard=el("div"); streakCard.className="card" + (pIsFrozen ? " ice-frozen-card" : "");
 Object.assign(streakCard.style,{padding:"20px",borderRadius:"var(--r-lg)",marginBottom:"14px"});
 streakCard.innerHTML=`
-<div style="font-size:14px;font-weight:800;color:var(--ink);margin-bottom:16px">🔥 Streaks</div>
+<div style="font-size:14px;font-weight:800;color:var(--ink);margin-bottom:16px">${pIsFrozen ? "🧊 Frozen Streaks" : "🔥 Streaks"}</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-<div style="text-align:center;padding:16px;background:var(--card-2);border-radius:var(--r)">
-<div style="font-size:11px;color:var(--amber);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Day streak</div>
-<div class="display" style="font-size:36px;font-weight:800;color:var(--amber)">${computeStreak().count}</div>
-<div style="font-size:10px;color:var(--ink-3);margin-top:6px;font-weight:600">consecutive days</div>
+<div style="text-align:center;padding:16px;background:${pIsFrozen ? "rgba(56,189,248,0.12)" : "var(--card-2)"};border-radius:var(--r);border:${pIsFrozen ? "1px solid rgba(125,211,252,0.4)" : "none"}">
+<div style="font-size:11px;color:${pIsFrozen ? "#7DD3FC" : "var(--amber)"};font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">${pIsFrozen ? "🧊 Frozen streak" : "Day streak"}</div>
+<div class="display ${pIsFrozen ? "ice-frozen-text" : ""}" style="font-size:36px;font-weight:800;color:${pIsFrozen ? "#7DD3FC" : "var(--amber)"}">${pStreakObj.count}</div>
+<div style="font-size:10px;color:${pIsFrozen ? "#7DD3FC" : "var(--ink-3)"};margin-top:6px;font-weight:600">${pIsFrozen ? "protected by freeze" : "consecutive days"}</div>
 </div>
 <div style="text-align:center;padding:16px;background:var(--card-2);border-radius:var(--r)">
 <div style="font-size:11px;color:var(--acc);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Session streak</div>
@@ -1327,10 +1515,11 @@ const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
 const m=(state.log[k]||{minutes:0}).minutes;
 let c="var(--heat-0)";
 if(m>0) c="var(--heat-1)"; if(m>=120) c="var(--heat-2)"; if(m>=300) c="var(--heat-3)"; if(m>=480) c="var(--heat-4)";
-hh+=`<div title="${k} · ${m} min" style="aspect-ratio:1;border-radius:7px;background:${c};${k===tk?"box-shadow:0 0 0 2px var(--acc);":""}"></div>`; }
-hh+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:12px;justify-content:flex-end"><span style="font-size:9px;color:var(--ink-4);font-weight:600">0h</span>';
+const hrsTxt=m===0?"0h (No study)":`${Math.floor(m/60)}h ${m%60}m`;
+hh+=`<div title="${k} · ${hrsTxt}" style="aspect-ratio:1;border-radius:7px;background:${c};${k===tk?"box-shadow:0 0 0 2px var(--acc);":""}"></div>`; }
+hh+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:12px;justify-content:flex-end"><span style="font-size:9px;color:var(--ink-4);font-weight:700">0h (Red)</span>';
 ["var(--heat-0)","var(--heat-1)","var(--heat-2)","var(--heat-3)","var(--heat-4)"].forEach(c=>hh+=`<span style="width:10px;height:10px;border-radius:3px;background:${c}"></span>`);
-hh+='<span style="font-size:9px;color:var(--ink-4);font-weight:600">8h+</span></div>';
+hh+='<span style="font-size:9px;color:var(--ink-4);font-weight:700">8h+ (Green)</span></div>';
 heat.innerHTML=hh;
 inner.appendChild(heat);
 
@@ -1473,10 +1662,31 @@ let profExp=loadJSON("ese_prof_exp_v1",{badges:true});
 function renderYou(){
 const wrap=el("div"); wrap.className="screen view";
 const inner=el("div"); inner.className="stagger";
-inner.appendChild(header("You",""));
+
+/* ── Top Header Command Deck ── */
+const cdDate = cd(ESE_DATE);
+const streakObj = computeStreak(), tlog = state.log[todayKey()]||{minutes:0};
+const topDeck = el("div"); topDeck.className = "top-deck";
+topDeck.innerHTML = `
+<div style="display:flex;align-items:center;gap:8px">
+<span class="top-deck-pill press" id="cdPillYou" title="Target: ESE 2027">⚡ ESE 2027 · ${cdDate.d}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillYou" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?'🧊':'🔥'} ${streakObj.count}d</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<button class="top-deck-pill press" id="soundPillYou" title="Toggle Ambient Audio">🎧 ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
+<button class="iconbtn press" id="themeBtnYou" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${state.theme==="dark"?IC.sun:IC.moon}</button>
+</div>
+`;
+topDeck.querySelector("#cdPillYou").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
+topDeck.querySelector("#streakPillYou").onclick = () => setNav("progress");
+topDeck.querySelector("#soundPillYou").onclick = () => toggleDockDrawer();
+topDeck.querySelector("#themeBtnYou").onclick = cycleTheme;
+inner.appendChild(topDeck);
+
+inner.appendChild(header("Profile & Settings","Mastery Dashboard"));
 
 /* identity card */
-const streakObj=computeStreak(), streak=streakObj.count, sstreak=computeSessionStreak();
+const streak=streakObj.count, sstreak=computeSessionStreak();
 const unlockedCount=ACHIEVEMENTS.filter(a=>state.achievements[a.id]).length;
 const ese=cd(ESE_DATE);
 const totMin=Object.values(state.log).reduce((a,e)=>a+(e.minutes||0),0);
@@ -1784,17 +1994,17 @@ view.innerHTML="";
 if(state.nav==="home") state.nav="today";
 if(state.nav==="stats") state.nav="progress";
 if(state.nav==="settings") state.nav="you";
-if(state.nav==="focus") state.nav="today"; /* focus is no longer a screen */
 /* render current screen */
 if(state.nav==="today") view.appendChild(renderToday());
 else if(state.nav==="plan") view.appendChild(renderPlan());
+else if(state.nav==="focus") view.appendChild(renderFocus());
 else if(state.nav==="progress") view.appendChild(renderProgress());
 else if(state.nav==="you") view.appendChild(renderYou());
 else view.appendChild(renderToday()); /* fallback */
 renderNav(); renderTimerDock(); updateLandscape(); }
 function renderNav(){
 navEl.innerHTML="";
-[["today","Today",IC.home],["plan","Plan",IC.plan],["progress","Progress",IC.stats],["you","You",IC.settings]].forEach(([id,label,icon])=>{
+[["today","Today",IC.home],["plan","Plan",IC.plan],["focus","Focus",IC.focus],["progress","Progress",IC.stats],["you","You",IC.settings]].forEach(([id,label,icon])=>{
 const b=el("button"); b.className="navbtn press"+(state.nav===id?" active":"");
 b.setAttribute("aria-label",label);
 b.setAttribute("aria-current",state.nav===id?"page":"false");
@@ -1802,60 +2012,236 @@ b.innerHTML=icon+`<span>${label}</span>`;
 b.onclick=()=>setNav(id);
 navEl.appendChild(b); }); }
 
-/* ── docked timer + focus overlay ─────────────────────────── */
+/* ── docked timer + customization drawer + focus overlay ─────── */
+let dockDrawerOpen = false;
+
+function toggleDockDrawer(){
+dockDrawerOpen = !dockDrawerOpen;
+renderTimerDockDrawer();
+const customBtn = document.querySelector("#timerDock #dockCustom");
+if(customBtn) customBtn.classList.toggle("active", dockDrawerOpen);
+}
+
+function closeTimerDockDrawer(){
+dockDrawerOpen = false;
+const drawer = document.getElementById("timerDockDrawer");
+if(drawer) drawer.remove();
+const customBtn = document.querySelector("#timerDock #dockCustom");
+if(customBtn) customBtn.classList.remove("active");
+}
+
+function renderTimerDockDrawer(){
+let drawer = document.getElementById("timerDockDrawer");
+if(!dockDrawerOpen){
+if(drawer) drawer.remove();
+return;
+}
+if(!drawer){
+drawer = el("div"); drawer.id="timerDockDrawer";
+drawer.className = "card";
+document.body.appendChild(drawer);
+}
+
+drawer.innerHTML = `
+<div class="ddrawer-header">
+<span class="ddrawer-title">QUICK TIMER CUSTOMIZATION</span>
+<button class="ddrawer-close press" id="dockDrawerClose">✕</button>
+</div>
+<div class="ddrawer-presets">
+${PRESETS.map(p=>`
+<button class="dpreset-chip press ${state.pomo.workMins===p.work&&state.pomo.breakMins===p.brk?'active':''}"
+data-work="${p.work}" data-brk="${p.brk}">
+${p.label}
+</button>
+`).join("")}
+</div>
+<div class="ddrawer-grid">
+<div class="ddrawer-box">
+<span class="ddrawer-lbl">Focus: <b>${state.pomo.workMins}m</b></span>
+<div style="display:flex;gap:4px">
+<button class="ddrawer-btn press" data-target="work" data-delta="-5">−5m</button>
+<button class="ddrawer-btn press" data-target="work" data-delta="5">+5m</button>
+</div>
+</div>
+<div class="ddrawer-box">
+<span class="ddrawer-lbl">Break: <b>${state.pomo.breakMins}m</b></span>
+<div style="display:flex;gap:4px">
+<button class="ddrawer-btn press" data-target="break" data-delta="-5">−5m</button>
+<button class="ddrawer-btn press" data-target="break" data-delta="5">+5m</button>
+</div>
+</div>
+</div>
+<div style="display:flex;gap:8px;margin-top:10px">
+<button class="press ddrawer-action ${state.pomo.loop?'active':''}" id="dockLoopBtn" style="flex:1">
+Loop: ${state.pomo.loop ? "ON" : "OFF"}
+</button>
+<button class="press ddrawer-action" id="dockPhaseBtn" style="flex:1">
+${state.pomo.phase === "work" ? "Focus Phase" : "Break Phase"}
+</button>
+<button class="press ddrawer-action" id="dockFullscreenBtn" style="flex:none" title="Expand Full Screen">
+⛶ Overlay
+</button>
+</div>
+<div style="margin-top:10px;padding:10px;border-radius:12px;background:var(--card-2);border:1px solid var(--border)">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+<span style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)">🎧 AMBIENT FOCUS AUDIO</span>
+<span style="font-size:10px;font-weight:700;color:var(--acc)">${currentSoundMode.toUpperCase()}</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+<button class="press dsound-btn ${currentSoundMode==='off'?'active':''}" data-mode="off" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='off'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='off'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='off'?'var(--acc)':'var(--ink-2)'};cursor:pointer">Off</button>
+<button class="press dsound-btn ${currentSoundMode==='rain'?'active':''}" data-mode="rain" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='rain'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='rain'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='rain'?'var(--acc)':'var(--ink-2)'};cursor:pointer">🌧️ Rain</button>
+<button class="press dsound-btn ${currentSoundMode==='waves'?'active':''}" data-mode="waves" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='waves'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='waves'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='waves'?'var(--acc)':'var(--ink-2)'};cursor:pointer">🌊 432Hz</button>
+<button class="press dsound-btn ${currentSoundMode==='brown'?'active':''}" data-mode="brown" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='brown'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='brown'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='brown'?'var(--acc)':'var(--ink-2)'};cursor:pointer">🎧 Brown</button>
+</div>
+</div>
+`;
+
+drawer.querySelector("#dockDrawerClose").onclick = closeTimerDockDrawer;
+drawer.querySelectorAll(".dpreset-chip").forEach(b => {
+b.onclick = () => {
+applyPreset(parseInt(b.dataset.work, 10), parseInt(b.dataset.brk, 10));
+renderTimerDockDrawer();
+};
+});
+drawer.querySelectorAll(".ddrawer-btn").forEach(b => {
+b.onclick = () => {
+adjustDuration(b.dataset.target, parseInt(b.dataset.delta, 10));
+renderTimerDockDrawer();
+};
+});
+drawer.querySelectorAll(".dsound-btn").forEach(b => {
+b.onclick = () => {
+setFocusSoundMode(b.dataset.mode);
+renderTimerDockDrawer();
+};
+});
+drawer.querySelector("#dockLoopBtn").onclick = () => {
+toggleLoop();
+renderTimerDockDrawer();
+};
+drawer.querySelector("#dockPhaseBtn").onclick = () => {
+setPhase(state.pomo.phase === "work" ? "break" : "work");
+renderTimerDockDrawer();
+};
+drawer.querySelector("#dockFullscreenBtn").onclick = () => {
+closeTimerDockDrawer();
+expandFocusOverlay();
+};
+}
+
 function renderTimerDock(){
 try{
 let existing=document.getElementById("timerDock");
-if(!state.pomo.running){ if(existing) existing.remove(); return; }
-if(!SCHED||!SCHED[state.index]){ if(existing) existing.remove(); return; }
+const isDockActive = state.pomo.docked !== false;
+if(!isDockActive){
+if(existing){ existing.classList.remove("show"); closeTimerDockDrawer(); }
+return;
+}
+if(!SCHED||!SCHED[state.index]){ if(existing) existing.classList.remove("show"); return; }
 const rem=getRemainingPomo();
 const mm=Math.floor(rem/60), ss=rem%60;
 const timeStr=`${fmt(mm)}:${fmt(ss)}`;
 const phaseLabel=state.pomo.phase==="work"?"FOCUS":"BREAK";
+let taskTitle="Study session";
+try{
 const fd=SCHED[state.index];
+if(fd&&fd.sessions){
 const curSession=fd.sessions.find((_,si)=>!fd.sessions[si].tasks.every((_,ti)=>state.checked[`${state.index}-${si}-${ti}`]));
-const taskTitle=curSession?curSession.subject.split("—")[0].trim():"Study session";
+if(curSession&&curSession.subject) taskTitle=curSession.subject.split("—")[0].trim();
+else if(fd.subject) taskTitle=fd.subject.split("—")[0].trim();
+}
+}catch(err){}
+
 if(!existing){
-existing=el("div"); existing.id="timerDock";
+existing=el("div"); existing.id="timerDock"; existing.className="show";
 existing.innerHTML=`
+<button class="dstep-btn press" id="dockMinus5" title="Subtract 5 mins">−5m</button>
+<div class="dtime-box" id="dockTimeBox">
 <div class="dtime">${timeStr}</div>
-<div class="dmeta">
 <div class="dphase">${phaseLabel}</div>
+</div>
+<button class="dstep-btn press" id="dockPlus5" title="Add 5 mins">+5m</button>
+<div class="dmeta" id="dockMeta">
 <div class="dtask">${taskTitle}</div>
 </div>
-<div class="dbtn" id="dockPause">⏸</div>`;
+<button class="dicon-btn press ${dockDrawerOpen?'active':''}" id="dockCustom" title="Customize Timer">⚙</button>
+<button class="dbtn press main" id="dockPlayPause">${state.pomo.running?"⏸":"▶"}</button>
+`;
 document.body.appendChild(existing);
-existing.onclick=e=>{ if(e.target.id!=="dockPause") expandFocusOverlay(); };
-existing.querySelector("#dockPause").onclick=e=>{ e.stopPropagation(); toggleRunning(); };
+
+existing.querySelector("#dockMinus5").onclick=(e)=>{ e.stopPropagation(); adjustDuration(state.pomo.phase, -5); };
+existing.querySelector("#dockPlus5").onclick=(e)=>{ e.stopPropagation(); adjustDuration(state.pomo.phase, 5); };
+existing.querySelector("#dockTimeBox").onclick=()=>expandFocusOverlay();
+existing.querySelector("#dockMeta").onclick=()=>expandFocusOverlay();
+existing.querySelector("#dockCustom").onclick=(e)=>{ e.stopPropagation(); toggleDockDrawer(); };
+existing.querySelector("#dockPlayPause").onclick=(e)=>{ e.stopPropagation(); toggleRunning(); };
 }else{
+existing.classList.add("show");
 existing.querySelector(".dtime").textContent=timeStr;
 existing.querySelector(".dphase").textContent=phaseLabel;
 existing.querySelector(".dtask").textContent=taskTitle;
+existing.querySelector("#dockPlayPause").textContent=state.pomo.running?"⏸":"▶";
+const customBtn = existing.querySelector("#dockCustom");
+if(customBtn) customBtn.classList.toggle("active", dockDrawerOpen);
 }
+if(dockDrawerOpen) renderTimerDockDrawer();
 }catch(e){ console.error("renderTimerDock error:",e); }
 }
+
+function updateOverlayUI(ov){
+if(!ov) return;
+const rem=getRemainingPomo(), secs=phaseSecs();
+const mm=Math.floor(rem/60), ss=rem%60;
+const phaseLabel=state.pomo.phase==="work"?"FOCUS":"BREAK";
+const pct=secs?Math.round((1-rem/secs)*100):0;
+const phaseChip=ov.querySelector(".fchip"); if(phaseChip) phaseChip.textContent=phaseLabel;
+const bignum=ov.querySelector(".bignum"); if(bignum) bignum.textContent=`${fmt(mm)}:${fmt(ss)}`;
+const bigsub=ov.querySelector(".bigsub"); if(bigsub) bigsub.textContent=state.pomo.phase==="work"?"MINUTES FOCUS":"MINUTES BREAK";
+const svg=ov.querySelector(".breather svg circle:last-child");
+if(svg){ const r=114, c=2*Math.PI*r; svg.setAttribute("stroke-dashoffset",c*(1-pct/100)); }
+const toggleBtn=ov.querySelector("#fToggle"); if(toggleBtn) toggleBtn.textContent=state.pomo.running?"⏸":"▶";
+const loopBtn=ov.querySelector("#fLoopBtn");
+if(loopBtn){
+loopBtn.style.borderColor=state.pomo.loop?"var(--acc)":"var(--line-2)";
+loopBtn.style.color=state.pomo.loop?"var(--acc)":"var(--ink-2)";
+loopBtn.textContent=`Auto Loop: ${state.pomo.loop?"ON":"OFF"}`;
+}
+ov.querySelectorAll(".fpreset-chip").forEach(btn=>{
+const w=parseInt(btn.dataset.work,10), b=parseInt(btn.dataset.brk,10);
+const active=state.pomo.workMins===w&&state.pomo.breakMins===b;
+btn.style.borderColor=active?"var(--acc)":"var(--line-2)";
+btn.style.color=active?"var(--acc)":"var(--ink-2)";
+btn.style.background=active?"var(--acc-dim)":"var(--card-2)";
+});
+const wVal=ov.querySelector("#fWorkVal"); if(wVal) wVal.textContent=`${state.pomo.workMins}m Focus`;
+const bVal=ov.querySelector("#fBreakVal"); if(bVal) bVal.textContent=`${state.pomo.breakMins}m Break`;
+}
+
 function expandFocusOverlay(){
 try{
 if(!SCHED||!SCHED[state.index]) return;
 let ov=document.getElementById("focusOverlay");
 if(!ov){
 ov=el("div"); ov.id="focusOverlay";
-const rem=getRemainingPomo();
+const rem=getRemainingPomo(), secs=phaseSecs();
 const mm=Math.floor(rem/60), ss=rem%60;
 const phaseLabel=state.pomo.phase==="work"?"FOCUS":"BREAK";
 const fd=SCHED[state.index];
 const curSession=fd.sessions.find((_,si)=>!fd.sessions[si].tasks.every((_,ti)=>state.checked[`${state.index}-${si}-${ti}`]));
 const taskTitle=curSession?curSession.subject.split("—")[0].trim():"Study session";
-const pct=Math.round((1-rem/phaseSecs())*100);
+const pct=secs?Math.round((1-rem/secs)*100):0;
 ov.innerHTML=`
-<button class="fexit">Done</button>
-<div class="fchip">${phaseLabel}</div>
+<div class="foverlay-header">
+<button class="fbtn-sub press" id="fSettings">⚙ Full Focus View</button>
+<button class="fexit press">Done ✕</button>
+</div>
+<button class="fchip press" id="fPhaseToggle" title="Switch Focus/Break">${phaseLabel}</button>
 <div class="breather">
 <div class="halo"></div>
 ${ring(240,12,pct,"var(--acc)","var(--card-2)")}
 <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
 <div class="bignum">${fmt(mm)}:${fmt(ss)}</div>
-<div class="bigsub">${state.pomo.phase==="work"?"MINUTES":"BREAK"}</div>
+<div class="bigsub">${state.pomo.phase==="work"?"MINUTES FOCUS":"MINUTES BREAK"}</div>
 </div>
 </div>
 <div class="ftask">
@@ -1863,17 +2249,69 @@ ${ring(240,12,pct,"var(--acc)","var(--card-2)")}
 <div class="ft">${taskTitle}</div>
 </div>
 <div class="fctrl">
-<button class="fbtn" id="fSkip">⏭</button>
-<button class="fbtn main" id="fToggle">${state.pomo.running?"⏸":"▶"}</button>
-<button class="fbtn" id="fReset">⏹</button>
+<button class="fbtn press" id="fSkip" title="Skip phase">⏭</button>
+<button class="fbtn main press" id="fToggle" title="Play/Pause">${state.pomo.running?"⏸":"▶"}</button>
+<button class="fbtn press" id="fReset" title="Reset timer">⏹</button>
+</div>
+<div class="fcustom-panel">
+<div class="fcustom-title">CUSTOMIZE SESSION TIMING</div>
+<div class="fpresets-row">
+${PRESETS.map(p=>`
+<button class="fpreset-chip press" data-work="${p.work}" data-brk="${p.brk}"
+style="cursor:pointer;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;font-family:var(--mono-font);
+border:1px solid ${state.pomo.workMins===p.work&&state.pomo.breakMins===p.brk?"var(--acc)":"var(--line-2)"};
+color:${state.pomo.workMins===p.work&&state.pomo.breakMins===p.brk?"var(--acc)":"var(--ink-2)"};
+background:${state.pomo.workMins===p.work&&state.pomo.breakMins===p.brk?"var(--acc-dim)":"var(--card-2)"}">
+${p.label}
+</button>
+`).join("")}
+</div>
+<div class="fsteppers-grid">
+<div class="fstepper-box">
+<span id="fWorkVal" style="font-size:12px;font-weight:700;color:var(--ink-2)">${state.pomo.workMins}m Focus</span>
+<div style="display:flex;gap:6px">
+<button class="fstep-btn press" data-target="work" data-delta="-5">−5m</button>
+<button class="fstep-btn press" data-target="work" data-delta="5">+5m</button>
+</div>
+</div>
+<div class="fstepper-box">
+<span id="fBreakVal" style="font-size:12px;font-weight:700;color:var(--ink-2)">${state.pomo.breakMins}m Break</span>
+<div style="display:flex;gap:6px">
+<button class="fstep-btn press" data-target="break" data-delta="-5">−5m</button>
+<button class="fstep-btn press" data-target="break" data-delta="5">+5m</button>
+</div>
+</div>
+</div>
+<button class="press" id="fLoopBtn" style="margin-top:10px;width:100%;padding:10px;border-radius:12px;
+border:1px solid ${state.pomo.loop?"var(--acc)":"var(--line-2)"};
+background:var(--card-2);color:${state.pomo.loop?"var(--acc)":"var(--ink-2)"};
+font-size:12px;font-weight:700;cursor:pointer">
+Auto Loop: ${state.pomo.loop?"ON":"OFF"}
+</button>
 </div>`;
 document.body.appendChild(ov);
 ov.querySelector(".fexit").onclick=collapseFocusOverlay;
-ov.querySelector("#fToggle").onclick=()=>{ toggleRunning(); if(!state.pomo.running) collapseFocusOverlay(); };
-ov.querySelector("#fSkip").onclick=()=>{ skipPhase(); collapseFocusOverlay(); };
-ov.querySelector("#fReset").onclick=()=>{ resetPomo(); collapseFocusOverlay(); };
+ov.querySelector("#fSettings").onclick=()=>{ collapseFocusOverlay(); setNav("focus"); };
+ov.querySelector("#fPhaseToggle").onclick=()=>{ setPhase(state.pomo.phase==="work"?"break":"work"); updateOverlayUI(ov); };
+ov.querySelector("#fToggle").onclick=()=>{ toggleRunning(); updateOverlayUI(ov); };
+ov.querySelector("#fSkip").onclick=()=>{ skipPhase(); updateOverlayUI(ov); };
+ov.querySelector("#fReset").onclick=()=>{ resetPomo(); updateOverlayUI(ov); };
+ov.querySelectorAll(".fpreset-chip").forEach(btn=>{
+btn.onclick=()=>{
+const w=parseInt(btn.dataset.work,10), b=parseInt(btn.dataset.brk,10);
+applyPreset(w,b); updateOverlayUI(ov);
+};
+});
+ov.querySelectorAll(".fstep-btn").forEach(btn=>{
+btn.onclick=()=>{
+const target=btn.dataset.target, delta=parseInt(btn.dataset.delta,10);
+adjustDuration(target,delta); updateOverlayUI(ov);
+};
+});
+ov.querySelector("#fLoopBtn").onclick=()=>{ toggleLoop(); updateOverlayUI(ov); };
 requestAnimationFrame(()=>ov.classList.add("active"));
 }else{
+updateOverlayUI(ov);
 ov.classList.add("active");
 }
 }catch(e){ console.error("expandFocusOverlay error:",e); }
@@ -1885,6 +2323,9 @@ if(ov){
 ov.classList.remove("active");
 setTimeout(()=>ov.remove(),350);
 }
+state.pomo.docked=true;
+saveJSON(POMO_KEY,state.pomo);
+renderTimerDock();
 }catch(e){ console.error("collapseFocusOverlay error:",e); }
 }
 
@@ -1895,6 +2336,7 @@ function commandList(){
 const c=[
 {i:"◈",l:"Go to Today",r:()=>setNav("today")},
 {i:"◈",l:"Go to Plan",r:()=>setNav("plan")},
+{i:"◈",l:"Go to Focus",r:()=>setNav("focus")},
 {i:"◈",l:"Go to Progress",r:()=>setNav("progress")},
 {i:"◈",l:"Go to You",r:()=>setNav("you")},
 {i:"→",l:"Jump to today",r:()=>{ goToday(); if(state.nav!=="plan") setNav("plan"); }},
@@ -1964,8 +2406,9 @@ if(e.ctrlKey||e.metaKey||e.altKey) return;
 switch(e.key){
 case "1": setNav("today"); break;
 case "2": setNav("plan"); break;
-case "3": setNav("progress"); break;
-case "4": setNav("you"); break;
+case "3": setNav("focus"); break;
+case "4": setNav("progress"); break;
+case "5": setNav("you"); break;
 case "t": case "T": cycleTheme(); break;
 case " ": if(state.pomo.running||state.nav==="today"){ e.preventDefault(); if(strictActive()){ toast("Strict mode — hold Pause on the clock"); break; } toggleRunning(); } break;
 case "ArrowLeft": if(state.nav==="plan"&&state.index>0) navDay(-1); break;
@@ -2058,8 +2501,7 @@ let nav=h;
 if(h==="home") nav="today";
 if(h==="stats") nav="progress";
 if(h==="settings") nav="you";
-if(h==="focus") nav="today";
-if(["today","plan","progress","you"].includes(nav)) state.nav=nav; })();
+if(["today","plan","focus","progress","you"].includes(nav)) state.nav=nav; })();
 window.addEventListener("hashchange",()=>{
 const h=(location.hash||"").replace("#","");
 /* migrate old routes */
@@ -2067,8 +2509,21 @@ let nav=h;
 if(h==="home") nav="today";
 if(h==="stats") nav="progress";
 if(h==="settings") nav="you";
-if(h==="focus") nav="today";
-if(["today","plan","progress","you"].includes(nav)&&state.nav!==nav) setNav(nav); });
+if(["today","plan","focus","progress","you"].includes(nav)&&state.nav!==nav) setNav(nav);
+renderTimerDock(); });
+window.addEventListener("popstate",()=>{
+const ov=document.getElementById("focusOverlay");
+if(ov){
+ov.classList.remove("active");
+setTimeout(()=>ov.remove(),350);
+}
+if(clockOn){
+clockOn=false;
+exitAppFullscreen();
+}
+state.pomo.docked=true;
+saveJSON(POMO_KEY,state.pomo);
+renderTimerDock(); });
 
 /* ── lifecycle ────────────────────────────────────────── */
 document.getElementById("importFile").addEventListener("change",handleImportFile);
