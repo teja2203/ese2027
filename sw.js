@@ -1,6 +1,6 @@
 /* ESE2027 Study OS — Service Worker
    Cache-first for app shell, network-first for Supabase, offline-ready. */
-const VERSION = "ese2027-v25";
+const VERSION = "ese2027-v27";
 const APP_SHELL = [
   "./",
   "./index.html",

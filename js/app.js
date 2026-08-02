@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v25";
+const APP_VERSION="v27";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -12,7 +12,7 @@ const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
       LOG_KEY="ese_planner_log_v1", THEME_KEY="THEME", EXP_KEY="expandedSessions",
       ACH_KEY="ese_achievements_v1", CELEB_KEY="ese_celebrated_days_v1", NOTIF_KEY="ese_notif_v1", BLOCK_KEY="ese_block_v1",
       MOCK_KEY="ese_mocks_v1", SHAKY_KEY="ese_shaky_v1", RATE_KEY="ese_ratings_v1", FREEZE_KEY="ese_freeze_v1", BKUP_KEY="ese_last_backup_v1",
-      SOUND_KEY="ese_sound_v1";
+      SOUND_KEY="ese_sound_v1", REST_KEY="ese_rest_v1", RESTED_KEY="ese_rested_v1";
 function loadJSON(k,f){ try{ const r=localStorage.getItem(k); return r===null?f:JSON.parse(r);}catch(e){ return f; } }
 function saveJSON(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 
@@ -75,6 +75,8 @@ shaky:loadJSON(SHAKY_KEY,{}),
 ratings:loadJSON(RATE_KEY,{}),
 freeze:loadJSON(FREEZE_KEY,{}),
 sound:loadJSON(SOUND_KEY,true),
+restDayBank:loadJSON(REST_KEY,7),
+restedDays:loadJSON(RESTED_KEY,[]),
 };
 if(state.index<0||state.index>=SCHED.length) state.index=0;
 
@@ -123,6 +125,32 @@ const used=Object.keys(state.freeze).some(k=>k.slice(0,7)===mon);
 if(used) return;                                        /* token already spent this month */
 state.freeze[yk]=true; saveJSON(FREEZE_KEY,state.freeze);
 setTimeout(()=>toast("🧊 Streak freeze used for "+yk.slice(5)+" — one per month"),1200); }
+
+/* ── rest days — shift the remaining plan forward ─────── */
+function parsePlanDate(s){ const p=s.split(" "); const mi=MON.indexOf(p[0]); const y=mi>=6?2026:2027; return new Date(y,mi,parseInt(p[1],10)); }
+function effDateLabel(i){ const b=parsePlanDate(SCHED[i].date); const sh=state.restedDays.filter(r=>r.i<=i).length; b.setDate(b.getDate()+sh); return MON[b.getMonth()]+" "+b.getDate(); }
+function isRestToday(){ return state.restedDays.some(r=>r.d===todayKey()); }
+function findTodayIndex(){ const t=todayDateLabel(); for(let i=0;i<SCHED.length;i++){ if(effDateLabel(i)===t) return i; } return -1; }
+function takeRestToday(){
+if(state.restDayBank<=0){ toast("No rest days left in the bank"); return; }
+if(isRestToday()){ toast("Today is already a rest day"); return; }
+const idx=findTodayIndex();
+if(idx<0){ toast("No plan day today to shift"); return; }
+if(!confirm(`Take a rest day?\n\nToday's plan (${SCHED[idx].subject}) and everything after it moves forward by one day.\n\n${state.restDayBank-1} of 7 rest days will remain.`)) return;
+state.restedDays.push({i:idx,d:todayKey()});
+state.restDayBank--;
+saveJSON(REST_KEY,state.restDayBank); saveJSON(RESTED_KEY,state.restedDays);
+state.freeze[todayKey()]="rest";              /* free freeze — sickness never kills the streak */
+saveJSON(FREEZE_KEY,state.freeze);
+render(); toast("🛌 Rest day taken — recover well"); }
+function cancelRestToday(){
+const ix=state.restedDays.findIndex(r=>r.d===todayKey());
+if(ix<0) return;
+if(!confirm("Cancel today's rest and return to the plan?")) return;
+state.restedDays.splice(ix,1); state.restDayBank++;
+if(state.freeze[todayKey()]==="rest") delete state.freeze[todayKey()];
+saveJSON(REST_KEY,state.restDayBank); saveJSON(RESTED_KEY,state.restedDays); saveJSON(FREEZE_KEY,state.freeze);
+render(); toast("Rest cancelled — back on plan 💪"); }
 
 /* ── mock test scores ─────────────────────────────────── */
 function addMockSheet(){
@@ -483,7 +511,8 @@ d.setDate(d.getDate()-1); }
 return streak; }
 function checkSlotNotifications(){
 if(!notifOn()) return;
-const today=todayDateLabel(); const di=SCHED.findIndex(d=>d.date===today);
+if(isRestToday()) return;                     /* rest day — no slot pings, actually rest */
+const di=findTodayIndex();
 if(di<0) return;
 const now=new Date(), mins=now.getHours()*60+now.getMinutes();
 const tk=todayKey();
@@ -644,7 +673,18 @@ saveJSON(STORAGE_KEY,state.checked); lastToggle=null; render(); toast("Undone");
 /* ── navigation ───────────────────────────────────────── */
 function navDay(dir){ state.index=Math.max(0,Math.min(SCHED.length-1,state.index+dir)); saveJSON(IDX_KEY,state.index); window.scrollTo({top:0,behavior:"smooth"}); render(); }
 function jumpTo(i){ state.index=Math.max(0,Math.min(SCHED.length-1,i)); saveJSON(IDX_KEY,state.index); window.scrollTo({top:0,behavior:"smooth"}); render(); }
-function goToday(){ const t=todayDateLabel(); const idx=SCHED.findIndex(d=>d.date===t); jumpTo(idx>=0?idx:0); }
+function goToday(){ const idx=findTodayIndex(); jumpTo(idx>=0?idx:0); }
+
+/* ── rest days (non-destructive) ──────────────────────── */
+(function(){
+const k=todayKey();
+const e=state.log[k];
+if(!e||!e.minutes||!e.sessions){
+/* if nothing was studied by 9pm, flag today as a rest day */
+const d=SCHED[state.index];
+if(d&&d.badge!=="RECOVERY"){
+setTimeout(()=>{ if(!(state.log[todayKey()]||{}).sessions){ toast("🌙 Rest day detected — no sessions tracked. Health comes first."); } },22*3600000-60000*new Date().getHours()); /* ~10pm */
+} } })();
 function setNav(id){
 if(state.nav===id) return;
 view.style.transition="opacity .15s ease, transform .15s ease";
