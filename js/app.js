@@ -776,31 +776,31 @@ stroke-dasharray="${c}" stroke-dashoffset="${c*(1-pct/100)}" style="transition:s
 
 /* ════════════════ TODAY ════════════════ */
 function renderToday(){
-const wrap=el(“div”); wrap.className=”screen view”;
+const wrap=el("div"); wrap.className="screen view";
 const today=todayDateLabel();
 let idx=SCHED.findIndex(d=>d.date===today);
 const focusIdx=idx>=0?idx:state.index;
 const fd=SCHED[focusIdx], st=dayStats(focusIdx);
 const streakObj=computeStreak(), streak=streakObj.count, tlog=state.log[todayKey()]||{sessions:0,minutes:0};
-const inner=el(“div”); inner.className=”stagger”;
+const inner=el("div"); inner.className="stagger";
 
 inner.appendChild(header(today,`${fd.day} · Day ${focusIdx+1}`));
 
 /* greeting */
-inner.appendChild(html(`<div style=”margin-bottom:14px”>
-<div style=”font-size:13px;color:var(--ink-3);font-weight:600”>${greeting()}, Teja</div>
-<div style=”font-size:13.5px;color:var(--ink-2);margin-top:6px;line-height:1.55;font-style:italic”>”${dailyQuote()}”</div>
+inner.appendChild(html(`<div style="margin-bottom:14px">
+<div style="font-size:13px;color:var(--ink-3);font-weight:600">${greeting()}, Teja</div>
+<div style="font-size:13.5px;color:var(--ink-2);margin-top:6px;line-height:1.55;font-style:italic">"${dailyQuote()}"</div>
 </div>`));
 
 /* segmented day bar — 5 dots showing session progress */
-const dayBar=el(“div”,{display:”flex”,alignItems:”center”,gap:”6px”,marginBottom:”16px”,justifyContent:”center”});
+const dayBar=el("div",{display:"flex",alignItems:"center",gap:"6px",marginBottom:"16px",justifyContent:"center"});
 fd.sessions.forEach((s,si)=>{
 const done=s.tasks.every((_,ti)=>state.checked[`${focusIdx}-${si}-${ti}`]);
 const current=!done&&fd.sessions.slice(0,si).every((ps,psi)=>ps.tasks.every((_,ti)=>state.checked[`${focusIdx}-${psi}-${ti}`]));
-const dot=el(“div”);
-Object.assign(dot.style,{width:current?”14px”:”8px”,height:current?”14px”:”8px”,borderRadius:”50%”,
-background:done?”var(--acc)”:current?”var(--acc)”:”var(--card-2)”,transition:”all .3s var(--spring)”,
-border:current?”2px solid var(--acc)”:”none”});
+const dot=el("div");
+Object.assign(dot.style,{width:current?"14px":"8px",height:current?"14px":"8px",borderRadius:"50%",
+background:done?"var(--acc)":current?"var(--acc)":"var(--card-2)",transition:"all .3s var(--spring)",
+border:current?"2px solid var(--acc)":"none"});
 dayBar.appendChild(dot); });
 inner.appendChild(dayBar);
 
@@ -814,54 +814,54 @@ if(curSi===-1) curSi=fd.sessions.length-1; /* all done — show last session */
 
 const curSession=fd.sessions[curSi];
 const t=tagOf(curSession.tag);
-const slot=SLOTS[curSi]||{label:”Session”,time:””,icon:”•”,desc:””};
+const slot=SLOTS[curSi]||{label:"Session",time:"",icon:"•",desc:""};
 const tasksDone=curSession.tasks.filter((_,ti)=>state.checked[`${focusIdx}-${curSi}-${ti}`]).length;
 const pct=Math.round(tasksDone/curSession.tasks.length*100);
 const allDone=tasksDone===curSession.tasks.length;
 const sstreak=slotStreak(curSi);
 
 /* current slot card */
-const slotCard=el(“div”); slotCard.className=”card”;
-Object.assign(slotCard.style,{borderRadius:”var(--r-lg)”,padding:”20px”,marginBottom:”14px”,border:”2px solid var(--acc)”});
+const slotCard=el("div"); slotCard.className="card";
+Object.assign(slotCard.style,{borderRadius:"var(--r-lg)",padding:"20px",marginBottom:"14px",border:"2px solid var(--acc)"});
 slotCard.innerHTML=`
-<div style=”display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap”>
-<div style=”font-size:22px”>${slot.icon}</div>
-<div style=”flex:1;min-width:0”>
-<div style=”font-size:12px;color:var(--ink-3);font-weight:700”>${slot.label}${slot.time?” · “+slot.time:””}</div>
-<div style=”font-size:16px;font-weight:800;color:var(--ink);margin-top:2px”>${curSession.title}</div>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+<div style="font-size:22px">${slot.icon}</div>
+<div style="flex:1;min-width:0">
+<div style="font-size:12px;color:var(--ink-3);font-weight:700">${slot.label}${slot.time?" · "+slot.time:""}</div>
+<div style="font-size:16px;font-weight:800;color:var(--ink);margin-top:2px">${curSession.title}</div>
 </div>
-${sstreak>0?`<span class=”pill” style=”background:var(--amber-soft);color:var(--amber);font-size:9px;padding:4px 9px”>${IC.flame} ${sstreak}</span>`:””}
-<span class=”pill” style=”background:${t.s};color:${t.c};font-size:9px;padding:4px 9px”>${t.label}</span>
+${sstreak>0?`<span class="pill" style="background:var(--amber-soft);color:var(--amber);font-size:9px;padding:4px 9px">${IC.flame} ${sstreak}</span>`:""}
+<span class="pill" style="background:${t.s};color:${t.c};font-size:9px;padding:4px 9px">${t.label}</span>
 </div>
-<div style=”font-size:11px;color:var(--ink-3);margin-bottom:12px;line-height:1.5”>${slot.desc}</div>
-<div style=”display:flex;justify-content:space-between;align-items:center;margin-bottom:10px”>
-<span style=”font-size:12px;font-weight:700;color:var(--ink-2)”>${tasksDone}/${curSession.tasks.length} tasks</span>
-<span class=”mono” style=”font-size:13px;font-weight:800;color:var(--acc)”>${pct}%</span>
+<div style="font-size:11px;color:var(--ink-3);margin-bottom:12px;line-height:1.5">${slot.desc}</div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<span style="font-size:12px;font-weight:700;color:var(--ink-2)">${tasksDone}/${curSession.tasks.length} tasks</span>
+<span class="mono" style="font-size:13px;font-weight:800;color:var(--acc)">${pct}%</span>
 </div>
-<div class=”track” style=”height:7px;margin-bottom:16px”><div class=”fill” style=”width:${pct}%”></div></div>`;
+<div class="track" style="height:7px;margin-bottom:16px"><div class="fill" style="width:${pct}%"></div></div>`;
 
 /* task list inline */
-const taskList=el(“div”,{display:”flex”,flexDirection:”column”,gap:”6px”,marginBottom:”16px”});
+const taskList=el("div",{display:"flex",flexDirection:"column",gap:"6px",marginBottom:"16px"});
 curSession.tasks.forEach((task,ti)=>{
 const k=`${focusIdx}-${curSi}-${ti}`, on=!!state.checked[k], shk=!!state.shaky[k];
-const row=el(“div”); row.className=”taskrow”+(on?” done”:””);
-row.setAttribute(“role”,”checkbox”); row.setAttribute(“aria-checked”,on?”true”:”false”); row.tabIndex=0;
-row.innerHTML=`<span class=”chk${on?” on”:””}” style=”color:var(--acc-ink)”>${on?IC.check:””}</span><span class=”txt” style=”flex:1”>${task}</span>
-<button class=”shakybtn press” aria-label=”${shk?”Remove shaky flag”:”Mark as shaky”}” title=”Mark topic as shaky” style=”border:none;background:none;cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0;opacity:${shk?”1”:”.28”};filter:${shk?”none”:”grayscale(1)”}”>⚠️</button>`;
+const row=el("div"); row.className="taskrow"+(on?" done":"");
+row.setAttribute("role","checkbox"); row.setAttribute("aria-checked",on?"true":"false"); row.tabIndex=0;
+row.innerHTML=`<span class="chk${on?" on":""}" style="color:var(--acc-ink)">${on?IC.check:""}</span><span class="txt" style="flex:1">${task}</span>
+<button class="shakybtn press" aria-label="${shk?"Remove shaky flag":"Mark as shaky"}" title="Mark topic as shaky" style="border:none;background:none;cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0;opacity:${shk?"1":".28"};filter:${shk?"none":"grayscale(1)"}">⚠️</button>`;
 row.onclick=()=>{ state.index=focusIdx; toggleTask(curSi,ti); };
-row.querySelector(“.shakybtn”).onclick=e=>{ e.stopPropagation(); state.index=focusIdx; toggleShaky(curSi,ti); };
-row.onkeydown=e=>{ if(e.key===” “||e.key===”Enter”){ e.preventDefault(); state.index=focusIdx; toggleTask(curSi,ti); } };
+row.querySelector(".shakybtn").onclick=e=>{ e.stopPropagation(); state.index=focusIdx; toggleShaky(curSi,ti); };
+row.onkeydown=e=>{ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); state.index=focusIdx; toggleTask(curSi,ti); } };
 taskList.appendChild(row); });
 slotCard.appendChild(taskList);
 
 /* ring + start button */
-const actions=el(“div”,{display:”flex”,alignItems:”center”,gap:”14px”});
+const actions=el("div",{display:"flex",alignItems:"center",gap:"14px"});
 actions.innerHTML=`
-<div style=”position:relative;width:68px;height:68px;flex-shrink:0”>
-${ring(68,6,pct,”var(--acc)”)}
-<div class=”mono” style=”position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--ink)”>${pct}%</div>
+<div style="position:relative;width:68px;height:68px;flex-shrink:0">
+${ring(68,6,pct,"var(--acc)")}
+<div class="mono" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--ink)">${pct}%</div>
 </div>`;
-const startBtn=html(`<button class=”btn ${allDone?”btn-ghost”:”btn-acc”} press” style=”flex:1”>${allDone?”✓ Done”:”▶ Start focus”}</button>`);
+const startBtn=html(`<button class="btn ${allDone?"btn-ghost":"btn-acc"} press" style="flex:1">${allDone?"✓ Done":"▶ Start focus"}</button>`);
 if(!allDone) startBtn.onclick=()=>{ if(!state.pomo.running) toggleRunning(); };
 actions.appendChild(startBtn);
 slotCard.appendChild(actions);
@@ -871,41 +871,41 @@ inner.appendChild(slotCard);
 if(curSi<fd.sessions.length-1){
 const nextSi=curSi+1;
 const nextSession=fd.sessions[nextSi];
-const nextSlot=SLOTS[nextSi]||{label:”Session”,time:””,icon:”•”};
+const nextSlot=SLOTS[nextSi]||{label:"Session",time:"",icon:"•"};
 const nextTag=tagOf(nextSession.tag);
-const nextCard=html(`<div class=”card lift press” style=”padding:14px 16px;border-radius:var(--r);margin-bottom:14px;cursor:pointer;border:1px solid var(--line-2)”>
-<div style=”font-size:10px;color:var(--ink-4);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px”>Up next</div>
-<div style=”display:flex;align-items:center;gap:10px”>
-<span style=”font-size:18px”>${nextSlot.icon}</span>
-<div style=”flex:1;min-width:0”>
-<div style=”font-size:11px;color:var(--ink-3);font-weight:600”>${nextSlot.label}${nextSlot.time?” · “+nextSlot.time:””}</div>
-<div style=”font-size:13px;font-weight:700;color:var(--ink);margin-top:2px”>${nextSession.title}</div>
+const nextCard=html(`<div class="card lift press" style="padding:14px 16px;border-radius:var(--r);margin-bottom:14px;cursor:pointer;border:1px solid var(--line-2)">
+<div style="font-size:10px;color:var(--ink-4);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Up next</div>
+<div style="display:flex;align-items:center;gap:10px">
+<span style="font-size:18px">${nextSlot.icon}</span>
+<div style="flex:1;min-width:0">
+<div style="font-size:11px;color:var(--ink-3);font-weight:600">${nextSlot.label}${nextSlot.time?" · "+nextSlot.time:""}</div>
+<div style="font-size:13px;font-weight:700;color:var(--ink);margin-top:2px">${nextSession.title}</div>
 </div>
-<span class=”pill” style=”background:${nextTag.s};color:${nextTag.c};font-size:8px;padding:3px 7px”>${nextTag.label}</span>
+<span class="pill" style="background:${nextTag.s};color:${nextTag.c};font-size:8px;padding:3px 7px">${nextTag.label}</span>
 </div></div>`);
-nextCard.onclick=()=>{ jumpTo(focusIdx); setNav(“plan”); };
+nextCard.onclick=()=>{ jumpTo(focusIdx); setNav("plan"); };
 inner.appendChild(nextCard);
 }
 
 /* week streak strip with ice/fire indicator */
-const streakBar=el(“div”); streakBar.className=”card”;
-Object.assign(streakBar.style,{padding:”14px 16px”,borderRadius:”var(--r)”,marginBottom:”14px”,display:”flex”,alignItems:”center”,gap:”12px”});
-const streakIcon=streakObj.hasFrozen?”🧊”:”🔥”;
-const streakLabel=streakObj.hasFrozen?”frozen”:”day”;
+const streakBar=el("div"); streakBar.className="card";
+Object.assign(streakBar.style,{padding:"14px 16px",borderRadius:"var(--r)",marginBottom:"14px",display:"flex",alignItems:"center",gap:"12px"});
+const streakIcon=streakObj.hasFrozen?"🧊":"🔥";
+const streakLabel=streakObj.hasFrozen?"frozen":"day";
 streakBar.innerHTML=`
-<div style=”flex:1”>
-<div style=”display:flex;align-items:center;gap:6px”>
-<span style=”font-size:15px” id=”streakIcon”>${streakIcon}</span>
-<span class=”display” style=”font-size:22px;font-weight:800;color:var(--amber)”>${streak}</span>
-<span style=”font-size:11px;color:var(--ink-3);font-weight:700”>${streakLabel} streak</span>
+<div style="flex:1">
+<div style="display:flex;align-items:center;gap:6px">
+<span style="font-size:15px" id="streakIcon">${streakIcon}</span>
+<span class="display" style="font-size:22px;font-weight:800;color:var(--amber)">${streak}</span>
+<span style="font-size:11px;color:var(--ink-3);font-weight:700">${streakLabel} streak</span>
 </div>
 </div>
-<div style=”width:1px;height:28px;background:var(--line-2)”></div>
-<div style=”flex:1”>
-<div style=”display:flex;align-items:center;gap:6px”>
-<span style=”font-size:15px”>🎯</span>
-<span class=”display” style=”font-size:22px;font-weight:800;color:var(--acc)”>${computeSessionStreak()}</span>
-<span style=”font-size:11px;color:var(--ink-3);font-weight:700”>session</span>
+<div style="width:1px;height:28px;background:var(--line-2)"></div>
+<div style="flex:1">
+<div style="display:flex;align-items:center;gap:6px">
+<span style="font-size:15px">🎯</span>
+<span class="display" style="font-size:22px;font-weight:800;color:var(--acc)">${computeSessionStreak()}</span>
+<span style="font-size:11px;color:var(--ink-3);font-weight:700">session</span>
 </div>
 </div>`;
 inner.appendChild(streakBar);
@@ -926,16 +926,16 @@ setTimeout(()=>{ icon.innerHTML='🔥'; icon.className=""; },850);
 }
 
 /* today's stats */
-const statsRow=el(“div”,{display:”grid”,gridTemplateColumns:”1fr 1fr”,gap:”10px”,marginBottom:”14px”});
+const statsRow=el("div",{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"14px"});
 const hrs=Math.floor(tlog.minutes/60), mins=tlog.minutes%60;
 statsRow.innerHTML=`
-<div class=”card” style=”padding:14px;text-align:center;border-radius:var(--r)”>
-<div class=”display” style=”font-size:24px;font-weight:800;color:var(--sky)”>${tlog.sessions}</div>
-<div style=”font-size:9px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;font-weight:700”>Sessions</div>
+<div class="card" style="padding:14px;text-align:center;border-radius:var(--r)">
+<div class="display" style="font-size:24px;font-weight:800;color:var(--sky)">${tlog.sessions}</div>
+<div style="font-size:9px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;font-weight:700">Sessions</div>
 </div>
-<div class=”card” style=”padding:14px;text-align:center;border-radius:var(--r)”>
-<div class=”display” style=”font-size:24px;font-weight:800;color:var(--mint)”>${hrs>0?hrs+”h “+mins+”m”:mins+”m”}</div>
-<div style=”font-size:9px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;font-weight:700”>Studied</div>
+<div class="card" style="padding:14px;text-align:center;border-radius:var(--r)">
+<div class="display" style="font-size:24px;font-weight:800;color:var(--mint)">${hrs>0?hrs+"h "+mins+"m":mins+"m"}</div>
+<div style="font-size:9px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;font-weight:700">Studied</div>
 </div>`;
 inner.appendChild(statsRow);
 
@@ -1758,7 +1758,7 @@ const streak=computeStreak().count;
 const n=nextAchievement();
 showCelebration({eyebrow:"Day conquered",icon:"🏆",
 title:day.date+" — 100%",
-sub:`Every task of “${day.subject}” is done.${streak>1?` ${streak}-day streak alive.`:""} Tomorrow builds on today.`,
+sub:`Every task of "${day.subject}" is done.${streak>1?` ${streak}-day streak alive.`:""} Tomorrow builds on today.`,
 next:n,cta:"On to tomorrow"}); }
 
 /* ════════════════ RENDER CORE ════════════════ */
@@ -1804,8 +1804,10 @@ navEl.appendChild(b); }); }
 
 /* ── docked timer + focus overlay ─────────────────────────── */
 function renderTimerDock(){
+try{
 let existing=document.getElementById("timerDock");
 if(!state.pomo.running){ if(existing) existing.remove(); return; }
+if(!SCHED||!SCHED[state.index]){ if(existing) existing.remove(); return; }
 const rem=getRemainingPomo();
 const mm=Math.floor(rem/60), ss=rem%60;
 const timeStr=`${fmt(mm)}:${fmt(ss)}`;
@@ -1830,8 +1832,11 @@ existing.querySelector(".dtime").textContent=timeStr;
 existing.querySelector(".dphase").textContent=phaseLabel;
 existing.querySelector(".dtask").textContent=taskTitle;
 }
+}catch(e){ console.error("renderTimerDock error:",e); }
 }
 function expandFocusOverlay(){
+try{
+if(!SCHED||!SCHED[state.index]) return;
 let ov=document.getElementById("focusOverlay");
 if(!ov){
 ov=el("div"); ov.id="focusOverlay";
@@ -1871,13 +1876,16 @@ requestAnimationFrame(()=>ov.classList.add("active"));
 }else{
 ov.classList.add("active");
 }
+}catch(e){ console.error("expandFocusOverlay error:",e); }
 }
 function collapseFocusOverlay(){
+try{
 const ov=document.getElementById("focusOverlay");
 if(ov){
 ov.classList.remove("active");
 setTimeout(()=>ov.remove(),350);
 }
+}catch(e){ console.error("collapseFocusOverlay error:",e); }
 }
 
 
@@ -1990,14 +1998,14 @@ guideSheet("Block adult sites — whole device",
 G_NOTE("This uses <b>CleanBrowsing</b>, a free family DNS. It blocks adult content in <b>every app and browser</b> on the device — no app install, no account.")+
 G_HEAD("Android")+
 G_STEP(1,"Settings → Network &amp; Internet → <b>Private DNS</b>")+
-G_STEP(2,"Choose “Private DNS provider hostname”")+
+G_STEP(2,"Choose \"Private DNS provider hostname\"")+
 G_STEP(3,"Enter: <b>adult-filter-dns.cleanbrowsing.org</b>")+
 G_STEP(4,"Save. Done — works on Wi-Fi and mobile data.")+
 G_HEAD("Windows 11")+
 G_STEP(1,"Settings → Network &amp; Internet → Wi-Fi → your network → <b>DNS server assignment</b> → Edit")+
 G_STEP(2,"Switch to Manual → turn on IPv4")+
 G_STEP(3,"Preferred DNS: <b>185.228.168.10</b> · Alternate: <b>185.228.169.11</b>")+
-G_STEP(4,"Set “DNS over HTTPS” to On (automatic) → Save")+
+G_STEP(4,"Set \"DNS over HTTPS\" to On (automatic) → Save")+
 G_HEAD("Make it hard to undo (strict)")+
 G_STEP(1,"Android: Settings → Digital Wellbeing → set a Screen-time PIN, or use Family Link with a parent/friend holding the PIN")+
 G_STEP(2,"Windows: create a separate non-admin account for daily use — changing DNS then requires the admin password. Give that password to someone you trust")+
@@ -2008,8 +2016,8 @@ G_NOTE("A web app can't block other apps — that needs OS power. Use the built-
 G_HEAD("Android — Focus Mode (built in)")+
 G_STEP(1,"Settings → Digital Wellbeing → <b>Focus mode</b>")+
 G_STEP(2,"Tick your distracting apps (Instagram, YouTube…)")+
-G_STEP(3,"Tap “Turn on now” before each study session — icons grey out and notifications mute")+
-G_STEP(4,"Optional: “Set a schedule” to auto-enable during your 5 study slots (8:30, 11:00, 3:00, 6:30, 9:30)")+
+G_STEP(3,"Tap \"Turn on now\" before each study session — icons grey out and notifications mute")+
+G_STEP(4,"Optional: \"Set a schedule\" to auto-enable during your 5 study slots (8:30, 11:00, 3:00, 6:30, 9:30)")+
 G_HEAD("Android — strict (uninstall-proof)")+
 G_STEP(1,"Digital Wellbeing → App timers → set 1-minute timers on distracting apps")+
 G_STEP(2,"Set a Screen-time PIN and have a friend/parent keep it — you literally can't extend the timer alone")+
@@ -2029,9 +2037,9 @@ if(deferredInstall){
 deferredInstall.prompt();
 deferredInstall.userChoice.then(r=>{ if(r.outcome==="accepted") deferredInstall=null; render(); });
 }else if(/iphone|ipad|ipod/i.test(navigator.userAgent)){
-alert("To install on iPhone/iPad:\n\n1. Tap the Share button (□↑) in Safari\n2. Scroll down → “Add to Home Screen”\n3. Tap Add");
+alert("To install on iPhone/iPad:\n\n1. Tap the Share button (□↑) in Safari\n2. Scroll down → \"Add to Home Screen\"\n3. Tap Add");
 }else{
-alert("To install:\n\nOpen the browser menu (⋮) and choose “Install app” / “Add to Home screen”.\n\nNote: install requires the app to be served over https or localhost — not from a file:// path."); } }
+alert("To install:\n\nOpen the browser menu (⋮) and choose \"Install app\" / \"Add to Home screen\".\n\nNote: install requires the app to be served over https or localhost — not from a file:// path."); } }
 
 /* ── ripple ───────────────────────────────────────────── */
 document.addEventListener("pointerdown",e=>{
