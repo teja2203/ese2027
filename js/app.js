@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v30";
+const APP_VERSION="v31";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -124,15 +124,16 @@ const dn=Object.values(state.checked).filter(Boolean).length;
 return {tot,dn,pct:tot?Math.round(dn/tot*100):0}; }
 function doneDaysCount(){ let n=0; for(let i=0;i<SCHED.length;i++){ const s=dayStats(i); if(s.tot&&s.dn===s.tot) n++; } return n; }
 function computeStreak(){
-let streak=0; const d=new Date();
+let streak=0, frozenInStreak=false;
+const d=new Date();
 for(;;){ const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
 const e=state.log[k];
 if(e&&(e.minutes>0||e.sessions>0)) streak++;
-else if(state.freeze[k]) streak++;                      /* frozen day keeps the chain */
+else if(state.freeze[k]){ streak++; frozenInStreak=true; }  /* frozen day keeps the chain */
 else if(streak===0&&k===todayKey()){ /* today not started yet — look back */ }
 else break;
 d.setDate(d.getDate()-1); }
-return streak; }
+return {count:streak, hasFrozen:frozenInStreak}; }
 /* one streak-freeze token per calendar month, auto-spent on a missed day */
 function maybeSpendFreeze(){
 const y=new Date(); y.setDate(y.getDate()-1);
@@ -325,7 +326,7 @@ function tick(){
 const r=getRemainingPomo();
 if(r<=0){ completePhase(); return; }
 bankProgress();
-renderTimerOnly(); }
+renderTimerOnly(); renderTimerDock(); }
 /* minute-by-minute banking: minutes are logged as they are earned, not on completion.
    pomo.logged = minutes already banked for the current work phase. */
 function addMinutes(mins){
@@ -780,7 +781,7 @@ const today=todayDateLabel();
 let idx=SCHED.findIndex(d=>d.date===today);
 const focusIdx=idx>=0?idx:state.index;
 const fd=SCHED[focusIdx], st=dayStats(focusIdx);
-const streak=computeStreak(), tlog=state.log[todayKey()]||{sessions:0,minutes:0};
+const streakObj=computeStreak(), streak=streakObj.count, tlog=state.log[todayKey()]||{sessions:0,minutes:0};
 const inner=el(“div”); inner.className=”stagger”;
 
 inner.appendChild(header(today,`${fd.day} · Day ${focusIdx+1}`));
@@ -886,15 +887,17 @@ nextCard.onclick=()=>{ jumpTo(focusIdx); setNav(“plan”); };
 inner.appendChild(nextCard);
 }
 
-/* week streak strip */
+/* week streak strip with ice/fire indicator */
 const streakBar=el(“div”); streakBar.className=”card”;
 Object.assign(streakBar.style,{padding:”14px 16px”,borderRadius:”var(--r)”,marginBottom:”14px”,display:”flex”,alignItems:”center”,gap:”12px”});
+const streakIcon=streakObj.hasFrozen?”🧊”:”🔥”;
+const streakLabel=streakObj.hasFrozen?”frozen”:”day”;
 streakBar.innerHTML=`
 <div style=”flex:1”>
 <div style=”display:flex;align-items:center;gap:6px”>
-<span style=”font-size:15px”>${IC.flame}</span>
+<span style=”font-size:15px” id=”streakIcon”>${streakIcon}</span>
 <span class=”display” style=”font-size:22px;font-weight:800;color:var(--amber)”>${streak}</span>
-<span style=”font-size:11px;color:var(--ink-3);font-weight:700”>day streak</span>
+<span style=”font-size:11px;color:var(--ink-3);font-weight:700”>${streakLabel} streak</span>
 </div>
 </div>
 <div style=”width:1px;height:28px;background:var(--line-2)”></div>
@@ -906,6 +909,21 @@ streakBar.innerHTML=`
 </div>
 </div>`;
 inner.appendChild(streakBar);
+
+/* ice shatter animation — when continuing after freeze */
+if(streakObj.hasFrozen&&tlog.minutes>0){
+const y=new Date(); y.setDate(y.getDate()-1);
+const yk=`${y.getFullYear()}-${fmt(y.getMonth()+1)}-${fmt(y.getDate())}`;
+if(state.freeze[yk]&&!sessionStorage.getItem("shatter-"+todayKey())){
+sessionStorage.setItem("shatter-"+todayKey(),"1");
+setTimeout(()=>{
+const icon=document.getElementById("streakIcon");
+if(!icon) return;
+icon.innerHTML='🧊'; icon.className="ice-shatter";
+setTimeout(()=>{ icon.innerHTML='🔥'; icon.className=""; },850);
+},600);
+}
+}
 
 /* today's stats */
 const statsRow=el(“div”,{display:”grid”,gridTemplateColumns:”1fr 1fr”,gap:”10px”,marginBottom:”14px”});
@@ -1155,7 +1173,21 @@ const remain=getRemainingPomo(), secs=phaseSecs();
 disp.textContent=fmtTime(remain);
 ph.textContent=state.pomo.phase==="work"?"Focus":"Break";
 const c=2*Math.PI*110;
-prog.setAttribute("stroke-dashoffset",c*(1-(secs?(secs-remain)/secs:0))); }
+prog.setAttribute("stroke-dashoffset",c*(1-(secs?(secs-remain)/secs:0)));
+/* update focus overlay if open */
+const ov=document.getElementById("focusOverlay");
+if(ov&&ov.classList.contains("active")){
+const mm=Math.floor(remain/60), ss=remain%60;
+const bignum=ov.querySelector(".bignum");
+if(bignum) bignum.textContent=`${fmt(mm)}:${fmt(ss)}`;
+const svg=ov.querySelector(".breather svg circle:last-child");
+if(svg){
+const pct=Math.round((1-remain/secs)*100);
+const r=114, c=2*Math.PI*r;
+svg.setAttribute("stroke-dashoffset",c*(1-pct/100));
+}
+}
+}
 
 /* ── flip clock focus mode ────────────────────────────── */
 let wfcEl=null, clockOn=false;
@@ -1273,7 +1305,7 @@ streakCard.innerHTML=`
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
 <div style="text-align:center;padding:16px;background:var(--card-2);border-radius:var(--r)">
 <div style="font-size:11px;color:var(--amber);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Day streak</div>
-<div class="display" style="font-size:36px;font-weight:800;color:var(--amber)">${computeStreak()}</div>
+<div class="display" style="font-size:36px;font-weight:800;color:var(--amber)">${computeStreak().count}</div>
 <div style="font-size:10px;color:var(--ink-3);margin-top:6px;font-weight:600">consecutive days</div>
 </div>
 <div style="text-align:center;padding:16px;background:var(--card-2);border-radius:var(--r)">
@@ -1444,7 +1476,7 @@ const inner=el("div"); inner.className="stagger";
 inner.appendChild(header("You",""));
 
 /* identity card */
-const streak=computeStreak(), sstreak=computeSessionStreak();
+const streakObj=computeStreak(), streak=streakObj.count, sstreak=computeSessionStreak();
 const unlockedCount=ACHIEVEMENTS.filter(a=>state.achievements[a.id]).length;
 const ese=cd(ESE_DATE);
 const totMin=Object.values(state.log).reduce((a,e)=>a+(e.minutes||0),0);
@@ -1606,7 +1638,7 @@ if(!bySubj[b]) bySubj[b]={tot:0,dn:0};
 d.sessions.forEach((s,si)=>{ bySubj[b].tot+=s.tasks.length;
 s.tasks.forEach((_,ti)=>{ if(state.checked[`${i}-${si}-${ti}`]) bySubj[b].dn++; }); }); });
 const subjects=Object.values(bySubj).filter(e=>e.tot>=30&&e.dn===e.tot).length;
-return {sessions,hours:Math.floor(minutes/60),tasks,days:doneDaysCount(),streak:computeStreak(),subjects,sstreak:computeSessionStreak(),mocks:state.mocks.length}; }
+return {sessions,hours:Math.floor(minutes/60),tasks,days:doneDaysCount(),streak:computeStreak().count,subjects,sstreak:computeSessionStreak(),mocks:state.mocks.length}; }
 function achProgress(a,m){ const v=m[a.type]||0; return Math.min(v,a.goal); }
 function checkAchievements(){
 const m=achMetrics();
@@ -1722,7 +1754,7 @@ next:n,cta:"Claim it"}); }
 function celebrateDay(){
 playSound("day");
 const day=SCHED[state.index];
-const streak=computeStreak();
+const streak=computeStreak().count;
 const n=nextAchievement();
 showCelebration({eyebrow:"Day conquered",icon:"🏆",
 title:day.date+" — 100%",
@@ -1759,7 +1791,7 @@ else if(state.nav==="plan") view.appendChild(renderPlan());
 else if(state.nav==="progress") view.appendChild(renderProgress());
 else if(state.nav==="you") view.appendChild(renderYou());
 else view.appendChild(renderToday()); /* fallback */
-renderNav(); updateLandscape(); }
+renderNav(); renderTimerDock(); updateLandscape(); }
 function renderNav(){
 navEl.innerHTML="";
 [["today","Today",IC.home],["plan","Plan",IC.plan],["progress","Progress",IC.stats],["you","You",IC.settings]].forEach(([id,label,icon])=>{
@@ -1769,6 +1801,85 @@ b.setAttribute("aria-current",state.nav===id?"page":"false");
 b.innerHTML=icon+`<span>${label}</span>`;
 b.onclick=()=>setNav(id);
 navEl.appendChild(b); }); }
+
+/* ── docked timer + focus overlay ─────────────────────────── */
+function renderTimerDock(){
+let existing=document.getElementById("timerDock");
+if(!state.pomo.running){ if(existing) existing.remove(); return; }
+const rem=getRemainingPomo();
+const mm=Math.floor(rem/60), ss=rem%60;
+const timeStr=`${fmt(mm)}:${fmt(ss)}`;
+const phaseLabel=state.pomo.phase==="work"?"FOCUS":"BREAK";
+const fd=SCHED[state.index];
+const curSession=fd.sessions.find((_,si)=>!fd.sessions[si].tasks.every((_,ti)=>state.checked[`${state.index}-${si}-${ti}`]));
+const taskTitle=curSession?curSession.subject.split("—")[0].trim():"Study session";
+if(!existing){
+existing=el("div"); existing.id="timerDock";
+existing.innerHTML=`
+<div class="dtime">${timeStr}</div>
+<div class="dmeta">
+<div class="dphase">${phaseLabel}</div>
+<div class="dtask">${taskTitle}</div>
+</div>
+<div class="dbtn" id="dockPause">⏸</div>`;
+document.body.appendChild(existing);
+existing.onclick=e=>{ if(e.target.id!=="dockPause") expandFocusOverlay(); };
+existing.querySelector("#dockPause").onclick=e=>{ e.stopPropagation(); toggleRunning(); };
+}else{
+existing.querySelector(".dtime").textContent=timeStr;
+existing.querySelector(".dphase").textContent=phaseLabel;
+existing.querySelector(".dtask").textContent=taskTitle;
+}
+}
+function expandFocusOverlay(){
+let ov=document.getElementById("focusOverlay");
+if(!ov){
+ov=el("div"); ov.id="focusOverlay";
+const rem=getRemainingPomo();
+const mm=Math.floor(rem/60), ss=rem%60;
+const phaseLabel=state.pomo.phase==="work"?"FOCUS":"BREAK";
+const fd=SCHED[state.index];
+const curSession=fd.sessions.find((_,si)=>!fd.sessions[si].tasks.every((_,ti)=>state.checked[`${state.index}-${si}-${ti}`]));
+const taskTitle=curSession?curSession.subject.split("—")[0].trim():"Study session";
+const pct=Math.round((1-rem/phaseSecs())*100);
+ov.innerHTML=`
+<button class="fexit">Done</button>
+<div class="fchip">${phaseLabel}</div>
+<div class="breather">
+<div class="halo"></div>
+${ring(240,12,pct,"var(--acc)","var(--card-2)")}
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+<div class="bignum">${fmt(mm)}:${fmt(ss)}</div>
+<div class="bigsub">${state.pomo.phase==="work"?"MINUTES":"BREAK"}</div>
+</div>
+</div>
+<div class="ftask">
+<div class="fk">CURRENT TASK</div>
+<div class="ft">${taskTitle}</div>
+</div>
+<div class="fctrl">
+<button class="fbtn" id="fSkip">⏭</button>
+<button class="fbtn main" id="fToggle">${state.pomo.running?"⏸":"▶"}</button>
+<button class="fbtn" id="fReset">⏹</button>
+</div>`;
+document.body.appendChild(ov);
+ov.querySelector(".fexit").onclick=collapseFocusOverlay;
+ov.querySelector("#fToggle").onclick=()=>{ toggleRunning(); if(!state.pomo.running) collapseFocusOverlay(); };
+ov.querySelector("#fSkip").onclick=()=>{ skipPhase(); collapseFocusOverlay(); };
+ov.querySelector("#fReset").onclick=()=>{ resetPomo(); collapseFocusOverlay(); };
+requestAnimationFrame(()=>ov.classList.add("active"));
+}else{
+ov.classList.add("active");
+}
+}
+function collapseFocusOverlay(){
+const ov=document.getElementById("focusOverlay");
+if(ov){
+ov.classList.remove("active");
+setTimeout(()=>ov.remove(),350);
+}
+}
+
 
 /* ── command palette ──────────────────────────────────── */
 let cmdOpen=false;

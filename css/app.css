@@ -564,7 +564,94 @@ select{ font-family:inherit; appearance:none; -webkit-appearance:none;
   .celebrate-card::after,#celebrate::before,
   .celebrate-eyebrow,.celebrate-title,.celebrate-sub,.celebrate-next,.celebrate-cta,
   .hex-grid .hexwrap,.hex.on,.hex.on::before,.hex.on::after,.hex.fresh,
-  .hexwrap.next .hex::after{ animation:none !important; }
+  .hexwrap.next .hex::after,.ice-shatter{ animation:none !important; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   FROZEN STREAK — ice shatter animation
+   ════════════════════════════════════════════════════════════ */
+@keyframes iceShatter{
+  0%{ opacity:1; transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.15) rotate(-8deg); }
+  40%{ transform:scale(1.08) rotate(5deg); }
+  60%{ opacity:.85; transform:scale(1.3) rotate(-15deg); }
+  100%{ opacity:0; transform:scale(1.6) rotate(25deg) translateY(20px); }
+}
+.ice-shatter{ animation:iceShatter 850ms cubic-bezier(.34,1.56,.64,1) both; }
+
+/* ════════════════════════════════════════════════════════════
+   DOCKED TIMER — persistent mini bar when timer running
+   ════════════════════════════════════════════════════════════ */
+#timerDock{ position:fixed; left:50%; transform:translateX(-50%);
+  bottom:calc(var(--nav-h) + 24px + env(safe-area-inset-bottom)); z-index:55;
+  width:calc(100% - 28px); max-width:492px; height:66px;
+  border-radius:18px; padding:12px 14px; cursor:pointer;
+  background:color-mix(in srgb, var(--bg-2) 84%, transparent);
+  backdrop-filter:blur(24px) saturate(150%); -webkit-backdrop-filter:blur(24px) saturate(150%);
+  border:1px solid color-mix(in srgb,var(--acc) 28%,transparent);
+  box-shadow:0 18px 40px -18px rgba(0,0,0,.8),
+             0 0 24px color-mix(in srgb,var(--acc) 22%,transparent);
+  display:flex; align-items:center; gap:12px;
+  animation:dockIn .6s cubic-bezier(.34,1.35,.42,1) both;
+  transition:transform .35s var(--ease-slow), opacity .35s; }
+@keyframes dockIn{ from{ opacity:0; transform:translateX(-50%) translateY(26px) scale(.94);} to{ opacity:1; transform:translateX(-50%);} }
+#timerDock:active{ transform:translateX(-50%) scale(.98); }
+#timerDock .dtime{ font-family:'JetBrains Mono',monospace; font-size:21px; font-weight:700;
+  letter-spacing:-.02em; color:var(--acc); flex:none; }
+#timerDock .dmeta{ flex:1; min-width:0; }
+#timerDock .dphase{ font-size:9.5px; font-weight:700; letter-spacing:.15em;
+  text-transform:uppercase; color:var(--ink-3); }
+#timerDock .dtask{ font-size:12.5px; font-weight:600; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; margin-top:1px; color:var(--ink); }
+#timerDock .dbtn{ width:38px; height:38px; flex:none; border-radius:12px;
+  border:1px solid var(--line-2); background:var(--surface-2);
+  display:grid; place-items:center; font-size:13px; color:var(--ink);
+  transition:all .3s var(--ease-slow); }
+#timerDock .dbtn:hover{ transform:scale(1.08); }
+
+/* ════════════════════════════════════════════════════════════
+   FOCUS OVERLAY — full-screen when dock tapped
+   ════════════════════════════════════════════════════════════ */
+#focusOverlay{ position:fixed; inset:0; z-index:500; display:flex;
+  flex-direction:column; align-items:center; justify-content:center;
+  background:var(--bg); padding:24px; opacity:0; pointer-events:none;
+  transition:opacity .35s ease; }
+#focusOverlay.active{ opacity:1; pointer-events:all; }
+#focusOverlay .fexit{ position:absolute; top:16px; right:16px;
+  padding:10px 16px; border-radius:var(--r-sm); border:1px solid var(--line-2);
+  background:var(--card-2); color:var(--ink-2); font-size:12px; font-weight:600;
+  cursor:pointer; transition:all .3s var(--ease-slow); }
+#focusOverlay .fexit:hover{ border-color:var(--line-2); transform:translateY(-1px); }
+#focusOverlay .fchip{ font-size:10px; font-weight:700; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--acc); padding:7px 14px; border-radius:999px;
+  background:var(--acc-dim); border:1px solid color-mix(in srgb,var(--acc) 28%,transparent);
+  margin-bottom:30px; }
+#focusOverlay .breather{ position:relative; width:240px; height:240px;
+  display:grid; place-items:center; }
+#focusOverlay .breather .halo{ position:absolute; inset:-24px; border-radius:50%;
+  background:radial-gradient(circle, var(--acc-dim), transparent 68%);
+  animation:breathe 7s ease-in-out infinite; }
+@keyframes breathe{ 0%,100%{ transform:scale(1); opacity:.4; } 50%{ transform:scale(1.12); opacity:.7; } }
+#focusOverlay .breather svg{ position:absolute; inset:0; transform:rotate(-90deg); }
+#focusOverlay .bignum{ font-family:'JetBrains Mono',monospace; font-size:52px;
+  font-weight:700; letter-spacing:-.045em; position:relative; line-height:1; }
+#focusOverlay .bigsub{ font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:700; margin-top:8px; position:relative; }
+#focusOverlay .ftask{ margin-top:30px; text-align:center; max-width:270px; }
+#focusOverlay .ftask .fk{ font-size:9.5px; font-weight:700; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:7px; }
+#focusOverlay .ftask .ft{ font-family:var(--display-font); font-size:19px;
+  font-weight:600; line-height:1.3; letter-spacing:-.01em; }
+#focusOverlay .fctrl{ display:flex; gap:11px; margin-top:34px; }
+#focusOverlay .fbtn{ width:56px; height:56px; border-radius:19px;
+  border:1px solid var(--line-2); background:var(--surface-2);
+  display:grid; place-items:center; font-size:17px; color:var(--ink);
+  cursor:pointer; transition:all .35s var(--ease-slow); }
+#focusOverlay .fbtn:hover{ transform:translateY(-2px); }
+#focusOverlay .fbtn.main{ width:78px;
+  background:linear-gradient(175deg,var(--acc-2),var(--acc));
+  color:var(--acc-ink); border-color:transparent;
+  box-shadow:var(--glow), inset 0 1px 0 rgba(255,255,255,.28); }
+.ice-shatter{ display:inline-block; animation:iceShatter .85s cubic-bezier(.34,1.2,.64,1) forwards; }
 
 @media print{ *{ transition:none!important; animation:none!important; box-shadow:none!important; } }
