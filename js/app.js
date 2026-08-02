@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v28";
+const APP_VERSION="v29";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -58,13 +58,38 @@ const d={phase:"work",running:false,targetTs:null,timeLeft:50*60,workMins:50,bre
 if(!p||typeof p!=="object") return d;
 return Object.assign(d,p);
 }
+/* ── theme suits ─────────────────────────────────────────
+   Each suit is a full palette defined in css/app.css under
+   html[data-theme="<id>"]. Adding one here + a CSS block is
+   all that's needed; the picker builds itself from THEMES. */
+const THEMES=[
+{id:"ember", name:"Warm Midnight", desc:"Study-lamp glow", meta:"#0A0E17",
+ sw:["#FF6B35","#C89B3C","#0E1320","#F9F6F0"]},
+{id:"forest",name:"Deep Forest",   desc:"Calm and green",  meta:"#08110D",
+ sw:["#4ADE80","#D4B063","#0C1913","#EAF3ED"]},
+{id:"ice",   name:"Graphite & Ice",desc:"Cool and clinical",meta:"#0B0D10",
+ sw:["#7DD3FC","#CBB994","#12161B","#F1F5F9"]},
+{id:"paper", name:"Paper Light",   desc:"Daylight reading", meta:"#F6F2EA",
+ sw:["#B4451F","#9A7524","#FFFDF8","#1C1712"]},
+];
+const THEME_IDS=THEMES.map(t=>t.id);
+/* migrate the old binary dark/light preference */
+function loadTheme(){
+  const v=loadJSON(THEME_KEY,"ember");
+  if(v==="dark") return "ember";
+  if(v==="light") return "paper";
+  return THEME_IDS.includes(v)?v:"ember";
+}
+function themeMeta(id){ const t=THEMES.find(x=>x.id===id); return t?t.meta:"#0A0E17"; }
+function isLightTheme(id){ return id==="paper"; }
+
 const state={
 nav:loadJSON(NAV_KEY,"home"),
 index:loadJSON(IDX_KEY,0),
 checked:loadJSON(STORAGE_KEY,{}),
 pomo:normalizePomo(loadJSON(POMO_KEY,null)),
 log:loadJSON(LOG_KEY,{}),
-theme:loadJSON(THEME_KEY,"dark"),
+theme:loadTheme(),
 expandedSessions:loadJSON(EXP_KEY,{}),
 achievements:loadJSON(ACH_KEY,{}),
 celebratedDays:loadJSON(CELEB_KEY,{}),
@@ -739,7 +764,7 @@ ${sub?`<div style="font-size:12.5px;color:var(--ink-3);margin-top:4px;font-weigh
 </header>`); }
 function wireTheme(root){
 const b=root.querySelector("#themeBtn");
-if(b) b.onclick=()=>{ state.theme=state.theme==="dark"?"light":"dark"; saveJSON(THEME_KEY,state.theme); render(); }; }
+if(b) b.onclick=cycleTheme; }
 function ring(size,stroke,pct,color,track){
 const r=(size-stroke)/2, c=2*Math.PI*r;
 return `<svg width="${size}" height="${size}" style="transform:rotate(-90deg)" aria-hidden="true">
@@ -1312,8 +1337,9 @@ ACHIEVEMENTS.forEach(a=>{
 const rec=state.achievements[a.id], on=!!rec;
 const have=achProgress(a,m), pct=Math.round(have/a.goal*100);
 const isNext=nx&&nx.a.id===a.id;
-ah+=`<div class="hexwrap" title="${a.desc}">
-<div class="hex ${on?"on":"locked"}" style="--bc:${a.bc||"var(--amber)"}">
+const fresh=on&&rec.at&&(Date.now()-new Date(rec.at).getTime())<8000;
+ah+=`<div class="hexwrap ${isNext?"next":""}" title="${a.desc}">
+<div class="hex ${on?"on":"locked"} ${fresh?"fresh":""}" style="--bc:${a.bc||"var(--amber)"}">
 <div class="hicon">${a.icon}</div>
 <div class="hlabel">${a.title}</div>
 </div>
@@ -1412,8 +1438,29 @@ row("Strict focus lock","During focus: Stop / Pause / Back need a 5-second hold,
 row("Block adult sites — whole device","Free, built into Android & Windows via DNS. Tap for 2-min setup","→",showBlockGuide),
 row("Block distracting apps","Uses Android Focus Mode / Windows Focus — tap for setup","→",showAppBlockGuide),
 ])));
-inner.appendChild(acc("app","⚙️","App & data","",()=>rows([
-row("Dark theme","Easier on the eyes for long sessions",toggleUI(state.theme==="dark"),()=>{ state.theme=state.theme==="dark"?"light":"dark"; saveJSON(THEME_KEY,state.theme); render(); }),
+inner.appendChild(acc("app","⚙️","App & data","",()=>{
+const wrap=el("div");
+/* theme picker */
+const themeRow=el("div"); themeRow.style.cssText="padding:12px 2px 2px;border-top:1px solid var(--line)";
+const themeLabel=el("div"); themeLabel.style.cssText="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px";
+themeLabel.textContent="Theme suit";
+const themeDesc=el("div"); themeDesc.style.cssText="font-size:11px;color:var(--ink-3);margin-bottom:10px;line-height:1.4";
+themeDesc.textContent="Choose a palette — applies instantly everywhere.";
+const grid=el("div"); grid.className="theme-grid";
+THEMES.forEach(t=>{
+const card=el("button"); card.className=`theme-card ${state.theme===t.id?"on":""}`;
+card.setAttribute("data-id",t.id);
+card.innerHTML=`<div class="swatch">${t.sw.map(c=>`<i style="background:${c}"></i>`).join("")}</div>
+<span class="tname">${t.name}</span>
+<span class="tdesc">${t.desc}</span>
+<span class="tick">✓</span>`;
+card.onclick=()=>setTheme(t.id);
+grid.appendChild(card); });
+themeRow.appendChild(themeLabel); themeRow.appendChild(themeDesc); themeRow.appendChild(grid);
+wrap.appendChild(themeRow);
+/* rest of app settings */
+return rows([
+wrap,
 isStandalone()
 ? row("Installed as app","Running standalone · offline ready","✓")
 : row("Install app","Add to home screen — full screen, offline, notifications","⬇",installApp),
@@ -1426,7 +1473,7 @@ if(!confirm("Sign out from ESE2027?")) return;
 try{ if(window.sbAuth) await window.sbAuth.signOut(); }catch(e){}
 toast("Signed out"); }),
 row("Shortcuts","⌘K palette · 1–5 tabs · T theme · Z undo · Space timer",""),
-])));
+]); }));
 
 inner.appendChild(html(`<div style="text-align:center;font-size:11px;color:var(--ink-4);line-height:1.9;padding:8px 0 20px">
 ESE2027 Study OS · ${APP_VERSION}<br>Built for one goal — Jan 31, 2027</div>`));
@@ -1599,10 +1646,21 @@ sub:`Every task of “${day.subject}” is done.${streak>1?` ${streak}-day strea
 next:n,cta:"On to tomorrow"}); }
 
 /* ════════════════ RENDER CORE ════════════════ */
-function render(){
-document.body.classList.toggle("light",state.theme==="light");
+function applyTheme(){
+document.documentElement.setAttribute("data-theme",state.theme);
+document.body.classList.toggle("light",isLightTheme(state.theme));
 const tc=document.querySelector('meta[name="theme-color"]');
-if(tc) tc.setAttribute("content",state.theme==="light"?"#F4F5F2":"#0D0F12");
+if(tc) tc.setAttribute("content",themeMeta(state.theme)); }
+function setTheme(id){
+if(!THEME_IDS.includes(id)) return;
+state.theme=id; saveJSON(THEME_KEY,id); applyTheme(); render();
+const t=THEMES.find(x=>x.id===id); toast(t.name); }
+function cycleTheme(){
+const i=THEME_IDS.indexOf(state.theme);
+setTheme(THEME_IDS[(i+1)%THEME_IDS.length]); }
+
+function render(){
+applyTheme();
 syncPomoState();
 syncWakeLock();
 view.innerHTML="";
@@ -1632,7 +1690,7 @@ const c=[
 {i:"◈",l:"Go to Progress",r:()=>setNav("stats")},
 {i:"◈",l:"Go to Settings",r:()=>setNav("settings")},
 {i:"→",l:"Jump to today",r:()=>{ goToday(); if(state.nav!=="plan") setNav("plan"); }},
-{i:"◐",l:state.theme==="dark"?"Switch to light theme":"Switch to dark theme",r:()=>{ state.theme=state.theme==="dark"?"light":"dark"; saveJSON(THEME_KEY,state.theme); render(); }},
+...THEMES.map(t=>({i:"◐",l:"Theme — "+t.name,r:()=>setTheme(t.id)})),
 {i:"▸",l:state.pomo.running?"Pause timer":"Start timer",r:toggleRunning},
 {i:"↺",l:"Reset timer",r:resetPomo},
 {i:"⌫",l:"Undo last check",r:undoLast},
@@ -1701,7 +1759,7 @@ case "2": setNav("plan"); break;
 case "3": setNav("focus"); break;
 case "4": setNav("stats"); break;
 case "5": setNav("settings"); break;
-case "t": case "T": state.theme=state.theme==="dark"?"light":"dark"; saveJSON(THEME_KEY,state.theme); render(); break;
+case "t": case "T": cycleTheme(); break;
 case " ": if(state.nav==="focus"){ e.preventDefault(); if(strictActive()){ toast("Strict mode — hold Pause on the clock"); break; } toggleRunning(); } break;
 case "ArrowLeft": if(state.nav==="plan"&&state.index>0) navDay(-1); break;
 case "ArrowRight": if(state.nav==="plan"&&state.index<SCHED.length-1) navDay(1); break;
@@ -1867,6 +1925,7 @@ window.addEventListener("beforeunload",function(){ if(user) push(); });
 })();
 
 /* ── boot ─────────────────────────────────────────────── */
+applyTheme();
 render();
 /* animated splash → hand off to the app once the intro has played */
 (function(){
