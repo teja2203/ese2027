@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v29";
+const APP_VERSION="v30";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -84,7 +84,7 @@ function themeMeta(id){ const t=THEMES.find(x=>x.id===id); return t?t.meta:"#0A0
 function isLightTheme(id){ return id==="paper"; }
 
 const state={
-nav:loadJSON(NAV_KEY,"home"),
+nav:loadJSON(NAV_KEY,"today"),
 index:loadJSON(IDX_KEY,0),
 checked:loadJSON(STORAGE_KEY,{}),
 pomo:normalizePomo(loadJSON(POMO_KEY,null)),
@@ -773,110 +773,153 @@ return `<svg width="${size}" height="${size}" style="transform:rotate(-90deg)" a
 stroke-dasharray="${c}" stroke-dashoffset="${c*(1-pct/100)}" style="transition:stroke-dashoffset .8s var(--ease)"/>
 </svg>`; }
 
-/* ════════════════ HOME ════════════════ */
-function renderHome(){
-const wrap=el("div"); wrap.className="screen view";
+/* ════════════════ TODAY ════════════════ */
+function renderToday(){
+const wrap=el(“div”); wrap.className=”screen view”;
 const today=todayDateLabel();
 let idx=SCHED.findIndex(d=>d.date===today);
 const focusIdx=idx>=0?idx:state.index;
 const fd=SCHED[focusIdx], st=dayStats(focusIdx);
 const streak=computeStreak(), tlog=state.log[todayKey()]||{sessions:0,minutes:0};
-const ov=overall(); const apt=cd(APT_DATE), ese=cd(ESE_DATE);
-const inner=el("div"); inner.className="stagger";
+const inner=el(“div”); inner.className=”stagger”;
 
-inner.appendChild(header("ESE 2027","Study OS"));
+inner.appendChild(header(today,`${fd.day} · Day ${focusIdx+1}`));
 
 /* greeting */
-inner.appendChild(html(`<div style="margin-bottom:18px">
-<div style="font-size:13px;color:var(--ink-3);font-weight:600">${greeting()}, Teja</div>
-<div style="font-size:13.5px;color:var(--ink-2);margin-top:6px;line-height:1.55;font-style:italic">“${dailyQuote()}”</div>
+inner.appendChild(html(`<div style=”margin-bottom:14px”>
+<div style=”font-size:13px;color:var(--ink-3);font-weight:600”>${greeting()}, Teja</div>
+<div style=”font-size:13.5px;color:var(--ink-2);margin-top:6px;line-height:1.55;font-style:italic”>”${dailyQuote()}”</div>
 </div>`));
 
-/* hero — today's mission */
-const hero=el("div"); hero.className="card lift press";
-Object.assign(hero.style,{borderRadius:"var(--r-lg)",padding:"22px",marginBottom:"14px",cursor:"pointer",border:"1px solid var(--line-2)"});
-hero.innerHTML=`
-<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
-<div style="flex:1;min-width:0">
-<span class="pill" style="background:var(--acc-dim);color:var(--acc)">${idx>=0?"Today · "+fd.day:"Up next"}</span>
-<div class="display" style="font-size:28px;font-weight:800;margin-top:12px;color:var(--ink);line-height:1.1">${fd.subject}</div>
-<div style="font-size:12.5px;color:var(--ink-3);margin-top:7px;font-weight:600">${fd.date} · ${st.dn}/${st.tot} tasks done</div>
-<div class="track" style="height:8px;margin-top:16px">
-<div class="fill" style="width:${st.pct}%"></div>
+/* segmented day bar — 5 dots showing session progress */
+const dayBar=el(“div”,{display:”flex”,alignItems:”center”,gap:”6px”,marginBottom:”16px”,justifyContent:”center”});
+fd.sessions.forEach((s,si)=>{
+const done=s.tasks.every((_,ti)=>state.checked[`${focusIdx}-${si}-${ti}`]);
+const current=!done&&fd.sessions.slice(0,si).every((ps,psi)=>ps.tasks.every((_,ti)=>state.checked[`${focusIdx}-${psi}-${ti}`]));
+const dot=el(“div”);
+Object.assign(dot.style,{width:current?”14px”:”8px”,height:current?”14px”:”8px”,borderRadius:”50%”,
+background:done?”var(--acc)”:current?”var(--acc)”:”var(--card-2)”,transition:”all .3s var(--spring)”,
+border:current?”2px solid var(--acc)”:”none”});
+dayBar.appendChild(dot); });
+inner.appendChild(dayBar);
+
+/* find current session — first incomplete */
+let curSi=-1;
+for(let si=0;si<fd.sessions.length;si++){
+const done=fd.sessions[si].tasks.every((_,ti)=>state.checked[`${focusIdx}-${si}-${ti}`]);
+if(!done){ curSi=si; break; }
+}
+if(curSi===-1) curSi=fd.sessions.length-1; /* all done — show last session */
+
+const curSession=fd.sessions[curSi];
+const t=tagOf(curSession.tag);
+const slot=SLOTS[curSi]||{label:”Session”,time:””,icon:”•”,desc:””};
+const tasksDone=curSession.tasks.filter((_,ti)=>state.checked[`${focusIdx}-${curSi}-${ti}`]).length;
+const pct=Math.round(tasksDone/curSession.tasks.length*100);
+const allDone=tasksDone===curSession.tasks.length;
+const sstreak=slotStreak(curSi);
+
+/* current slot card */
+const slotCard=el(“div”); slotCard.className=”card”;
+Object.assign(slotCard.style,{borderRadius:”var(--r-lg)”,padding:”20px”,marginBottom:”14px”,border:”2px solid var(--acc)”});
+slotCard.innerHTML=`
+<div style=”display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap”>
+<div style=”font-size:22px”>${slot.icon}</div>
+<div style=”flex:1;min-width:0”>
+<div style=”font-size:12px;color:var(--ink-3);font-weight:700”>${slot.label}${slot.time?” · “+slot.time:””}</div>
+<div style=”font-size:16px;font-weight:800;color:var(--ink);margin-top:2px”>${curSession.title}</div>
 </div>
+${sstreak>0?`<span class=”pill” style=”background:var(--amber-soft);color:var(--amber);font-size:9px;padding:4px 9px”>${IC.flame} ${sstreak}</span>`:””}
+<span class=”pill” style=”background:${t.s};color:${t.c};font-size:9px;padding:4px 9px”>${t.label}</span>
 </div>
-<div style="position:relative;flex-shrink:0;width:76px;height:76px">
-${ring(76,7,st.pct,"var(--acc)")}
-<div class="mono" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:var(--ink)">${st.pct}%</div>
+<div style=”font-size:11px;color:var(--ink-3);margin-bottom:12px;line-height:1.5”>${slot.desc}</div>
+<div style=”display:flex;justify-content:space-between;align-items:center;margin-bottom:10px”>
+<span style=”font-size:12px;font-weight:700;color:var(--ink-2)”>${tasksDone}/${curSession.tasks.length} tasks</span>
+<span class=”mono” style=”font-size:13px;font-weight:800;color:var(--acc)”>${pct}%</span>
 </div>
-</div>
-<div style="display:flex;align-items:center;gap:8px;margin-top:16px;color:var(--acc);font-size:13px;font-weight:700">
-Open today's plan ${IC.right}
+<div class=”track” style=”height:7px;margin-bottom:16px”><div class=”fill” style=”width:${pct}%”></div></div>`;
+
+/* task list inline */
+const taskList=el(“div”,{display:”flex”,flexDirection:”column”,gap:”6px”,marginBottom:”16px”});
+curSession.tasks.forEach((task,ti)=>{
+const k=`${focusIdx}-${curSi}-${ti}`, on=!!state.checked[k], shk=!!state.shaky[k];
+const row=el(“div”); row.className=”taskrow”+(on?” done”:””);
+row.setAttribute(“role”,”checkbox”); row.setAttribute(“aria-checked”,on?”true”:”false”); row.tabIndex=0;
+row.innerHTML=`<span class=”chk${on?” on”:””}” style=”color:var(--acc-ink)”>${on?IC.check:””}</span><span class=”txt” style=”flex:1”>${task}</span>
+<button class=”shakybtn press” aria-label=”${shk?”Remove shaky flag”:”Mark as shaky”}” title=”Mark topic as shaky” style=”border:none;background:none;cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0;opacity:${shk?”1”:”.28”};filter:${shk?”none”:”grayscale(1)”}”>⚠️</button>`;
+row.onclick=()=>{ state.index=focusIdx; toggleTask(curSi,ti); };
+row.querySelector(“.shakybtn”).onclick=e=>{ e.stopPropagation(); state.index=focusIdx; toggleShaky(curSi,ti); };
+row.onkeydown=e=>{ if(e.key===” “||e.key===”Enter”){ e.preventDefault(); state.index=focusIdx; toggleTask(curSi,ti); } };
+taskList.appendChild(row); });
+slotCard.appendChild(taskList);
+
+/* ring + start button */
+const actions=el(“div”,{display:”flex”,alignItems:”center”,gap:”14px”});
+actions.innerHTML=`
+<div style=”position:relative;width:68px;height:68px;flex-shrink:0”>
+${ring(68,6,pct,”var(--acc)”)}
+<div class=”mono” style=”position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--ink)”>${pct}%</div>
 </div>`;
-hero.onclick=()=>{ jumpTo(focusIdx); setNav("plan"); };
-inner.appendChild(hero);
+const startBtn=html(`<button class=”btn ${allDone?”btn-ghost”:”btn-acc”} press” style=”flex:1”>${allDone?”✓ Done”:”▶ Start focus”}</button>`);
+if(!allDone) startBtn.onclick=()=>{ if(!state.pomo.running) toggleRunning(); };
+actions.appendChild(startBtn);
+slotCard.appendChild(actions);
+inner.appendChild(slotCard);
 
-/* stat tiles */
-const tiles=el("div",{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"14px"});
-[[IC.flame,streak,"day streak","var(--amber)","var(--amber-soft)"],
- ["🎯",computeSessionStreak(),"session streak","var(--acc)","var(--acc-dim)"],
- [IC.bolt,(tlog.minutes>=60?Math.floor(tlog.minutes/60)+"h "+(tlog.minutes%60)+"m":tlog.minutes+"m"),"today","var(--sky)","var(--sky-soft)"],
- [IC.trophy,doneDaysCount(),"days cleared","var(--mint)","var(--mint-soft)"]
-].forEach(([ic,big,label,c,s])=>{
-tiles.appendChild(html(`<div class="card lift" style="padding:14px 10px;text-align:center;border-radius:var(--r)">
-<div style="display:inline-flex;width:32px;height:32px;border-radius:10px;background:${s};color:${c};align-items:center;justify-content:center;font-size:15px">${ic}</div>
-<div class="display" style="font-size:22px;font-weight:800;color:var(--ink);margin-top:8px">${big}</div>
-<div style="font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-top:4px">${label}</div>
-</div>`)); });
-inner.appendChild(tiles);
-
-/* countdowns — single compact strip */
-inner.appendChild(html(`<div class="card" style="padding:13px 16px;border-radius:var(--r);margin-bottom:14px;display:flex;align-items:center;gap:12px">
-<div style="flex:1;display:flex;align-items:center;gap:8px">
-<span style="width:7px;height:7px;border-radius:50%;background:var(--rose);flex-shrink:0"></span>
-<div><div style="font-size:9px;color:var(--rose);font-weight:800;letter-spacing:.06em;text-transform:uppercase">APTRANSCO</div>
-<div class="display mono" style="font-size:17px;font-weight:800;color:var(--ink)">${apt.d}<span style="font-size:10px;color:var(--ink-3)">d</span> ${apt.h}<span style="font-size:10px;color:var(--ink-3)">h</span></div></div>
+/* up next peek — only if not the last session */
+if(curSi<fd.sessions.length-1){
+const nextSi=curSi+1;
+const nextSession=fd.sessions[nextSi];
+const nextSlot=SLOTS[nextSi]||{label:”Session”,time:””,icon:”•”};
+const nextTag=tagOf(nextSession.tag);
+const nextCard=html(`<div class=”card lift press” style=”padding:14px 16px;border-radius:var(--r);margin-bottom:14px;cursor:pointer;border:1px solid var(--line-2)”>
+<div style=”font-size:10px;color:var(--ink-4);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px”>Up next</div>
+<div style=”display:flex;align-items:center;gap:10px”>
+<span style=”font-size:18px”>${nextSlot.icon}</span>
+<div style=”flex:1;min-width:0”>
+<div style=”font-size:11px;color:var(--ink-3);font-weight:600”>${nextSlot.label}${nextSlot.time?” · “+nextSlot.time:””}</div>
+<div style=”font-size:13px;font-weight:700;color:var(--ink);margin-top:2px”>${nextSession.title}</div>
 </div>
-<div style="width:1px;height:32px;background:var(--line-2)"></div>
-<div style="flex:1;display:flex;align-items:center;gap:8px">
-<span style="width:7px;height:7px;border-radius:50%;background:var(--sky);flex-shrink:0"></span>
-<div><div style="font-size:9px;color:var(--sky);font-weight:800;letter-spacing:.06em;text-transform:uppercase">ESE 2027</div>
-<div class="display mono" style="font-size:17px;font-weight:800;color:var(--ink)">${ese.d}<span style="font-size:10px;color:var(--ink-3)">d</span> ${ese.h}<span style="font-size:10px;color:var(--ink-3)">h</span></div></div>
-</div>
-</div>`));
+<span class=”pill” style=”background:${nextTag.s};color:${nextTag.c};font-size:8px;padding:3px 7px”>${nextTag.label}</span>
+</div></div>`);
+nextCard.onclick=()=>{ jumpTo(focusIdx); setNav(“plan”); };
+inner.appendChild(nextCard);
+}
 
-/* next achievement teaser — the carrot (tap → Profile) */
-const nx=nextAchievement();
-if(nx){
-const t=html(`<div class="card lift press" style="padding:12px 16px;border-radius:var(--r);margin-bottom:14px;cursor:pointer;display:flex;align-items:center;gap:12px;border:1px solid var(--line-2)">
-<div style="width:36px;height:36px;border-radius:12px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:17px;filter:grayscale(1);opacity:.8;flex-shrink:0">${nx.a.icon}</div>
-<div style="flex:1;min-width:0">
-<div style="display:flex;justify-content:space-between;align-items:center">
-<span style="font-size:12px;font-weight:700;color:var(--ink)">${nx.a.title}</span>
-<span class="mono" style="font-size:10px;font-weight:800;color:var(--amber)">${nx.pct}%</span></div>
-<div class="track" style="height:4px;margin-top:6px"><div class="fill" style="width:${nx.pct}%;background:var(--amber)"></div></div>
+/* week streak strip */
+const streakBar=el(“div”); streakBar.className=”card”;
+Object.assign(streakBar.style,{padding:”14px 16px”,borderRadius:”var(--r)”,marginBottom:”14px”,display:”flex”,alignItems:”center”,gap:”12px”});
+streakBar.innerHTML=`
+<div style=”flex:1”>
+<div style=”display:flex;align-items:center;gap:6px”>
+<span style=”font-size:15px”>${IC.flame}</span>
+<span class=”display” style=”font-size:22px;font-weight:800;color:var(--amber)”>${streak}</span>
+<span style=”font-size:11px;color:var(--ink-3);font-weight:700”>day streak</span>
 </div>
-</div>`);
-t.onclick=()=>setNav("settings");
-inner.appendChild(t); }
-
-/* overall progress — compact strip */
-inner.appendChild(html(`<div class="card" style="padding:13px 16px;border-radius:var(--r);margin-bottom:14px">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-<span style="font-size:11.5px;font-weight:700;color:var(--ink-2)">Full syllabus · ${ov.dn}/${ov.tot}</span>
-<span class="mono" style="font-size:11.5px;font-weight:800;color:var(--acc)">${ov.pct}%</span>
 </div>
-<div class="track" style="height:7px"><div class="fill" style="width:${ov.pct}%"></div></div>
-</div>`));
+<div style=”width:1px;height:28px;background:var(--line-2)”></div>
+<div style=”flex:1”>
+<div style=”display:flex;align-items:center;gap:6px”>
+<span style=”font-size:15px”>🎯</span>
+<span class=”display” style=”font-size:22px;font-weight:800;color:var(--acc)”>${computeSessionStreak()}</span>
+<span style=”font-size:11px;color:var(--ink-3);font-weight:700”>session</span>
+</div>
+</div>`;
+inner.appendChild(streakBar);
 
-/* quick actions */
-const qa=el("div",{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"});
-const q1=html(`<button class="btn btn-acc press" style="width:100%">${IC.play} Start focus</button>`);
-q1.onclick=()=>setNav("focus");
-const q2=html(`<button class="btn btn-ghost press" style="width:100%">${IC.stats} Progress</button>`);
-q2.onclick=()=>setNav("stats");
-qa.appendChild(q1); qa.appendChild(q2);
-inner.appendChild(qa);
+/* today's stats */
+const statsRow=el(“div”,{display:”grid”,gridTemplateColumns:”1fr 1fr”,gap:”10px”,marginBottom:”14px”});
+const hrs=Math.floor(tlog.minutes/60), mins=tlog.minutes%60;
+statsRow.innerHTML=`
+<div class=”card” style=”padding:14px;text-align:center;border-radius:var(--r)”>
+<div class=”display” style=”font-size:24px;font-weight:800;color:var(--sky)”>${tlog.sessions}</div>
+<div style=”font-size:9px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;font-weight:700”>Sessions</div>
+</div>
+<div class=”card” style=”padding:14px;text-align:center;border-radius:var(--r)”>
+<div class=”display” style=”font-size:24px;font-weight:800;color:var(--mint)”>${hrs>0?hrs+”h “+mins+”m”:mins+”m”}</div>
+<div style=”font-size:9px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;font-weight:700”>Studied</div>
+</div>`;
+inner.appendChild(statsRow);
 
 wrap.appendChild(inner); wireTheme(wrap); return wrap; }
 
@@ -1183,12 +1226,81 @@ const instant=!wasActive;                         /* opening frame: snap digits,
 setFlip(ov.querySelector("#wfcMin"),fmt(Math.floor(remain/60)),instant);
 setFlip(ov.querySelector("#wfcSec"),fmt(remain%60),instant); }
 
-/* ════════════════ STATS ════════════════ */
-function renderStats(){
+/* ════════════════ PROGRESS ════════════════ */
+function renderProgress(){
 const wrap=el("div"); wrap.className="screen view";
 const inner=el("div"); inner.className="stagger";
 inner.appendChild(header("Progress","Your numbers, honestly"));
 const ov=overall();
+
+/* most recent celebration teaser */
+const recentAch=ACHIEVEMENTS.filter(a=>state.achievements[a.id]).sort((a,b)=>{
+const tA=new Date(state.achievements[a.id].at).getTime();
+const tB=new Date(state.achievements[b.id].at).getTime();
+return tB-tA; })[0];
+if(recentAch){
+const rec=state.achievements[recentAch.id];
+const daysAgo=Math.floor((Date.now()-new Date(rec.at).getTime())/864e5);
+const timeStr=daysAgo===0?"Today":daysAgo===1?"Yesterday":`${daysAgo} days ago`;
+const celebCard=html(`<div class="card lift press" style="padding:16px;border-radius:var(--r-lg);margin-bottom:14px;background:linear-gradient(135deg, var(--card) 0%, var(--card-2) 100%);border:1px solid var(--line-2);cursor:pointer">
+<div style="display:flex;align-items:center;gap:12px">
+<div style="width:48px;height:48px;border-radius:14px;background:var(--acc-dim);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">${recentAch.icon}</div>
+<div style="flex:1;min-width:0">
+<div style="font-size:10px;color:var(--ink-4);font-weight:700;text-transform:uppercase;letter-spacing:.06em">Latest achievement · ${timeStr}</div>
+<div style="font-size:14px;font-weight:800;color:var(--ink);margin-top:3px">${recentAch.title}</div>
+<div style="font-size:11px;color:var(--ink-3);margin-top:2px">${recentAch.desc}</div>
+</div>
+</div></div>`);
+celebCard.onclick=()=>setNav("you");
+inner.appendChild(celebCard); }
+
+/* achievements section */
+const achSection=el("div"); achSection.className="card";
+Object.assign(achSection.style,{padding:"18px",borderRadius:"var(--r-lg)",marginBottom:"14px"});
+const unlockedCount=ACHIEVEMENTS.filter(a=>state.achievements[a.id]).length;
+achSection.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+<div style="font-size:14px;font-weight:800;color:var(--ink)">🏅 Achievements</div>
+<span class="pill" style="background:var(--acc-dim);color:var(--acc)">${unlockedCount} / ${ACHIEVEMENTS.length}</span>
+</div>`;
+achSection.appendChild(buildAchievements());
+inner.appendChild(achSection);
+
+/* streaks section */
+const streakCard=el("div"); streakCard.className="card";
+Object.assign(streakCard.style,{padding:"20px",borderRadius:"var(--r-lg)",marginBottom:"14px"});
+streakCard.innerHTML=`
+<div style="font-size:14px;font-weight:800;color:var(--ink);margin-bottom:16px">🔥 Streaks</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+<div style="text-align:center;padding:16px;background:var(--card-2);border-radius:var(--r)">
+<div style="font-size:11px;color:var(--amber);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Day streak</div>
+<div class="display" style="font-size:36px;font-weight:800;color:var(--amber)">${computeStreak()}</div>
+<div style="font-size:10px;color:var(--ink-3);margin-top:6px;font-weight:600">consecutive days</div>
+</div>
+<div style="text-align:center;padding:16px;background:var(--card-2);border-radius:var(--r)">
+<div style="font-size:11px;color:var(--acc);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Session streak</div>
+<div class="display" style="font-size:36px;font-weight:800;color:var(--acc)">${computeSessionStreak()}</div>
+<div style="font-size:10px;color:var(--ink-3);margin-top:6px;font-weight:600">in-slot focus</div>
+</div>
+</div>`;
+inner.appendChild(streakCard);
+
+/* heat map — 5 weeks */
+const heat=el("div"); heat.className="card";
+Object.assign(heat.style,{padding:"18px",borderRadius:"var(--r)",marginBottom:"14px"});
+let hh='<div style="font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:14px">Consistency · last 5 weeks</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">';
+const tk=todayKey();
+for(let i=34;i>=0;i--){
+const d=new Date(); d.setDate(d.getDate()-i);
+const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
+const m=(state.log[k]||{minutes:0}).minutes;
+let c="var(--heat-0)";
+if(m>0) c="var(--heat-1)"; if(m>=120) c="var(--heat-2)"; if(m>=300) c="var(--heat-3)"; if(m>=480) c="var(--heat-4)";
+hh+=`<div title="${k} · ${m} min" style="aspect-ratio:1;border-radius:7px;background:${c};${k===tk?"box-shadow:0 0 0 2px var(--acc);":""}"></div>`; }
+hh+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:12px;justify-content:flex-end"><span style="font-size:9px;color:var(--ink-4);font-weight:600">0h</span>';
+["var(--heat-0)","var(--heat-1)","var(--heat-2)","var(--heat-3)","var(--heat-4)"].forEach(c=>hh+=`<span style="width:10px;height:10px;border-radius:3px;background:${c}"></span>`);
+hh+='<span style="font-size:9px;color:var(--ink-4);font-weight:600">8h+</span></div>';
+heat.innerHTML=hh;
+inner.appendChild(heat);
 
 /* overall ring + counters */
 const top=el("div"); top.className="card";
@@ -1202,9 +1314,9 @@ ${ring(118,11,ov.pct,"var(--acc)")}
 </div></div>
 <div style="flex:1;display:flex;flex-direction:column;gap:10px">
 <div><div class="display" style="font-size:20px;font-weight:800;color:var(--mint)">${doneDaysCount()}</div><div style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">days cleared</div></div>
-<div><div class="display" style="font-size:20px;font-weight:800;color:var(--amber)">${computeStreak()}</div><div style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">day streak</div></div>
-<div><div class="display" style="font-size:20px;font-weight:800;color:var(--acc)">${computeSessionStreak()}</div><div style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">session streak</div></div>
 <div><div class="display" style="font-size:20px;font-weight:800;color:var(--sky)">${ov.dn}</div><div style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">tasks done</div></div>
+<div><div class="display" style="font-size:20px;font-weight:800;color:var(--amber)">${Object.values(state.log).reduce((a,e)=>a+(e.sessions||0),0)}</div><div style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">total sessions</div></div>
+<div><div class="display" style="font-size:20px;font-weight:800;color:var(--acc)">${Math.floor(Object.values(state.log).reduce((a,e)=>a+(e.minutes||0),0)/60)}h</div><div style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">total hours</div></div>
 </div>`;
 inner.appendChild(top);
 
@@ -1228,24 +1340,6 @@ bh+="</div>";
 bars.innerHTML=bh;
 inner.appendChild(bars);
 
-/* heat map — 5 weeks */
-const heat=el("div"); heat.className="card";
-Object.assign(heat.style,{padding:"18px",borderRadius:"var(--r)",marginBottom:"14px"});
-let hh='<div style="font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:14px">Consistency · last 5 weeks</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">';
-const tk=todayKey();
-for(let i=34;i>=0;i--){
-const d=new Date(); d.setDate(d.getDate()-i);
-const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
-const m=(state.log[k]||{minutes:0}).minutes;
-let c="var(--heat-0)";                                   /* 0 min = red — no hiding */
-if(m>0) c="var(--heat-1)"; if(m>=120) c="var(--heat-2)"; if(m>=300) c="var(--heat-3)"; if(m>=480) c="var(--heat-4)";
-hh+=`<div title="${k} · ${m} min" style="aspect-ratio:1;border-radius:7px;background:${c};${k===tk?"box-shadow:0 0 0 2px var(--acc);":""}"></div>`; }
-hh+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:12px;justify-content:flex-end"><span style="font-size:9px;color:var(--ink-4);font-weight:600">0h</span>';
-["var(--heat-0)","var(--heat-1)","var(--heat-2)","var(--heat-3)","var(--heat-4)"].forEach(c=>hh+=`<span style="width:10px;height:10px;border-radius:3px;background:${c}"></span>`);
-hh+='<span style="font-size:9px;color:var(--ink-4);font-weight:600">8h+</span></div>';
-heat.innerHTML=hh;
-inner.appendChild(heat);
-
 /* subject completion */
 const subj=el("div"); subj.className="card";
 Object.assign(subj.style,{padding:"18px",borderRadius:"var(--r)",marginBottom:"14px"});
@@ -1265,16 +1359,6 @@ sh+=`<div style="margin-bottom:12px">
 <div class="track" style="height:6px"><div class="fill" style="width:${pc}%"></div></div></div>`; });
 subj.innerHTML=sh;
 inner.appendChild(subj);
-
-/* pointer to profile for badges & mocks */
-const pf=html(`<div class="card lift press" style="padding:14px 16px;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;gap:12px">
-<span style="font-size:18px">🏅</span>
-<div style="flex:1;min-width:0">
-<div style="font-size:13px;font-weight:700;color:var(--ink)">Badges, mocks & revision queue</div>
-<div style="font-size:11px;color:var(--ink-3);margin-top:2px">Moved to your Profile tab</div>
-</div><span style="color:var(--ink-4)">${IC.right}</span></div>`);
-pf.onclick=()=>setNav("settings");
-inner.appendChild(pf);
 
 wrap.appendChild(inner); wireTheme(wrap); return wrap; }
 
@@ -1352,12 +1436,12 @@ ah+="</div>";
 ach.innerHTML=ah;
 return ach; }
 
-/* ════════════════ PROFILE ════════════════ */
+/* ════════════════ YOU ════════════════ */
 let profExp=loadJSON("ese_prof_exp_v1",{badges:true});
-function renderSettings(){
+function renderYou(){
 const wrap=el("div"); wrap.className="screen view";
 const inner=el("div"); inner.className="stagger";
-inner.appendChild(header("Profile",""));
+inner.appendChild(header("You",""));
 
 /* identity card */
 const streak=computeStreak(), sstreak=computeSessionStreak();
@@ -1472,7 +1556,7 @@ row("Sign out","Stop syncing on this device","",async()=>{
 if(!confirm("Sign out from ESE2027?")) return;
 try{ if(window.sbAuth) await window.sbAuth.signOut(); }catch(e){}
 toast("Signed out"); }),
-row("Shortcuts","⌘K palette · 1–5 tabs · T theme · Z undo · Space timer",""),
+row("Shortcuts","⌘K palette · 1-4 tabs · T theme · Z undo · Space timer",""),
 ]); }));
 
 inner.appendChild(html(`<div style="text-align:center;font-size:11px;color:var(--ink-4);line-height:1.9;padding:8px 0 20px">
@@ -1664,19 +1748,25 @@ applyTheme();
 syncPomoState();
 syncWakeLock();
 view.innerHTML="";
-if(state.nav==="home") view.appendChild(renderHome());
+/* migrate old nav values */
+if(state.nav==="home") state.nav="today";
+if(state.nav==="stats") state.nav="progress";
+if(state.nav==="settings") state.nav="you";
+if(state.nav==="focus") state.nav="today"; /* focus is no longer a screen */
+/* render current screen */
+if(state.nav==="today") view.appendChild(renderToday());
 else if(state.nav==="plan") view.appendChild(renderPlan());
-else if(state.nav==="focus") view.appendChild(renderFocus());
-else if(state.nav==="stats") view.appendChild(renderStats());
-else view.appendChild(renderSettings());
+else if(state.nav==="progress") view.appendChild(renderProgress());
+else if(state.nav==="you") view.appendChild(renderYou());
+else view.appendChild(renderToday()); /* fallback */
 renderNav(); updateLandscape(); }
 function renderNav(){
 navEl.innerHTML="";
-[["home","Home"],["plan","Plan"],["focus","Focus"],["stats","Stats"],["settings","Profile"]].forEach(([id,label])=>{
+[["today","Today",IC.home],["plan","Plan",IC.plan],["progress","Progress",IC.stats],["you","You",IC.settings]].forEach(([id,label,icon])=>{
 const b=el("button"); b.className="navbtn press"+(state.nav===id?" active":"");
 b.setAttribute("aria-label",label);
 b.setAttribute("aria-current",state.nav===id?"page":"false");
-b.innerHTML=IC[id]+`<span>${label}</span>`;
+b.innerHTML=icon+`<span>${label}</span>`;
 b.onclick=()=>setNav(id);
 navEl.appendChild(b); }); }
 
@@ -1684,11 +1774,10 @@ navEl.appendChild(b); }); }
 let cmdOpen=false;
 function commandList(){
 const c=[
-{i:"◈",l:"Go to Home",r:()=>setNav("home")},
+{i:"◈",l:"Go to Today",r:()=>setNav("today")},
 {i:"◈",l:"Go to Plan",r:()=>setNav("plan")},
-{i:"◈",l:"Go to Focus",r:()=>setNav("focus")},
-{i:"◈",l:"Go to Progress",r:()=>setNav("stats")},
-{i:"◈",l:"Go to Settings",r:()=>setNav("settings")},
+{i:"◈",l:"Go to Progress",r:()=>setNav("progress")},
+{i:"◈",l:"Go to You",r:()=>setNav("you")},
 {i:"→",l:"Jump to today",r:()=>{ goToday(); if(state.nav!=="plan") setNav("plan"); }},
 ...THEMES.map(t=>({i:"◐",l:"Theme — "+t.name,r:()=>setTheme(t.id)})),
 {i:"▸",l:state.pomo.running?"Pause timer":"Start timer",r:toggleRunning},
@@ -1754,13 +1843,12 @@ const t=e.target;
 if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.isContentEditable)) return;
 if(e.ctrlKey||e.metaKey||e.altKey) return;
 switch(e.key){
-case "1": setNav("home"); break;
+case "1": setNav("today"); break;
 case "2": setNav("plan"); break;
-case "3": setNav("focus"); break;
-case "4": setNav("stats"); break;
-case "5": setNav("settings"); break;
+case "3": setNav("progress"); break;
+case "4": setNav("you"); break;
 case "t": case "T": cycleTheme(); break;
-case " ": if(state.nav==="focus"){ e.preventDefault(); if(strictActive()){ toast("Strict mode — hold Pause on the clock"); break; } toggleRunning(); } break;
+case " ": if(state.pomo.running||state.nav==="today"){ e.preventDefault(); if(strictActive()){ toast("Strict mode — hold Pause on the clock"); break; } toggleRunning(); } break;
 case "ArrowLeft": if(state.nav==="plan"&&state.index>0) navDay(-1); break;
 case "ArrowRight": if(state.nav==="plan"&&state.index<SCHED.length-1) navDay(1); break;
 case "z": case "Z": undoLast(); break; } });
@@ -1846,10 +1934,22 @@ btn.appendChild(rip); setTimeout(()=>rip.remove(),520); },{passive:true});
 
 /* ── hash routing (PWA shortcuts) ─────────────────────── */
 (function(){ const h=(location.hash||"").replace("#","");
-if(["home","plan","focus","stats","settings"].includes(h)) state.nav=h; })();
+/* migrate old routes */
+let nav=h;
+if(h==="home") nav="today";
+if(h==="stats") nav="progress";
+if(h==="settings") nav="you";
+if(h==="focus") nav="today";
+if(["today","plan","progress","you"].includes(nav)) state.nav=nav; })();
 window.addEventListener("hashchange",()=>{
 const h=(location.hash||"").replace("#","");
-if(["home","plan","focus","stats","settings"].includes(h)&&state.nav!==h) setNav(h); });
+/* migrate old routes */
+let nav=h;
+if(h==="home") nav="today";
+if(h==="stats") nav="progress";
+if(h==="settings") nav="you";
+if(h==="focus") nav="today";
+if(["today","plan","progress","you"].includes(nav)&&state.nav!==nav) setNav(nav); });
 
 /* ── lifecycle ────────────────────────────────────────── */
 document.getElementById("importFile").addEventListener("change",handleImportFile);
@@ -1933,8 +2033,8 @@ const sp=document.getElementById("splash"); if(!sp) return;
 const min=matchMedia("(prefers-reduced-motion: reduce)").matches?250:4800;
 setTimeout(()=>{ sp.classList.add("out"); setTimeout(()=>sp.remove(),520); },min);
 })();
-/* refresh countdowns + streak once a minute while on Home */
-setInterval(()=>{ if(state.nav==="home"&&!document.hidden) render(); },60000);
+/* refresh countdowns + streak once a minute while on Today */
+setInterval(()=>{ if(state.nav==="today"&&!document.hidden) render(); },60000);
 /* plan slot reminders — check now and every minute */
 checkSlotNotifications();
 setInterval(checkSlotNotifications,60000);
