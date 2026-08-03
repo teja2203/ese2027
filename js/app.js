@@ -420,7 +420,6 @@ moon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="curren
 trophy:'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12v2h3v3c0 2.5-1.9 4.5-4.3 4.9A6 6 0 0 1 13 16v2.2h3.4V21H7.6v-2.8H11V16a6 6 0 0 1-3.7-3.1C4.9 12.5 3 10.5 3 8V5h3V3Zm-1 4v1c0 1.3.8 2.4 2 2.8V7H5Zm14 0h-2v3.8c1.2-.4 2-1.5 2-2.8V7Z"/></svg>',
 head:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a8 8 0 0 1 16 0"/><rect x="3" y="13.5" width="4" height="6" rx="1.6"/><rect x="17" y="13.5" width="4" height="6" rx="1.6"/></svg>',
 cmd:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6Z"/></svg>',
-snow:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 2.5v19M2.5 12h19"/><path d="m6.5 6.5 11 11M6.5 17.5l11-11"/></svg>',
 clock:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9.5V13l2.5 2.5"/><path d="M9.5 2.5h5"/></svg>',
 gear:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M5.4 18.6l1.7-1.7M16.9 7.1l1.7-1.7"/></svg>',
 stop:'<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.4"/></svg>',
@@ -484,9 +483,25 @@ const o=ctx.createOscillator(), g=ctx.createGain();
 o.type=type||"sine"; o.frequency.value=freq;
 g.gain.setValueAtTime(0.0001,t0);
 g.gain.exponentialRampToValueAtTime(vol||0.18,t0+0.02);
-g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-o.connect(g); g.connect(dest||ctx.destination);
-o.start(t0); o.stop(t0+dur+0.05); }
+g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);  o.connect(g); g.connect(dest||ctx.destination);
+  o.start(t0); o.stop(t0+dur+0.05); }
+/* brass — sawtooth through a lowpass with a quick pitch bend + vibrato:
+   a cheap, convincing trumpet/ta-da timbre with zero audio files */
+function brass(ctx,t0,freq,dur,vol){
+  const o=ctx.createOscillator(), g=ctx.createGain(), f=ctx.createBiquadFilter();
+  o.type="sawtooth"; o.frequency.value=freq;
+  f.type="lowpass"; f.frequency.value=freq*6; f.Q.value=1.4;
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(vol||0.16,t0+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(f); f.connect(g); g.connect(ctx.destination);
+  o.frequency.setValueAtTime(freq*0.96,t0);
+  o.frequency.linearRampToValueAtTime(freq,t0+0.04);
+  const lfo=ctx.createOscillator(), lg=ctx.createGain();
+  lfo.frequency.value=5.5; lg.gain.value=freq*0.012;
+  lfo.connect(lg); lg.connect(o.frequency);
+  lfo.start(t0); lfo.stop(t0+dur);
+  o.start(t0); o.stop(t0+dur+0.05); }
 function playSound(kind){
 if(!state.sound) return;
 const ctx=actx(); if(!ctx) return;
@@ -510,15 +525,32 @@ tone(ctx,t+.75,1567.98,.5,"sine",.07); tone(ctx,t+.95,2093,.6,"sine",.05);
 /* gentle three-note descend, warm tail — breathe */
 tone(ctx,t,783.99,.3,"sine",.13); tone(ctx,t+.18,659.25,.3,"sine",.13);
 tone(ctx,t+.36,523.25,.7,"sine",.15); tone(ctx,t+.36,261.63,.7,"sine",.05);
-}else if(kind==="achievement"){
-/* proper fanfare: call, answer, resolving chord + long sparkles */
-tone(ctx,t,523.25,.18,"triangle",.15); tone(ctx,t+.12,659.25,.18,"triangle",.15);
-tone(ctx,t+.24,783.99,.18,"triangle",.16); tone(ctx,t+.36,1046.5,.4,"triangle",.19);
-tone(ctx,t+.6,783.99,.16,"triangle",.13); tone(ctx,t+.72,1046.5,.16,"triangle",.15);
-tone(ctx,t+.84,1318.5,.7,"triangle",.18);
-[1046.5,1318.5,1567.98].forEach(f=>tone(ctx,t+.84,f,.8,"sine",.06));
-tone(ctx,t+1.1,2093,.5,"sine",.06); tone(ctx,t+1.25,2637,.55,"sine",.04);
-}else if(kind==="flip"){
+  }else if(kind==="fanfare"||kind==="achievement"){
+  /* trumpet fanfare — brass ta-da: short short short LOOOONG */
+  brass(ctx,t,392,.16,.15); brass(ctx,t+.13,523.25,.16,.15);
+  brass(ctx,t+.26,659.25,.16,.15); brass(ctx,t+.39,783.99,.62,.17);
+  brass(ctx,t+.39,392,.62,.08); brass(ctx,t+.56,1046.5,.3,.12);
+  tone(ctx,t+.9,1567.98,.5,"sine",.06); tone(ctx,t+1.08,2093,.6,"sine",.05);
+  }else if(kind==="day"){
+  /* brighter ascending trumpet: C E G C, held top note + chord */
+  brass(ctx,t,523.25,.2,.15); brass(ctx,t+.16,659.25,.2,.15);
+  brass(ctx,t+.32,783.99,.2,.15); brass(ctx,t+.48,1046.5,.7,.18);
+  [523.25,659.25,783.99,1046.5].forEach(f=>brass(ctx,t+.48,f,.7,.06));
+  tone(ctx,t+.9,2093,.6,"sine",.05);
+  }else if(kind==="shatter"){
+  /* ice crack — glassy noise burst, high shard plinks, low thud */
+  const sd=.09;
+  const sbuf=ctx.createBuffer(1,Math.floor(ctx.sampleRate*sd),ctx.sampleRate);
+  const sch=sbuf.getChannelData(0);
+  for(let i=0;i<sch.length;i++) sch[i]=(Math.random()*2-1)*Math.pow(1-i/sch.length,1.5);
+  const sns=ctx.createBufferSource(); sns.buffer=sbuf;
+  const sbf=ctx.createBiquadFilter(); sbf.type="highpass"; sbf.frequency.value=1700;
+  const sg=ctx.createGain(); sg.gain.setValueAtTime(.22,t);
+  sg.gain.exponentialRampToValueAtTime(.0001,t+sd);
+  sns.connect(sbf); sbf.connect(sg); sg.connect(ctx.destination); sns.start(t);
+  [2500,2000,1600,1200].forEach((f,i)=>tone(ctx,t+.025+i*.045,f,.09,"sine",.075));
+  tone(ctx,t+.06,900,.07,"sine",.06); tone(ctx,t,100,.13,"sine",.12);
+  }else if(kind==="flip"){
 /* mechanical flip-clock tick — filtered noise snap (debounced: one click per flip pair) */
 if(playSound._ft&&performance.now()-playSound._ft<90) return;
 playSound._ft=performance.now();
@@ -533,13 +565,8 @@ nsrc.connect(bp); bp.connect(g); g.connect(ctx.destination);
 nsrc.start(t);
 /* soft low thock underneath for body */
 tone(ctx,t+.015,190,.05,"sine",.05);
-}else if(kind==="day"){
-/* day conquered: grand rolled chord, octave answer, long shimmer tail */
-[261.63,329.63,392,523.25].forEach((f,i)=>tone(ctx,t+i*.09,f,1.1,"triangle",.12));
-[523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(ctx,t+.5+i*.07,f,1.0,"triangle",.1));
-tone(ctx,t+.9,1567.98,.7,"sine",.07); tone(ctx,t+1.1,2093,.8,"sine",.06);
-tone(ctx,t+1.35,2637,.7,"sine",.04);
-} }
+}
+}
 
 /* ── session notifications ────────────────────────────── */
 function notifSupported(){
@@ -917,9 +944,48 @@ function ring(size,stroke,pct,color,track){
 const r=(size-stroke)/2, c=2*Math.PI*r;
 return `<svg width="${size}" height="${size}" style="transform:rotate(-90deg)" aria-hidden="true">
 <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${track||"var(--card-2)"}" stroke-width="${stroke}"/>
-<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}" stroke-linecap="round"
-stroke-dasharray="${c}" stroke-dashoffset="${c*(1-pct/100)}" style="transition:stroke-dashoffset .8s var(--ease)"/>
-</svg>`; }
+<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}" stroke-linecap="round"  stroke-dasharray="${c}" stroke-dashoffset="${c*(1-pct/100)}" style="transition:stroke-dashoffset .8s var(--ease)"/>
+  </svg>`; }
+
+/* ── ice-shatter showcase: frozen flame flies in, cracks, fire reveals ── */
+function iceShatterShowcase(iconEl, opts){
+  opts = opts || {};
+  if (!iconEl) return;
+  playSound("shatter");
+  iconEl.style.position = iconEl.style.position || "relative";
+  iconEl.style.display = "inline-block";
+  /* 1) the FROZEN FLAME (ice state of the fire) flies in from off-screen */
+  iconEl.querySelectorAll(".ice-shard").forEach(s=>s.remove());
+  iconEl.innerHTML = IC.flame;
+  iconEl.classList.remove("ice-shatter","fire-glow","frost-flame","ice-fly-in");
+  void iconEl.offsetWidth;
+  iconEl.classList.add("frost-flame","ice-fly-in");
+  setTimeout(()=>{
+    /* 2) it lands, frost holds a beat, then CRACKS like shattered ice */
+    iconEl.classList.remove("ice-fly-in","frost-flame");
+    void iconEl.offsetWidth;
+    iconEl.classList.add("ice-shatter");
+    [-45,0,45,90,135,180,225,270,315].forEach((a) => {
+      const s = el("span"); s.className = "ice-shard";
+      const rad = a * Math.PI / 180, dist = 24 + Math.random() * 22;
+      s.style.setProperty("--dx", (Math.cos(rad) * dist).toFixed(1) + "px");
+      s.style.setProperty("--dy", (Math.sin(rad) * dist).toFixed(1) + "px");
+      s.style.setProperty("--rot", (Math.random() * 200 - 100).toFixed(0) + "deg");
+      s.style.animationDuration = (0.45 + Math.random() * 0.3).toFixed(2) + "s";
+      s.style.animationDelay = (Math.random() * 0.1).toFixed(2) + "s";
+      iconEl.appendChild(s);
+      setTimeout(() => s.remove(), 1300);
+    });
+    if (window.confetti) window.confetti({ particleCount: 80, colors: ["#E0F2FE", "#7DD3FC", "#38BDF8", "#FFFFFF"], spread: 100, origin: { y: 0.5 } });
+    /* 3) the glowing FIRE flame is revealed */
+    setTimeout(() => {
+      iconEl.classList.remove("ice-shatter");
+      iconEl.innerHTML = IC.flame;
+      iconEl.classList.add(opts.backToIce ? "frost-flame" : "fire-glow");
+      if (!opts.backToIce) toast("🧊💥 Ice shattered! Streak continued 🔥");
+    }, 820);
+  }, 1050);
+}
 
 /* ════════════════ TODAY (MASTER BENTO COMMAND CENTER) ════════════════ */
 function renderToday(){
@@ -937,7 +1003,7 @@ const topDeck = el("div"); topDeck.className = "top-deck";
 topDeck.innerHTML = `
 <div style="display:flex;align-items:center;gap:8px">
 <span class="top-deck-pill press" id="cdPill" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPill" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?IC.snow:IC.flame} ${streak}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-pill':'fire-pill'}" id="streakPill" title="Streak Status">${IC.flame} ${streak}d</span>
 </div>
 <div style="display:flex;align-items:center;gap:8px">
 <button class="top-deck-pill press" id="soundPill" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
@@ -1039,11 +1105,14 @@ const isFrozen = streakObj.hasFrozen && tlog.minutes === 0;
 const mCard1 = el("div"); mCard1.className = "card" + (isFrozen ? " ice-frozen-card" : "");
 Object.assign(mCard1.style, { padding: "16px", borderRadius: "var(--r)", textAlign: "center" });
 mCard1.innerHTML = `
-<div style="font-size:15px;margin-bottom:4px" id="streakIcon">${isFrozen ? IC.snow : IC.flame}</div>
-<div class="display ${isFrozen ? 'ice-frozen-text' : ''}" style="font-size:24px;font-weight:800;color:${isFrozen ? '#7DD3FC' : 'var(--amber)'}">${streak}</div>
+<div class="${isFrozen ? 'frost-flame' : 'fire-glow'}" style="font-size:15px;margin-bottom:4px" id="streakIcon">${IC.flame}</div>
+<div class="display ${isFrozen ? 'ice-text' : 'fire-text'}" style="font-size:24px;font-weight:800">${streak}</div>
 <div style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${isFrozen ? '#7DD3FC' : 'var(--ink-3)'}">${isFrozen ? 'FROZEN STREAK' : 'DAY STREAK'}</div>
 `;
 bento.appendChild(mCard1);
+/* tap the frozen streak to watch it shatter (preview only — no state change) */
+mCard1.style.cursor = isFrozen ? "pointer" : "default";
+mCard1.querySelector("#streakIcon").onclick = () => { if (isFrozen) iceShatterShowcase(document.getElementById("streakIcon"), { backToIce: true }); };
 
 const hrs = Math.floor(tlog.minutes / 60), mins = tlog.minutes % 60;
 const mCard2 = el("div"); mCard2.className = "card";
@@ -1080,25 +1149,13 @@ matrixList.appendChild(row);
 taskMatrix.appendChild(matrixList);
 inner.appendChild(taskMatrix);
 
-/* Ice shatter splash trigger when streak resumes */
+/* Ice shatter splash trigger when a frozen streak resumes (one shot per day) */
 if (streakObj.hasFrozen && tlog.minutes > 0) {
   const y = new Date(); y.setDate(y.getDate() - 1);
   const yk = `${y.getFullYear()}-${fmt(y.getMonth() + 1)}-${fmt(y.getDate())}`;
   if (state.freeze[yk] && !sessionStorage.getItem("shatter-" + todayKey())) {
     sessionStorage.setItem("shatter-" + todayKey(), "1");
-    setTimeout(() => {
-      const icon = document.getElementById("streakIcon");
-      if (!icon) return;
-      playSound("shatter");
-      if (window.confetti) {
-        window.confetti({ particleCount: 90, colors: ["#7DD3FC", "#38BDF8", "#E0F2FE", "#FFFFFF"], spread: 100, origin: { y: 0.5 } });
-      }
-      icon.innerHTML = IC.snow; icon.className = "ice-shatter";
-      setTimeout(() => {
-        icon.innerHTML = IC.flame; icon.className = "";
-        toast("🧊💥 Ice shattered! Streak continued 🔥");
-      }, 850);
-    }, 600);
+    setTimeout(() => iceShatterShowcase(document.getElementById("streakIcon")), 650);
   }
 }
 
@@ -1118,7 +1175,7 @@ const topDeck = el("div"); topDeck.className = "top-deck";
 topDeck.innerHTML = `
 <div style="display:flex;align-items:center;gap:8px">
 <span class="top-deck-pill press" id="cdPillPlan" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillPlan" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?IC.snow:IC.flame} ${streakObj.count}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-pill':'fire-pill'}" id="streakPillPlan" title="Streak Status">${IC.flame} ${streakObj.count}d</span>
 </div>
 <div style="display:flex;align-items:center;gap:8px">
 <button class="top-deck-pill press" id="soundPillPlan" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
@@ -1187,7 +1244,7 @@ top.innerHTML=`
 <div style="flex:1;min-width:0">
 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
 <span style="font-size:10px;color:var(--ink-3);font-weight:700">${slot.label}${slot.time?" · "+slot.time:""}</span>
-${sstreak>0?`<span class="pill" style="background:var(--amber-soft);color:var(--amber);font-size:8.5px;padding:3px 8px">🔥 ${sstreak}</span>`:""}
+${sstreak>0?`<span class="pill" style="background:rgba(255,138,43,.14);color:var(--fire-1);font-size:8.5px;padding:3px 8px">${IC.flame} ${sstreak}</span>`:""}
 <span class="pill" style="background:${t.s};color:${t.c};font-size:8.5px;padding:3px 8px">${t.label}</span>
 ${isCurrent?`<span class="pill" style="background:var(--acc-dim);color:var(--acc);font-size:8.5px;padding:3px 8px">Now</span>`:""}
 ${done?`<span class="pill" style="background:var(--mint-soft);color:var(--mint);font-size:8.5px;padding:3px 8px">Done</span>`:""}
@@ -1238,7 +1295,7 @@ const topDeck = el("div"); topDeck.className = "top-deck";
 topDeck.innerHTML = `
 <div style="display:flex;align-items:center;gap:8px">
 <span class="top-deck-pill press" id="cdPillFocus" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillFocus" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?IC.snow:IC.flame} ${streakObj.count}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-pill':'fire-pill'}" id="streakPillFocus" title="Streak Status">${IC.flame} ${streakObj.count}d</span>
 </div>
 <div style="display:flex;align-items:center;gap:8px">
 <button class="top-deck-pill press" id="soundPillFocus" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
@@ -1369,27 +1426,33 @@ inner.appendChild(stats);
 wrap.appendChild(inner); wireTheme(wrap); return wrap; }
 
 function renderTimerOnly(){
-const disp=document.getElementById("timer-display"), prog=document.getElementById("timer-progress"), ph=document.getElementById("phase-display");
-updateLandscape();
-if(!disp||!prog||!ph) return;
 const remain=getRemainingPomo(), secs=phaseSecs();
-disp.textContent=fmtTime(remain);
-ph.textContent=state.pomo.phase==="work"?"Focus":"Break";
-const c=2*Math.PI*110;
-prog.setAttribute("stroke-dashoffset",c*(1-(secs?(secs-remain)/secs:0)));
-/* update focus overlay if open */
+/* update the full-focus overlay FIRST — it must tick live even if the
+   legacy timer-display nodes no longer exist in the DOM */
 const ov=document.getElementById("focusOverlay");
 if(ov&&ov.classList.contains("active")){
 const mm=Math.floor(remain/60), ss=remain%60;
 const bignum=ov.querySelector(".bignum");
 if(bignum) bignum.textContent=`${fmt(mm)}:${fmt(ss)}`;
+/* keep the phase chip + sub-label live too — they can go stale if the
+   phase auto-flips (work↔break) while the overlay is open */
+const phaseChip=ov.querySelector(".fchip"); if(phaseChip) phaseChip.textContent=state.pomo.phase==="work"?"FOCUS":"BREAK";
+const bigsub=ov.querySelector(".bigsub"); if(bigsub) bigsub.textContent=state.pomo.phase==="work"?"MINUTES FOCUS":"MINUTES BREAK";
 const svg=ov.querySelector(".breather svg circle:last-child");
 if(svg){
-const pct=Math.round((1-remain/secs)*100);
-const r=114, c=2*Math.PI*r;
+const pct=secs?Math.round((1-remain/secs)*100):0;
+/* circumference read from the ring's own stroke-dasharray — single source of truth */
+const c=parseFloat(svg.getAttribute("stroke-dasharray"))||597;
 svg.setAttribute("stroke-dashoffset",c*(1-pct/100));
 }
 }
+const disp=document.getElementById("timer-display"), prog=document.getElementById("timer-progress"), ph=document.getElementById("phase-display");
+updateLandscape();
+if(!disp||!prog||!ph) return;
+disp.textContent=fmtTime(remain);
+ph.textContent=state.pomo.phase==="work"?"Focus":"Break";
+const c=2*Math.PI*110;
+prog.setAttribute("stroke-dashoffset",c*(1-(secs?(secs-remain)/secs:0)));
 }
 
 /* ── flip clock focus mode ────────────────────────────── */
@@ -1473,7 +1536,7 @@ const topDeck = el("div"); topDeck.className = "top-deck";
 topDeck.innerHTML = `
 <div style="display:flex;align-items:center;gap:8px">
 <span class="top-deck-pill press" id="cdPillProg" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillProg" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?IC.snow:IC.flame} ${streakObj.count}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-pill':'fire-pill'}" id="streakPillProg" title="Streak Status">${IC.flame} ${streakObj.count}d</span>
 </div>
 <div style="display:flex;align-items:center;gap:8px">
 <button class="top-deck-pill press" id="soundPillProg" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
@@ -1527,11 +1590,11 @@ const pIsFrozen = pStreakObj.hasFrozen && (state.log[todayKey()]||{minutes:0}).m
 const streakCard=el("div"); streakCard.className="card" + (pIsFrozen ? " ice-frozen-card" : "");
 Object.assign(streakCard.style,{padding:"20px",borderRadius:"var(--r-lg)",marginBottom:"14px"});
 streakCard.innerHTML=`
-<div style="font-size:14px;font-weight:800;color:var(--ink);margin-bottom:16px">${pIsFrozen ? "🧊 Frozen Streaks" : "🔥 Streaks"}</div>
+<div style="font-size:14px;font-weight:800;color:var(--ink);margin-bottom:16px"><span style="color:${pIsFrozen ? "var(--ice-1)" : "var(--fire-1)"}">${IC.flame}</span> ${pIsFrozen ? "Frozen Streaks" : "Streaks"}</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
 <div style="text-align:center;padding:16px;background:${pIsFrozen ? "rgba(56,189,248,0.12)" : "var(--card-2)"};border-radius:var(--r);border:${pIsFrozen ? "1px solid rgba(125,211,252,0.4)" : "none"}">
-<div style="font-size:11px;color:${pIsFrozen ? "#7DD3FC" : "var(--amber)"};font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">${pIsFrozen ? "🧊 Frozen streak" : "Day streak"}</div>
-<div class="display ${pIsFrozen ? "ice-frozen-text" : ""}" style="font-size:36px;font-weight:800;color:${pIsFrozen ? "#7DD3FC" : "var(--amber)"}">${pStreakObj.count}</div>
+<div style="font-size:11px;color:${pIsFrozen ? "#7DD3FC" : "var(--ink-3)"};font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">${pIsFrozen ? "🧊 Frozen streak" : "Day streak"}</div>
+<div class="display ${pIsFrozen ? "ice-text" : "fire-text"}" style="font-size:36px;font-weight:800">${pStreakObj.count}</div>
 <div style="font-size:10px;color:${pIsFrozen ? "#7DD3FC" : "var(--ink-3)"};margin-top:6px;font-weight:600">${pIsFrozen ? "protected by freeze" : "consecutive days"}</div>
 </div>
 <div style="text-align:center;padding:16px;background:var(--card-2);border-radius:var(--r)">
@@ -1552,9 +1615,8 @@ const d=new Date(); d.setDate(d.getDate()-i);
 const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
 const m=(state.log[k]||{minutes:0}).minutes;
 let c="var(--heat-0)";
-if(m>0) c="var(--heat-1)"; if(m>=120) c="var(--heat-2)"; if(m>=300) c="var(--heat-3)"; if(m>=480) c="var(--heat-4)";
-const hrsTxt=m===0?"0h (No study)":`${Math.floor(m/60)}h ${m%60}m`;
-hh+=`<div title="${k} · ${hrsTxt}" style="aspect-ratio:1;border-radius:7px;background:${c};${k===tk?"box-shadow:0 0 0 2px var(--acc);":""}"></div>`; }
+if(m>0) c="var(--heat-1)"; if(m>=120) c="var(--heat-2)"; if(m>=300) c="var(--heat-3)"; if(m>=480) c="var(--heat-4)";  const hrsTxt=m===0?"0h (No study)":`${Math.floor(m/60)}h ${m%60}m`;
+  hh+=`<div class="heat-cell" title="${k} · ${hrsTxt}" style="aspect-ratio:1;border-radius:7px;background:${c};animation-delay:${i*9}ms;${k===tk?"box-shadow:0 0 0 2px var(--acc);":""}"></div>`; }
 hh+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:12px;justify-content:flex-end"><span style="font-size:9px;color:var(--ink-4);font-weight:700">0h</span>';
 ["var(--heat-0)","var(--heat-1)","var(--heat-2)","var(--heat-3)","var(--heat-4)"].forEach(c=>hh+=`<span style="width:10px;height:10px;border-radius:3px;background:${c}"></span>`);
 hh+='<span style="font-size:9px;color:var(--ink-4);font-weight:700">8h+</span></div>';
@@ -1681,9 +1743,8 @@ const rec=state.achievements[a.id], on=!!rec;
 const have=achProgress(a,m), pct=Math.round(have/a.goal*100);
 const isNext=nx&&nx.a.id===a.id;
 const fresh=on&&rec.at&&(Date.now()-new Date(rec.at).getTime())<8000;
-ah+=`<div class="hexwrap ${isNext?"next":""}" title="${a.desc}">
-<div class="hex ${on?"on":"locked"} ${fresh?"fresh":""}" style="--bc:${a.bc||"var(--amber)"}">
-${on?`<span class="shine"></span>`:""}
+ah+=`<div class="hexwrap ${isNext?"next":""}" style="--bc:${a.bc||"var(--amber)"}" title="${a.desc}">
+<div class="hex ${on?"on":"locked"} ${fresh?"fresh":""}">
 <div class="hicon">${a.icon}</div>
 <div class="hlabel">${a.title}</div>
 </div>
@@ -1709,7 +1770,7 @@ const topDeck = el("div"); topDeck.className = "top-deck";
 topDeck.innerHTML = `
 <div style="display:flex;align-items:center;gap:8px">
 <span class="top-deck-pill press" id="cdPillYou" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillYou" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?IC.snow:IC.flame} ${streakObj.count}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-pill':'fire-pill'}" id="streakPillYou" title="Streak Status">${IC.flame} ${streakObj.count}d</span>
 </div>
 <div style="display:flex;align-items:center;gap:8px">
 <button class="top-deck-pill press" id="soundPillYou" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
@@ -1952,29 +2013,42 @@ cancelAnimationFrame(raf); step(); }
 
 /* ── celebration popup (badge unlock / day conquered) ─── */
 let celebrating=false;
-function showCelebration({eyebrow,icon,title,sub,next,cta}){
+function showCelebration({eyebrow,icon,title,sub,next,cta,bc}){
 if(celebrating) return; celebrating=true;
 const prevFocus=document.activeElement;
 const ov=el("div"); ov.id="celebrate";
 ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true"); ov.setAttribute("aria-label",title);
+/* next study session of the current day */
+const day=SCHED[state.index]; let nxtSess=null;
+if(day&&day.sessions){ const si=day.sessions.findIndex((s,i)=>!s.tasks.every((_,ti)=>state.checked[`${state.index}-${i}-${ti}`]));
+if(si>=0){ const s=day.sessions[si], slot=SLOTS[si]||{}; nxtSess={icon:slot.icon||"📖",time:slot.time||"",title:s.title}; } }
 ov.innerHTML=`
-<div class="celebrate-card">
+<div class="celebrate-stage">
 <div class="medallion">
 <div class="burst"></div>
 <div class="halo"></div>
-<div class="core">${icon}</div>
+<div class="core" style="--bc:${bc||'var(--acc)'}">${icon}</div>
 </div>
 <div class="celebrate-eyebrow">${eyebrow}</div>
 <div class="celebrate-title">${title}</div>
 <div class="celebrate-stamp"><span class="celebrate-seal">${IC.check}</span></div>
 <div class="celebrate-sub">${sub}</div>
-${next?`<div class="celebrate-next">
-<span style="font-size:20px;filter:grayscale(1);opacity:.7">${next.a.icon}</span>
+${(nxtSess||next)?`<div class="celebrate-next">
+${nxtSess?`<div class="nrow">
+<span style="font-size:19px">${nxtSess.icon}</span>
 <div style="flex:1;min-width:0">
-<div style="font-size:11px;font-weight:800;color:var(--ink-2)">Next: ${next.a.title}</div>
-<div class="track" style="height:5px;margin-top:6px"><div class="fill" style="width:${next.pct}%"></div></div>
+<div style="font-size:9.5px;font-weight:700;color:var(--acc);letter-spacing:.18em;text-transform:uppercase">Next session · ${nxtSess.time}</div>
+<div style="font-size:12.5px;font-weight:800;color:var(--ink);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nxtSess.title}</div>
+</div></div>`:""}
+${next?`<div class="nrow">
+<span style="font-size:19px;filter:grayscale(1);opacity:.7">${next.a.icon}</span>
+<div style="flex:1;min-width:0">
+<div style="font-size:9.5px;font-weight:700;color:var(--ink-4);letter-spacing:.18em;text-transform:uppercase">Next achievement</div>
+<div style="font-size:11px;font-weight:800;color:var(--ink-2);margin-top:2px">${next.a.title}</div>
+<div class="track" style="height:5px;margin-top:5px"><div class="fill" style="width:${next.pct}%"></div></div>
 <div style="font-size:10px;color:var(--ink-4);margin-top:4px;font-weight:600">${next.have} / ${next.a.goal} · ${next.pct}%</div>
 </div></div>`:""}
+</div>`:""}
 <button class="btn btn-acc press celebrate-cta">${cta||"Keep going"}</button>
 </div>`;
 function close(){
@@ -2000,7 +2074,7 @@ const n=nextAchievement();
 const LINES=["That's how ranks are built.","Momentum looks good on you.","The syllabus is shrinking.","Consistency is your superpower.","Another brick in the wall."];
 showCelebration({eyebrow:"Achievement unlocked",icon:a.icon,title:a.title,
 sub:a.desc+". "+LINES[Math.floor(Math.random()*LINES.length)],
-next:n,cta:"Claim it"}); }
+next:n,cta:"Claim it",bc:a.bc}); }
 function celebrateDay(){
 playSound("day");
 const day=SCHED[state.index];
@@ -2240,7 +2314,7 @@ const phaseChip=ov.querySelector(".fchip"); if(phaseChip) phaseChip.textContent=
 const bignum=ov.querySelector(".bignum"); if(bignum) bignum.textContent=`${fmt(mm)}:${fmt(ss)}`;
 const bigsub=ov.querySelector(".bigsub"); if(bigsub) bigsub.textContent=state.pomo.phase==="work"?"MINUTES FOCUS":"MINUTES BREAK";
 const svg=ov.querySelector(".breather svg circle:last-child");
-if(svg){ const r=114, c=2*Math.PI*r; svg.setAttribute("stroke-dashoffset",c*(1-pct/100)); }
+if(svg){ const c=parseFloat(svg.getAttribute("stroke-dasharray"))||597; svg.setAttribute("stroke-dashoffset",c*(1-pct/100)); }
 const toggleBtn=ov.querySelector("#fToggle"); if(toggleBtn) toggleBtn.innerHTML=state.pomo.running?IC.pause:IC.play;
 const loopBtn=ov.querySelector("#fLoopBtn");
 if(loopBtn){
@@ -2271,16 +2345,15 @@ const phaseLabel=state.pomo.phase==="work"?"FOCUS":"BREAK";
 const fd=SCHED[state.index];
 const curSession=fd.sessions.find((_,si)=>!fd.sessions[si].tasks.every((_,ti)=>state.checked[`${state.index}-${si}-${ti}`]));
 const taskTitle=curSession?(curSession.subject||curSession.title||"Study session").split("—")[0].trim():"Study session";
-const pct=secs?Math.round((1-rem/secs)*100):0;
-ov.innerHTML=`
+const pct=secs?Math.round((1-rem/secs)*100):0;  ov.innerHTML=`
+<div class="foverlay-stack">
 <div class="foverlay-header">
 <button class="fbtn-sub press" id="fSettings">${IC.gear} Full Focus View</button>
 <button class="fexit press">Done ✕</button>
 </div>
 <button class="fchip press" id="fPhaseToggle" title="Switch Focus/Break">${phaseLabel}</button>
 <div class="breather">
-<div class="halo"></div>
-${ring(240,12,pct,"var(--acc)","var(--card-2)")}
+<div class="halo"></div>  ${ring(200,10,pct,"var(--acc)","var(--card-2)")}
 <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
 <div class="bignum">${fmt(mm)}:${fmt(ss)}</div>
 <div class="bigsub">${state.pomo.phase==="work"?"MINUTES FOCUS":"MINUTES BREAK"}</div>
@@ -2327,9 +2400,9 @@ ${p.label}
 <button class="press" id="fLoopBtn" style="margin-top:10px;width:100%;padding:10px;border-radius:12px;
 border:1px solid ${state.pomo.loop?"var(--acc)":"var(--line-2)"};
 background:var(--card-2);color:${state.pomo.loop?"var(--acc)":"var(--ink-2)"};
-font-size:12px;font-weight:700;cursor:pointer">
-Auto Loop: ${state.pomo.loop?"ON":"OFF"}
+font-size:12px;font-weight:700;cursor:pointer">  Auto Loop: ${state.pomo.loop?"ON":"OFF"}
 </button>
+</div>
 </div>`;
 document.body.appendChild(ov);
 ov.querySelector(".fexit").onclick=collapseFocusOverlay;
@@ -2351,7 +2424,7 @@ adjustDuration(target,delta); updateOverlayUI(ov);
 };
 });
 ov.querySelector("#fLoopBtn").onclick=()=>{ toggleLoop(); updateOverlayUI(ov); };
-requestAnimationFrame(()=>ov.classList.add("active"));
+requestAnimationFrame(()=>{ ov.classList.add("active"); ov.scrollTop=0; });
 }else{
 updateOverlayUI(ov);
 ov.classList.add("active");

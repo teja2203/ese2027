@@ -1,0 +1,9 @@
+{
+  "name": "ese2027",
+  "version": "1.0.0",
+  "description": "ESE2027 Study OS — static PWA hosted on Vercel, packaged via PWA Builder",
+  "private": true,
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

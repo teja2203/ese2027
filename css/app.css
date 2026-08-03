@@ -24,6 +24,10 @@
   --ease-slow:cubic-bezier(.25,.46,.45,.94);
   --spring:cubic-bezier(.2,.9,.25,1.18);
   --nav-h:74px;
+  /* fixed data colours — never themed (streak fire / ice / heat intensity) */
+  --fire-0:#FFE259; --fire-1:#FFA32B; --fire-2:#FF5A1F; --fire-3:#EA3A0C;
+  --ice-0:#E0F2FE; --ice-1:#7DD3FC; --ice-2:#38BDF8; --ice-3:#1D4ED8;
+  --heat-1:#E5484D; --heat-2:#F7931E; --heat-3:#E3C94C; --heat-4:#3FB950;
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -49,8 +53,7 @@ html[data-theme="dark"], html[data-theme="forest"]{
   --rose:#E5484D;  --rose-soft:rgba(229,72,77,.13);
   --mint:#8FC9B0;  --mint-soft:rgba(143,201,176,.12);
   --lilac:#A78BFA; --lilac-soft:rgba(167,139,250,.14);
-  --heat-0:#171717; --heat-1:#30302C; --heat-2:#5A5A54;
-  --heat-3:#8F8F86; --heat-4:#CBCBC2;
+  --heat-0:#171717;
   --shadow-1:0 1px 0 rgba(0,0,0,.35), 0 1px 3px rgba(0,0,0,.25);
   --shadow-2:0 2px 10px rgba(0,0,0,.38);
   --shadow-3:0 8px 28px rgba(0,0,0,.5);
@@ -91,8 +94,7 @@ html[data-theme="paper"], html[data-theme="light"]{
   --rose:#B3232A;  --rose-soft:rgba(179,35,42,.09);
   --mint:#3E8E72;  --mint-soft:rgba(62,142,114,.10);
   --lilac:#7C5BC4; --lilac-soft:rgba(124,91,196,.10);
-  --heat-0:#E2E0DB; --heat-1:#C9C7C0; --heat-2:#9C9A92;
-  --heat-3:#6C6A64; --heat-4:#33332F;
+  --heat-0:#E2E0DB;
   --shadow-1:0 1px 0 rgba(40,30,18,.05), 0 1px 3px rgba(40,30,18,.06);
   --shadow-2:0 2px 10px rgba(40,30,18,.09);
   --shadow-3:0 8px 28px rgba(40,30,18,.14);
@@ -417,200 +419,270 @@ select:focus{ border-color:var(--acc); }
 .wfc-seam{position:absolute;left:0;right:0;top:50%;height:2px;transform:translateY(-1px);background:rgba(0,0,0,.65);z-index:4}
 
 /* ════════════════════════════════════════════════════════════
-   CELEBRATION — mono medallion, red signal ring
+   CELEBRATION — the badge FLIES IN, SPINS and STICKS to the screen
    ════════════════════════════════════════════════════════════ */
 #celebrate{ position:fixed; inset:0; z-index:400; display:flex; align-items:center;
-  justify-content:center; padding:24px;
-  background:color-mix(in srgb, var(--void) 86%, transparent);
+  justify-content:center; padding:26px;
+  background:color-mix(in srgb, var(--void) 92%, transparent);
   opacity:0; transition:opacity .22s var(--ease); }
 #celebrate.in{ opacity:1; }
 
-.celebrate-card{ position:relative; width:min(380px,100%); background:var(--bg-2);
-  border:1px solid var(--line-2); border-radius:var(--r-lg); padding:38px 28px 28px;
-  text-align:center; box-shadow:var(--shadow-float);
-  transform:translateY(22px) scale(.94); opacity:0;
-  transition:transform .5s var(--spring), opacity .3s var(--ease); overflow:hidden; }
-#celebrate.in .celebrate-card{ transform:none; opacity:1; }
+.celebrate-stage{ position:relative; width:min(400px,100%); text-align:center; }
 
-/* medallion — silver coin that TUMBLES in and STAMPS flat */
-.medallion{ position:relative; width:118px; height:118px; margin:0 auto; perspective:800px; }
-.medallion .core{ position:absolute; inset:13px; border-radius:50%;
-  background:linear-gradient(150deg, #F0F0EC 0%, #C6C6C0 30%, #989892 52%, #D4D4CE 78%, #ACACA6 100%);
-  color:#1C1C18; display:flex; align-items:center; justify-content:center; font-size:44px;
-  border:3px solid var(--acc);
-  box-shadow:inset 0 2px 3px rgba(255,255,255,.75), inset 0 -3px 6px rgba(0,0,0,.22),
-             0 6px 18px rgba(0,0,0,.4);
-  transform-style:preserve-3d;
-  animation:coinStamp 1.05s var(--spring) .08s both; }
-.medallion .core::after{ content:""; position:absolute; inset:-3px; border-radius:50%;
-  background:repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, rgba(0,0,0,.04) 1px 3px);
-  opacity:.45; pointer-events:none; }
+/* medallion — the badge itself: coloured radiant hex, flies in and STICKS */
+.medallion{ position:relative; width:140px; height:140px; margin:0 auto; perspective:900px; }
+.medallion .core{ position:absolute; inset:0;
+  clip-path:polygon(50% 1.5%,96% 25%,96% 75%,50% 98.5%,4% 75%,4% 25%);
+  background:radial-gradient(circle at 50% 34%,
+    color-mix(in srgb, var(--bc, var(--acc)) 46%, #fff 44%) 0%,
+    var(--bc, var(--acc)) 66%,
+    color-mix(in srgb, var(--bc, var(--acc)) 72%, #000 28%) 100%);
+  color:#FFFFFF; display:flex; align-items:center; justify-content:center; font-size:52px;
+  text-shadow:0 1px 0 rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.3);
+  box-shadow:0 0 24px color-mix(in srgb, var(--bc, var(--acc)) 38%, transparent),
+             inset 0 2px 5px rgba(255,255,255,.28);
+  animation:badgeStick 1.2s var(--spring) .05s both; }
+/* rotating rays behind the stuck medal */
+.medallion .core::before{ content:""; position:absolute; inset:-30%; z-index:0;
+  background:repeating-conic-gradient(from -6deg at 50% 46%,
+    rgba(255,255,255,.3) 0 9deg, rgba(255,255,255,0) 9deg 18deg);
+  animation:raySpin 15s linear infinite; }
+/* travelling shine */
+.medallion .core::after{ content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
+  background:linear-gradient(115deg, transparent 32%, rgba(255,255,255,.34) 48%,
+    rgba(255,255,255,.62) 50%, rgba(255,255,255,.34) 52%, transparent 68%);
+  background-size:260% 100%; background-position:130% 0;
+  animation:hexShine 5s var(--ease) 1.2s infinite; }
+/* the badge tumbles in from the top and STICKS with a mechanical squash */
+@keyframes badgeStick{
+  0%{ transform:translateY(-52vh) rotate(720deg) scale(.35); opacity:0; }
+  42%{ transform:translateY(5vh) rotate(150deg) scale(1.16); opacity:1; }
+  58%{ transform:translateY(-2vh) rotate(-18deg) scale(.96); }
+  70%{ transform:translateY(1.6vh) rotate(7deg) scale(1.09,.86); }
+  80%{ transform:translateY(-.9vh) rotate(-3deg) scale(.95,1.07); }
+  92%{ transform:translateY(0) rotate(0) scale(1.03,.97); }
+  100%{ transform:none; } }
 .medallion .halo{ position:absolute; inset:0; border-radius:50%;
-  border:2px dashed var(--acc); opacity:.55;
-  animation:haloSpin 14s linear infinite, haloReveal .5s var(--ease) .85s both; }
+  border:2px dashed var(--acc); opacity:0;
+  animation:haloSpin 14s linear infinite, haloReveal .4s var(--ease) .72s both; }
 .medallion .burst{ position:absolute; inset:-14px; border-radius:50%;
   border:2px solid var(--acc); opacity:0;
-  animation:burstRing 1s var(--ease) .5s, burstRing 1s var(--ease) .9s; }
-/* the coin drops in spinning, then SLAMS flat with a mechanical squash */
-@keyframes coinStamp{
-  0%{ transform:translateY(-70px) rotateX(85deg) rotateZ(200deg) scale(.4); opacity:0; }
-  38%{ transform:translateY(8px) rotateX(-28deg) rotateZ(38deg) scale(1.1); opacity:1; }
-  52%{ transform:translateY(-6px) rotateX(14deg) rotateZ(-12deg) scale(.95); }
-  66%{ transform:translateY(4px) rotateX(-6deg) rotateZ(3deg) scale(1.05,.9); }
-  78%{ transform:translateY(-2px) rotateX(2deg) rotateZ(-1deg) scale(.98,1.05); }
-  90%{ transform:translateY(0) rotateX(0) rotateZ(0) scale(1.02,.97); }
-  100%{ transform:none; } }
+  animation:burstRing .9s var(--ease) .62s, burstRing .9s var(--ease) 1s; }
 @keyframes haloReveal{ from{ opacity:0; } to{ opacity:.55; } }
 @keyframes haloSpin{ to{ transform:rotate(360deg); } }
-@keyframes burstRing{ 0%{ transform:scale(.6); opacity:.8; } 100%{ transform:scale(1.5); opacity:0; } }
+@keyframes burstRing{ 0%{ transform:scale(.55); opacity:.85; } 100%{ transform:scale(1.6); opacity:0; } }
 
 .celebrate-eyebrow{ font-family:var(--mono-font); font-size:10px; font-weight:700;
-  letter-spacing:.24em; text-transform:uppercase; color:var(--acc); margin-top:22px;
-  animation:rise .4s var(--ease) .3s both; }
+  letter-spacing:.24em; text-transform:uppercase; color:var(--acc); margin-top:24px;
+  animation:rise .4s var(--ease) .5s both; }
 /* title — dot-matrix tracking snaps from wide to tight (very Nothing) */
 .celebrate-title{ font-family:var(--display-font); font-size:27px; font-weight:400;
   color:var(--ink); margin-top:8px; letter-spacing:.06em; line-height:1.2;
-  animation:titleTrack .75s var(--ease) .4s both; }
+  animation:titleTrack .75s var(--ease) .58s both; }
 @keyframes titleTrack{ 0%{ letter-spacing:.5em; opacity:0; }
   60%{ letter-spacing:.05em; opacity:1; } 100%{ letter-spacing:.06em; } }
 /* stamp line — hairline draws out, dashed seal pops in */
 .celebrate-stamp{ position:relative; margin:16px 30px 0; height:34px; }
 .celebrate-stamp::before{ content:""; position:absolute; left:0; right:0; top:50%; height:1px;
   background:var(--line-2); transform-origin:center;
-  animation:drawLine .5s var(--ease) .55s both; }
+  animation:drawLine .5s var(--ease) .72s both; }
 .celebrate-seal{ position:absolute; left:50%; top:50%; width:34px; height:34px;
   margin:-17px 0 0 -17px; border:1px dashed var(--acc); border-radius:50%;
   background:var(--bg-2); color:var(--acc); display:flex; align-items:center;
   justify-content:center; transform:rotate(-8deg);
-  animation:sealPop .5s var(--spring) .68s both; }
+  animation:sealPop .5s var(--spring) .82s both; }
 .celebrate-seal svg{ width:15px; height:15px; }
 @keyframes drawLine{ from{ transform:scaleX(0); } to{ transform:scaleX(1); } }
 @keyframes sealPop{ from{ transform:scale(0) rotate(-140deg); opacity:0; }
   60%{ transform:scale(1.18) rotate(10deg); opacity:1; }
   100%{ transform:scale(1) rotate(-8deg); } }
 .celebrate-sub{ font-size:13px; color:var(--ink-3); line-height:1.6; margin-top:10px;
-  animation:rise .4s var(--ease) .44s both; }
-.celebrate-next{ margin-top:18px; padding:13px 16px; border-radius:var(--r-sm);
-  background:var(--card-2); text-align:left; display:flex; align-items:center; gap:12px;
-  animation:rise .4s var(--ease) .5s both; border:1px solid var(--line); }
+  animation:rise .4s var(--ease) .66s both; }
+/* next-up panel — next session of the day + next achievement */
+.celebrate-next{ margin-top:18px; padding:12px 15px; border-radius:var(--r-sm);
+  background:var(--card-2); text-align:left; border:1px solid var(--line);
+  animation:rise .4s var(--ease) .76s both; }
+.celebrate-next .nrow{ display:flex; align-items:center; gap:12px; }
+.celebrate-next .nrow + .nrow{ margin-top:10px; padding-top:10px;
+  border-top:1px dashed var(--line-2); }
 .celebrate-cta{ margin-top:18px; width:100%;
-  animation:rise .4s var(--ease) .56s both; }
+  animation:rise .4s var(--ease) .86s both; }
 
 #confettiCanvas{ position:fixed; inset:0; z-index:500; pointer-events:none; }
 
 /* ════════════════════════════════════════════════════════════
-   ACHIEVEMENTS — circular coin medals
-   unlocked = silver coin · locked = empty coin slot · next = signal beacon
+   ACHIEVEMENTS — hex medal grid (original v29 design)
+   unlocked = coloured radiant medal · locked = flat tray · next = beacon
    ════════════════════════════════════════════════════════════ */
 .hex-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px 12px; perspective:1000px; }
 .hexwrap{ text-align:center; perspective:1000px; }
-.hex{ position:relative; width:100%; aspect-ratio:1; border-radius:50%;
+.hex{ position:relative; width:100%; aspect-ratio:.92;
+  clip-path:polygon(50% 1.5%,96% 25%,96% 75%,50% 98.5%,4% 75%,4% 25%);
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:2px; padding:8%; transform-style:preserve-3d; cursor:pointer;
-  transition:transform .18s var(--spring), box-shadow .25s var(--ease); }
+  gap:3px; padding:9%; transform-style:preserve-3d; cursor:pointer; }
 
-.hex-grid .hexwrap{ animation:hexFly .55s var(--spring) both; }
-.hex-grid .hexwrap:nth-child(1){animation-delay:.04s}.hex-grid .hexwrap:nth-child(2){animation-delay:.08s}
-.hex-grid .hexwrap:nth-child(3){animation-delay:.12s}.hex-grid .hexwrap:nth-child(4){animation-delay:.16s}
-.hex-grid .hexwrap:nth-child(5){animation-delay:.20s}.hex-grid .hexwrap:nth-child(6){animation-delay:.24s}
-.hex-grid .hexwrap:nth-child(7){animation-delay:.28s}.hex-grid .hexwrap:nth-child(8){animation-delay:.32s}
-.hex-grid .hexwrap:nth-child(9){animation-delay:.36s}.hex-grid .hexwrap:nth-child(10){animation-delay:.40s}
-.hex-grid .hexwrap:nth-child(11){animation-delay:.44s}.hex-grid .hexwrap:nth-child(12){animation-delay:.48s}
-.hex-grid .hexwrap:nth-child(13){animation-delay:.52s}.hex-grid .hexwrap:nth-child(14){animation-delay:.56s}
+.hex-grid .hexwrap{ animation:hexFly .85s var(--spring) both; }
+.hex-grid .hexwrap:nth-child(1){animation-delay:.05s}.hex-grid .hexwrap:nth-child(2){animation-delay:.11s}
+.hex-grid .hexwrap:nth-child(3){animation-delay:.17s}.hex-grid .hexwrap:nth-child(4){animation-delay:.23s}
+.hex-grid .hexwrap:nth-child(5){animation-delay:.29s}.hex-grid .hexwrap:nth-child(6){animation-delay:.35s}
+.hex-grid .hexwrap:nth-child(7){animation-delay:.41s}.hex-grid .hexwrap:nth-child(8){animation-delay:.47s}
+.hex-grid .hexwrap:nth-child(9){animation-delay:.53s}.hex-grid .hexwrap:nth-child(10){animation-delay:.59s}
+.hex-grid .hexwrap:nth-child(11){animation-delay:.65s}.hex-grid .hexwrap:nth-child(12){animation-delay:.71s}
+.hex-grid .hexwrap:nth-child(13){animation-delay:.77s}.hex-grid .hexwrap:nth-child(14){animation-delay:.83s}
 @keyframes hexFly{
-  0%{ opacity:0; transform:translateY(30px) rotateY(-70deg) scale(.7); }
-  60%{ opacity:1; transform:translateY(-4px) rotateY(8deg) scale(1.05); }
-  80%{ transform:translateY(2px) scale(.98); }
+  0%{ opacity:0; transform:translateY(46px) rotateY(180deg) scale(.45); }
+  58%{ opacity:1; transform:translateY(-7px) rotateY(-26deg) scale(1.08); }
+  80%{ transform:translateY(3px) rotateY(11deg) scale(.97); }
   100%{ opacity:1; transform:none; } }
 
-/* unlocked — silver coin: milled edge + brushed face + travelling shine */
-.hex.on{
-  background:
-    radial-gradient(circle at 32% 26%, #FFFFFF 0%, #EDEDE9 30%, #C4C4BE 55%, #9A9A94 72%, #C2C2BC 88%, #8E8E88 100%);
-  border:1px solid #6E6E68;
-  box-shadow:
-    inset 0 2px 3px rgba(255,255,255,.9),
-    inset 0 -4px 8px rgba(0,0,0,.28),
-    inset 0 0 0 2px rgba(0,0,0,.08),
-    inset 0 0 0 3px color-mix(in srgb, var(--bc) 34%, transparent),
-    0 4px 12px rgba(0,0,0,.38);
-  animation:coinIdle 8s var(--ease) 1.2s infinite; }
-/* milled (knurled) coin edge + dot-matrix perforation ring */
-.hex.on::before{ content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none;
-  background:repeating-conic-gradient(from 0deg,
-    color-mix(in srgb, var(--bc) 42%, transparent) 0deg 4deg,
-    rgba(255,255,255,.55) 4deg 8deg);
-  -webkit-mask:radial-gradient(circle, transparent 55%, #000 57%, #000 61%, transparent 63%);
-  mask:radial-gradient(circle, transparent 55%, #000 57%, #000 61%, transparent 63%);
-  opacity:.75; }
-@supports not (mask:radial-gradient(circle, #000 0, transparent 100%)){
-  .hex.on::before{ display:none; } }
-/* brushed grain on the face */
-.hex.on::after{ content:""; position:absolute; inset:3px; border-radius:50%; pointer-events:none;
-  background:repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, rgba(0,0,0,.05) 1px 3px);
-  opacity:.5; }
-/* travelling specular sweep */
-.hex.on .shine{ position:absolute; inset:3px; border-radius:50%; pointer-events:none;
-  background:linear-gradient(115deg, transparent 30%, rgba(255,255,255,.5) 47%,
-    rgba(255,255,255,.85) 50%, rgba(255,255,255,.5) 53%, transparent 70%);
-  background-size:250% 100%; background-position:130% 0;
-  animation:metalSweep 5s var(--ease) 1.8s infinite; }
-@keyframes metalSweep{ 0%{ background-position:130% 0; } 45%,100%{ background-position:-130% 0; } }
-.hex.on .hicon{ filter:drop-shadow(0 2px 3px rgba(0,0,0,.35)); position:relative; z-index:2; }
-.hex.on .hlabel{ color:#1C1C18; position:relative; z-index:2;
-  text-shadow:0 1px 0 rgba(255,255,255,.5); }
+/* unlocked — coloured radiant medal, exactly like the reference */
+.hex.on{ background:
+  radial-gradient(circle at 50% 34%,
+    color-mix(in srgb, var(--bc) 46%, #fff 44%) 0%,
+    var(--bc) 66%,
+    color-mix(in srgb, var(--bc) 72%, #000 28%) 100%);
+  animation:coinIdle 7s ease-in-out 1.3s infinite;
+  box-shadow:0 0 20px color-mix(in srgb, var(--bc) 38%, transparent),
+             inset 0 2px 5px rgba(255,255,255,.28); }
 @keyframes coinIdle{
   0%,100%{ transform:rotateY(0deg) translateY(0); }
-  35%{ transform:rotateY(10deg) translateY(-1px); }
-  65%{ transform:rotateY(-10deg) translateY(-1px); } }
-.hex.on:active{ animation:coinFlip .7s var(--spring); }
-@keyframes coinFlip{ from{ transform:rotateY(0);} to{ transform:rotateY(360deg);} }
+  35%{ transform:rotateY(15deg) translateY(-2px); }
+  65%{ transform:rotateY(-15deg) translateY(-2px); } }
 
-/* freshly unlocked — spins in 3D, then settles flat into the coin slot */
-.hex.fresh{ animation:medalSpin 1.2s var(--spring) both, coinIdle 8s var(--ease) 1.4s infinite; }
-@keyframes medalSpin{
-  0%{ transform:rotateY(540deg) rotateX(40deg) scale(.3); opacity:0; filter:brightness(2.6); }
-  45%{ transform:rotateY(180deg) rotateX(-12deg) scale(1.15); opacity:1; filter:brightness(1.5); }
-  70%{ transform:rotateY(0deg) rotateX(0deg) scale(.94); filter:brightness(1.1); }
-  85%{ transform:scale(1.04); }
+/* rotating rays behind an unlocked medal */
+.hex.on::before{ content:""; position:absolute; inset:-30%; z-index:0;
+  background:repeating-conic-gradient(from -6deg at 50% 46%,
+    rgba(255,255,255,.3) 0 9deg, rgba(255,255,255,0) 9deg 18deg);
+  animation:raySpin 15s linear infinite; }
+@keyframes raySpin{ to{ transform:rotate(360deg); } }
+/* travelling shine */
+.hex.on::after{ content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
+  background:linear-gradient(115deg, transparent 32%, rgba(255,255,255,.34) 48%,
+    rgba(255,255,255,.62) 50%, rgba(255,255,255,.34) 52%, transparent 68%);
+  background-size:260% 100%; background-position:130% 0;
+  animation:hexShine 5s var(--ease) 1.7s infinite; }
+@keyframes hexShine{ 0%{ background-position:130% 0; } 34%,100%{ background-position:-130% 0; } }
+.hex.on .hicon,.hex.on .hlabel{ position:relative; z-index:2; }
+.hex.on:active{ animation:coinFlip .8s var(--spring); }
+@keyframes coinFlip{ from{ transform:rotateY(0); } to{ transform:rotateY(360deg); } }
+
+/* freshly unlocked — one-shot celebratory flare */
+.hex.fresh{ animation:hexUnlock 1.5s var(--spring) both, coinIdle 7s ease-in-out 1.6s infinite; }
+@keyframes hexUnlock{
+  0%{ transform:scale(.4) rotateY(-180deg); filter:brightness(2.5) saturate(0); }
+  45%{ transform:scale(1.2) rotateY(20deg); filter:brightness(1.6) saturate(1.3); }
+  70%{ transform:scale(.96) rotateY(-8deg); filter:brightness(1.1); }
   100%{ transform:none; filter:none; } }
 
-/* locked — dashed circle, reads as an empty coin slot */
-.hex.locked{ background:var(--card); border:1.5px dashed var(--border-2); border-radius:50%;
-  transition:background .25s var(--ease), transform .14s var(--spring); }
-.hex.locked:active{ transform:scale(.94); }
-.hex.locked .hicon{ filter:grayscale(1) opacity(.3); }
+/* locked medal — flat tray, no metallic */
+.hex.locked{ background:var(--card-2); border:1px solid var(--line);
+  transition:background .4s, transform .4s var(--spring); }
+.hex.locked:active{ transform:scale(.94) rotate(-2deg); }
+.hex.locked .hicon{ filter:grayscale(1) brightness(.6); opacity:.35; }
 .hex.locked .hlabel{ color:var(--ink-4); }
 
-/* next achievement — circular signal beacon pulse */
-.hexwrap.next .hex{ position:relative; }
-.hexwrap.next .hex.locked::before{ content:""; position:absolute; inset:-7%; z-index:0; border-radius:50%;
+/* next achievement — pulsing beacon ring (on the wrapper so the parent hex clip can't eat it) */
+.hexwrap.next{ position:relative; }
+.hexwrap.next .hex{ position:relative; z-index:1; }
+.hexwrap.next::before{ content:""; position:absolute; inset:-8%; z-index:0;
+  clip-path:polygon(50% 1.5%,96% 25%,96% 75%,50% 98.5%,4% 75%,4% 25%);
   background:color-mix(in srgb, var(--bc) 30%, transparent);
-  animation:beacon 2.2s var(--ease) infinite; }
-@keyframes beacon{ 0%{ transform:scale(.92); opacity:.75; } 70%,100%{ transform:scale(1.14); opacity:0; } }
+  animation:beacon 2.6s var(--ease-slow) infinite; }
+@keyframes beacon{ 0%{ transform:scale(.92); opacity:.7; } 70%,100%{ transform:scale(1.16); opacity:0; } }
 
-.hex .hicon{ font-size:clamp(20px,5.5vw,27px); }
-.hex .hlabel{ font-family:var(--mono-font); font-weight:700;
-  font-size:clamp(8px,2.5vw,10.5px); line-height:1.14; letter-spacing:.05em;
-  text-transform:uppercase; text-align:center; color:var(--ink); }
-.hdate{ margin-top:8px; font-size:9.5px; color:var(--ink-3); font-weight:600; font-family:var(--mono-font); }
+.hex .hicon{ font-size:clamp(17px,5vw,24px); filter:drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
+.hex .hlabel{ font-family:var(--ui-font); font-weight:700;
+  font-size:clamp(9.5px,2.8vw,12px); line-height:1.14; letter-spacing:.02em;
+  text-transform:uppercase; text-align:center; color:#fff;
+  text-shadow:0 1px 0 rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.3); }
+.hex.locked .hlabel{ color:var(--ink-4); text-shadow:none; }
+.hdate{ margin-top:7px; font-size:9.5px; color:var(--ink-3); font-weight:600; font-family:var(--mono-font); }
 .hprog{ margin-top:8px; padding:0 6px; }
 
 /* ════════════════════════════════════════════════════════════
-   FROZEN STREAK — ice signal (restrained)
+   STREAK SIGNAL — fire (live) · ice (frozen) · heat cells
+   fixed data colours, independent of the theme suit
    ════════════════════════════════════════════════════════════ */
 .ice-frozen-card{
   background:color-mix(in srgb, var(--sky) 9%, var(--card)) !important;
   border:1px solid color-mix(in srgb, var(--sky) 42%, transparent) !important;
 }
-.ice-frozen-text{ color:var(--sky) !important; }
+/* top-deck pill — the streak indicator keeps its elemental colour in every theme */
+.fire-pill{ color:var(--fire-1); border-color:color-mix(in srgb,var(--fire-2) 45%,transparent);
+  animation:firePill 2.6s var(--ease) infinite; }
+.fire-pill:hover{ color:var(--fire-2); border-color:color-mix(in srgb,var(--fire-2) 70%,transparent); }
+.ice-pill{ color:var(--ice-1); border-color:color-mix(in srgb,var(--ice-2) 50%,transparent);
+  animation:icePill 2.6s var(--ease) infinite; }
+.ice-pill:hover{ color:var(--ice-2); border-color:color-mix(in srgb,var(--ice-2) 75%,transparent); }
+@keyframes firePill{ 0%,100%{ text-shadow:0 0 8px rgba(255,138,43,.35); } 50%{ text-shadow:0 0 16px rgba(255,80,10,.6); } }
+@keyframes icePill{ 0%,100%{ text-shadow:0 0 8px rgba(125,211,252,.35); } 50%{ text-shadow:0 0 16px rgba(56,189,248,.6); } }
+
+/* big streak numbers — molten fire / frost ice gradient */
+.fire-text{
+  background:linear-gradient(180deg,var(--fire-0) 0%,var(--fire-1) 36%,var(--fire-2) 70%,var(--fire-3) 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:firePulse 2.6s var(--ease) infinite; }
+.ice-text{
+  background:linear-gradient(180deg,var(--ice-0) 0%,var(--ice-1) 40%,var(--ice-2) 75%,var(--ice-3) 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:icePulse 2.6s var(--ease) infinite; }
+@keyframes firePulse{ 0%,100%{ filter:drop-shadow(0 1px 4px rgba(255,122,26,.35)); } 50%{ filter:drop-shadow(0 2px 10px rgba(255,60,10,.6)); } }
+@keyframes icePulse{ 0%,100%{ filter:drop-shadow(0 1px 4px rgba(125,211,252,.35)); } 50%{ filter:drop-shadow(0 2px 10px rgba(56,189,248,.6)); } }
+
+/* heat-map cells — green → yellow → orange → red, pop-in wave */
+.heat-cell{ animation:heatPop .4s var(--spring) backwards;
+  transition:transform .15s var(--spring), box-shadow .15s var(--ease); }
+.heat-cell:hover{ transform:scale(1.3); }
+@keyframes heatPop{ 0%{ opacity:0; transform:scale(.4); } 70%{ transform:scale(1.12); } 100%{ opacity:1; transform:scale(1); } }
+/* text-clip fallback — gradient numbers stay readable everywhere */
+@supports not (background-clip:text){
+  .fire-text{ background:none; color:var(--fire-1); }
+  .ice-text{ background:none; color:var(--ice-1); }
+}
+
+/* glowing fire flame — the live streak symbol */
+.fire-glow{ color:var(--fire-1);
+  filter:drop-shadow(0 0 6px rgba(255,138,43,.55)) drop-shadow(0 0 14px rgba(255,60,10,.3));
+  animation:fireGlowPulse 2.4s var(--ease) infinite; }
+@keyframes fireGlowPulse{
+  0%,100%{ filter:drop-shadow(0 0 6px rgba(255,138,43,.55)) drop-shadow(0 0 14px rgba(255,60,10,.3)); }
+  50%{ filter:drop-shadow(0 0 11px rgba(255,138,43,.9)) drop-shadow(0 0 22px rgba(255,60,10,.55)); } }
+
+/* frozen flame — the streak caught mid-burn: icy-blue flame, frost halo.
+   NOTE: animates filter ONLY — transform/opacity stay free for the
+   fly-in and shatter animations to drive without cascade conflicts. */
+.frost-flame{ color:var(--ice-1);
+  filter:drop-shadow(0 0 5px rgba(125,211,252,.6)) drop-shadow(0 0 13px rgba(56,189,248,.3));
+  animation:frostFlicker 3.2s var(--ease) infinite; }
+@keyframes frostFlicker{
+  0%,100%{ filter:drop-shadow(0 0 5px rgba(125,211,252,.6)) drop-shadow(0 0 13px rgba(56,189,248,.3)); }
+  50%{ filter:drop-shadow(0 0 9px rgba(125,211,252,.95)) drop-shadow(0 0 18px rgba(56,189,248,.5)); } }
+
+/* the frozen flame flies in from off-screen, lands, then shatters */
+.ice-fly-in{ animation:iceFlyIn 1.05s var(--spring) both; }
+@keyframes iceFlyIn{
+  0%{ transform:translateY(-46vh) rotate(-170deg) scale(.35); opacity:0; }
+  48%{ transform:translateY(4vh) rotate(22deg) scale(1.18); opacity:1; }
+  64%{ transform:translateY(-1.5vh) rotate(-8deg) scale(.95); }
+  80%{ transform:translateY(.9vh) rotate(3deg) scale(1.07,.9); }
+  100%{ transform:none; } }
+
+/* ice shatter — snow icon cracks, shards fly, flame takes over */
 @keyframes iceShatter{
   0%{ opacity:1; transform:scale(1) rotate(0deg); }
   25%{ transform:scale(1.22) rotate(-10deg); }
   45%{ transform:scale(1.08) rotate(7deg); }
   65%{ opacity:.9; transform:scale(1.35) rotate(-16deg); }
   100%{ opacity:0; transform:scale(1.7) rotate(30deg) translateY(20px); } }
-.ice-shatter{ animation:iceShatter .8s cubic-bezier(.34,1.3,.64,1) both; }
+.ice-shatter{ display:inline-block; animation:iceShatter .8s cubic-bezier(.34,1.3,.64,1) both; }
+.ice-shard{ position:absolute; top:50%; left:50%; width:7px; height:13px;
+  background:linear-gradient(180deg,#E0F2FE 0%,#7DD3FC 60%,#38BDF8 100%);
+  clip-path:polygon(50% 0,100% 100%,0 100%);
+  opacity:0; pointer-events:none; z-index:5;
+  animation:shardFly .55s cubic-bezier(.2,.7,.2,1) forwards; }
+@keyframes shardFly{
+  0%{ opacity:1; transform:translate(-50%,-50%) rotate(0deg) scale(1); }
+  100%{ opacity:0; transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--rot)) scale(.4); } }
 
 /* ════════════════════════════════════════════════════════════
    DOCKED TIMER — flat command bar above the nav
@@ -705,11 +777,16 @@ select:focus{ border-color:var(--acc); }
    ════════════════════════════════════════════════════════════ */
 #focusOverlay{ position:fixed; inset:0; z-index:500; display:flex;
   flex-direction:column; align-items:center; justify-content:flex-start;
-  background:var(--bg); padding:24px 20px 40px; opacity:0; pointer-events:none;
-  transition:opacity .3s var(--ease); overflow-y:auto; }
+  background:var(--bg);
+  padding:calc(16px + env(safe-area-inset-top)) 18px calc(26px + env(safe-area-inset-bottom));
+  opacity:0; pointer-events:none;
+  transition:opacity .3s var(--ease); overflow-y:auto;
+  overscroll-behavior:contain; }
+#focusOverlay .foverlay-stack{ width:100%; max-width:420px; margin:auto;
+  display:flex; flex-direction:column; align-items:center; flex-shrink:0; }
 #focusOverlay.active{ opacity:1; pointer-events:all; }
 #focusOverlay .foverlay-header{ width:100%; max-width:420px; display:flex;
-  align-items:center; justify-content:space-between; margin-bottom:12px; }
+  align-items:center; justify-content:space-between; margin-bottom:10px; }
 #focusOverlay .fbtn-sub{ padding:8px 14px; border-radius:6px; border:1px solid var(--border-2);
   background:var(--card-2); color:var(--ink-2); font-family:var(--mono-font);
   font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
@@ -725,27 +802,27 @@ select:focus{ border-color:var(--acc); }
 #focusOverlay .fchip{ font-family:var(--mono-font); font-size:10px; font-weight:700;
   letter-spacing:.24em; text-transform:uppercase; color:var(--acc); padding:7px 14px;
   border-radius:999px; background:transparent; border:1px solid var(--acc);
-  margin-bottom:20px; cursor:pointer;
+  margin-bottom:14px; cursor:pointer;
   transition:transform .12s var(--spring), background .18s var(--ease); }
 #focusOverlay .fchip:hover{ background:var(--acc-dim); }
 #focusOverlay .fchip:active{ transform:scale(.94); }
-#focusOverlay .breather{ position:relative; width:240px; height:240px;
+#focusOverlay .breather{ position:relative; width:200px; height:200px;
   display:grid; place-items:center; flex-shrink:0; }
 #focusOverlay .breather .halo{ position:absolute; inset:-26px; border-radius:50%;
   border:1px dashed color-mix(in srgb, var(--acc) 34%, transparent);
   animation:haloSpin 14s linear infinite; }
 #focusOverlay .breather svg{ position:absolute; inset:0; transform:rotate(-90deg); }
-#focusOverlay .bignum{ font-family:var(--mono-font); font-size:52px;
+#focusOverlay .bignum{ font-family:var(--mono-font); font-size:44px;
   font-weight:700; letter-spacing:.01em; position:relative; line-height:1;
   font-variant-numeric:tabular-nums; }
 #focusOverlay .bigsub{ font-family:var(--mono-font); font-size:10px; letter-spacing:.28em;
   text-transform:uppercase; color:var(--ink-3); font-weight:700; margin-top:8px; position:relative; }
-#focusOverlay .ftask{ margin-top:20px; text-align:center; max-width:270px; }
+#focusOverlay .ftask{ margin-top:14px; text-align:center; max-width:270px; }
 #focusOverlay .ftask .fk{ font-family:var(--mono-font); font-size:9px; font-weight:700;
   letter-spacing:.28em; text-transform:uppercase; color:var(--ink-3); margin-bottom:7px; }
 #focusOverlay .ftask .ft{ font-family:var(--display-font); font-size:19px;
   font-weight:400; line-height:1.3; letter-spacing:.04em; text-transform:uppercase; }
-#focusOverlay .fctrl{ display:flex; gap:11px; margin-top:24px; }
+#focusOverlay .fctrl{ display:flex; gap:11px; margin-top:18px; }
 #focusOverlay .fbtn{ width:56px; height:56px; border-radius:14px;
   border:1px solid var(--border-2); background:var(--card);
   display:grid; place-items:center; font-size:17px; color:var(--ink);
@@ -773,17 +850,30 @@ select:focus{ border-color:var(--acc); }
 #focusOverlay .fstep-btn:hover{ border-color:var(--acc); color:var(--acc); }
 #focusOverlay .fstep-btn:active{ transform:scale(.94); }
 
-.ice-shatter{ display:inline-block; animation:iceShatter .8s cubic-bezier(.34,1.2,.64,1) forwards; }
+/* short viewports — shrink the ring so the live timer is always in view.
+   NOTE: ring() emits an SVG with inline width/height and NO viewBox, so
+   CSS-scaling the svg keeps the stroke-dashoffset progress ratio correct. */
+@media (max-height:560px){
+  #focusOverlay .breather{ width:158px; height:158px; }
+  #focusOverlay .breather svg{ width:158px; height:158px; }
+  #focusOverlay .bignum{ font-size:34px; }
+  #focusOverlay .fchip{ margin-bottom:10px; }
+  #focusOverlay .ftask{ margin-top:10px; }
+  #focusOverlay .fctrl{ margin-top:12px; }
+}
 
 @media (prefers-reduced-motion: reduce){
   .view,.stagger>*,.hex-grid .hexwrap,.hex.on,.hex.fresh,
-  .medallion .core,.medallion .core::after,.medallion .halo,.medallion .burst,
+  .hex.on::before,.hex.on::after,
+  .medallion .core,.medallion .core::before,.medallion .core::after,.medallion .halo,.medallion .burst,
   .celebrate-eyebrow,.celebrate-title,.celebrate-stamp,.celebrate-stamp::before,
   .celebrate-seal,.celebrate-sub,.celebrate-next,.celebrate-cta,
-  .hexwrap.next .hex.locked::before,.ice-shatter,#focusOverlay .breather .halo,
+  .hexwrap.next::before,.ice-shatter,.ice-shard,.heat-cell,
+  .fire-pill,.ice-pill,.fire-text,.ice-text,.fire-glow,.frost-flame,.ice-fly-in,
+  #focusOverlay .breather .halo,
   .wfc-overlay.active .wfc,.wfc.go .wfc-flip.top,.wfc.go .wfc-flip.bottom{
     animation:none !important; }
-  .hex.on::before,.hex.on::after,.hex.on .shine,.btn-acc::after{ animation:none !important; display:none; }
+  .hex.on::after,.medallion .core::after,.btn-acc::after{ animation:none !important; display:none; }
   *{ transition-duration:.01ms !important; animation-duration:.01ms !important; }
 }
 
