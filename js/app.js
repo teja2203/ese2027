@@ -63,10 +63,14 @@ return Object.assign(d,p);
    html[data-theme="<id>"]. Adding one here + a CSS block is
    all that's needed; the picker builds itself from THEMES. */
 const THEMES=[
-{id:"ember", name:"Nothing Dark", desc:"Pitch black dot-matrix dark mode", meta:"#000000",
- sw:["#E52712","#000000","#1A1A1A","#FFFFFF"]},
-{id:"paper", name:"Nothing Light", desc:"Ceramic white dot-matrix light mode", meta:"#FAFAFA",
- sw:["#E52712","#FAFAFA","#FFFFFF","#0A0A0A"]}
+{id:"ember", name:"Mono Black", desc:"OLED black · red signal", meta:"#000000",
+ sw:["#D71921","#000000","#0A0A0A","#F5F5F2"]},
+{id:"lime", name:"Glyph Lime", desc:"Black · lime signal", meta:"#000000",
+ sw:["#9EEB3B","#000000","#0A0A0A","#F5F5F2"]},
+{id:"ice", name:"Arctic Ice", desc:"Black · ice-blue signal", meta:"#000000",
+ sw:["#7FB8D9","#000000","#0A0A0A","#F5F5F2"]},
+{id:"paper", name:"Mono White", desc:"Ceramic white · red signal", meta:"#F0EEE9",
+ sw:["#C11218","#F0EEE9","#FAF9F6","#1A1A18"]}
 ];
 const THEME_IDS=THEMES.map(t=>t.id);
 /* migrate the old binary dark/light preference */
@@ -76,7 +80,7 @@ function loadTheme(){
   if(v==="light") return "paper";
   return THEME_IDS.includes(v)?v:"ember";
 }
-function themeMeta(id){ const t=THEMES.find(x=>x.id===id); return t?t.meta:"#0A0E17"; }
+function themeMeta(id){ const t=THEMES.find(x=>x.id===id); return t?t.meta:"#000000"; }
 function isLightTheme(id){ return id==="paper"; }
 
 const state={
@@ -414,6 +418,15 @@ skip:'<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path 
 sun:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.4"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M4.9 19.1l1.7-1.7M17.4 6.6l1.7-1.7"/></svg>',
 moon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z"/></svg>',
 trophy:'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12v2h3v3c0 2.5-1.9 4.5-4.3 4.9A6 6 0 0 1 13 16v2.2h3.4V21H7.6v-2.8H11V16a6 6 0 0 1-3.7-3.1C4.9 12.5 3 10.5 3 8V5h3V3Zm-1 4v1c0 1.3.8 2.4 2 2.8V7H5Zm14 0h-2v3.8c1.2-.4 2-1.5 2-2.8V7Z"/></svg>',
+head:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a8 8 0 0 1 16 0"/><rect x="3" y="13.5" width="4" height="6" rx="1.6"/><rect x="17" y="13.5" width="4" height="6" rx="1.6"/></svg>',
+cmd:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6Z"/></svg>',
+snow:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 2.5v19M2.5 12h19"/><path d="m6.5 6.5 11 11M6.5 17.5l11-11"/></svg>',
+clock:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9.5V13l2.5 2.5"/><path d="M9.5 2.5h5"/></svg>',
+gear:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M5.4 18.6l1.7-1.7M16.9 7.1l1.7-1.7"/></svg>',
+stop:'<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.4"/></svg>',
+expand:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6"/></svg>',
+warn:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9.5v4.5M12 17.2v.2"/></svg>',
+lock:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>',
 };
 
 /* ── pomodoro engine ──────────────────────────────────── */
@@ -529,51 +542,76 @@ tone(ctx,t+1.35,2637,.7,"sine",.04);
 } }
 
 /* ── session notifications ────────────────────────────── */
-function notifSupported(){ return "Notification" in window; }
+function notifSupported(){
+  return !!(window.Capacitor?.isNativePlatform?.() || window.Capacitor?.Plugins?.LocalNotifications || ("Notification" in window));
+}
 function askNotifPermission(){
-if(!notifSupported()) return Promise.resolve("unsupported");
-if(Notification.permission!=="default") return Promise.resolve(Notification.permission);
-return new Promise(res=>{
-let done=false;
-const finish=()=>{ if(done) return; done=true; res(Notification.permission); };
-try{
-const r=Notification.requestPermission(finish);      /* old callback style */
-if(r&&r.then) r.then(finish).catch(finish);          /* promise style */
-}catch(e){ finish(); }
-/* some Android WebViews never settle the promise — poll the real value */
-let n=0; const iv=setInterval(()=>{ n++;
-if(Notification.permission!=="default"||n>40){ clearInterval(iv); finish(); } },500);
-}); }
+  if(!notifSupported()) return Promise.resolve("unsupported");
+  if(window.Capacitor?.isNativePlatform?.() || window.Capacitor?.Plugins?.LocalNotifications){
+    const LN = window.Capacitor?.Plugins?.LocalNotifications;
+    if(LN){
+      return LN.requestPermissions().then(res => res.display === 'granted' ? 'granted' : 'denied').catch(() => 'denied');
+    }
+  }
+  if(typeof Notification !== "undefined" && Notification.permission!=="default") return Promise.resolve(Notification.permission);
+  return new Promise(res=>{
+    let done=false;
+    const finish=()=>{ if(done) return; done=true; res(typeof Notification !== "undefined" ? Notification.permission : "granted"); };
+    try{
+      if(typeof Notification !== "undefined" && Notification.requestPermission){
+        const r=Notification.requestPermission(finish);
+        if(r&&r.then) r.then(finish).catch(finish);
+      } else finish();
+    }catch(e){ finish(); }
+    let n=0; const iv=setInterval(()=>{ n++;
+    if((typeof Notification !== "undefined" && Notification.permission!=="default")||n>40){ clearInterval(iv); finish(); } },500);
+  });
+}
 function notify(title,body){
-if(!state.notif||!notifSupported()||Notification.permission!=="granted") return;
-const opts={body,icon:"./icons/icon-192.png",badge:"./icons/icon-192.png",tag:"ese-session",renotify:true,vibrate:[120,60,120]};
-try{
-if(navigator.serviceWorker){
-navigator.serviceWorker.getRegistration().then(reg=>{
-if(reg&&reg.showNotification) return reg.showNotification(title,opts);
-try{ new Notification(title,opts); }catch(_){}
-}).catch(()=>{ try{ new Notification(title,opts); }catch(_){} });
-}else new Notification(title,opts);
-}catch(e){ try{ new Notification(title,{body,icon:"./icons/icon-192.png"}); }catch(_){} } }
-/* Permissions API observer — fires even when requestPermission's promise doesn't */
-if("permissions" in navigator&&navigator.permissions.query){
-navigator.permissions.query({name:"notifications"}).then(st=>{
-st.onchange=()=>{ if(st.state==="granted"&&state.notif){ subscribePush(); render(); } };
-}).catch(()=>{}); }
-
-function notifOn(){ return state.notif&&notifSupported()&&Notification.permission==="granted"; }
+  if(!state.notif||!notifSupported()) return;
+  if(window.Capacitor?.isNativePlatform?.() || window.Capacitor?.Plugins?.LocalNotifications){
+    const LN = window.Capacitor?.Plugins?.LocalNotifications;
+    if(LN){
+      LN.schedule({
+        notifications: [{
+          title: title,
+          body: body,
+          id: Math.floor(Date.now() % 100000),
+          schedule: { at: new Date(Date.now() + 100) },
+          sound: null,
+          actionTypeId: "",
+          extra: null
+        }]
+      }).catch(()=>{});
+      return;
+    }
+  }
+  if(typeof Notification === "undefined" || Notification.permission!=="granted") return;
+  const opts={body,icon:"./icons/icon-192.png",badge:"./icons/icon-192.png",tag:"ese-session",renotify:true,vibrate:[120,60,120]};
+  try{
+    if(navigator.serviceWorker){
+      navigator.serviceWorker.getRegistration().then(reg=>{
+        if(reg&&reg.showNotification) return reg.showNotification(title,opts);
+        try{ new Notification(title,opts); }catch(_){}
+      }).catch(()=>{ try{ new Notification(title,opts); }catch(_){} });
+    }else new Notification(title,opts);
+  }catch(e){ try{ new Notification(title,{body,icon:"./icons/icon-192.png"}); }catch(_){} }
+}
+function notifOn(){
+  if(window.Capacitor?.isNativePlatform?.() || window.Capacitor?.Plugins?.LocalNotifications) return !!state.notif;
+  return state.notif&&notifSupported()&&(typeof Notification !== "undefined" && Notification.permission==="granted");
+}
 function toggleNotif(){
-if(!notifSupported()){ toast("Notifications not supported on this browser"); return; }
-if(!notifOn()){
-/* opt in first, so the switch works even if the permission event is flaky */
-state.notif=true; saveJSON(NOTIF_KEY,true);
-askNotifPermission().then(p=>{
-if(p==="granted"){ subscribePush(); toast("Session notifications on"); notify("Notifications enabled","You'll be pinged when a session or break ends."); }
-else if(p==="denied"){ state.notif=false; saveJSON(NOTIF_KEY,false); toast("Blocked — enable notifications for this app in Android Settings"); }
-else toast("Waiting for permission…");
-render(); });
-render();
-}else{ state.notif=false; saveJSON(NOTIF_KEY,false); toast("Session notifications off"); render(); } }
+  if(!notifSupported()){ toast("Notifications not supported on this device"); return; }
+  if(!notifOn()){
+    state.notif=true; saveJSON(NOTIF_KEY,true);
+    askNotifPermission().then(p=>{
+      if(p==="granted"){ subscribePush(); toast("Session notifications on"); notify("Notifications enabled","You'll be pinged when a session or break ends."); }
+      else if(p==="denied"){ state.notif=false; saveJSON(NOTIF_KEY,false); toast("Blocked — enable notifications for this app in Android Settings"); }
+      else toast("Waiting for permission…");
+      render(); });
+    render();
+  }else{ state.notif=false; saveJSON(NOTIF_KEY,false); toast("Session notifications off"); render(); } }
 
 /* ── web push (closed-app notifications) ──────────────── */
 const VAPID_PUBLIC="BF0fC7HEttfCmKd6cBrI92_fJI2eYRJDF3qoPaOvJ3FpLfiyhla2oc3G_G1sYMki5gBLfN176y6ShsDvvFv-eu0";
@@ -869,7 +907,7 @@ return html(`<header style="margin-bottom:18px">
 <h1 class="display" style="font-size:26px;font-weight:800;color:var(--ink)">${title}</h1>
 ${sub?`<div style="font-size:12.5px;color:var(--ink-3);margin-top:4px;font-weight:500">${sub}</div>`:""}
 </div>
-<button id="themeBtn" class="iconbtn press" aria-label="Toggle theme">${state.theme==="dark"?IC.sun:IC.moon}</button>
+<button id="themeBtn" class="iconbtn press" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
 </div>
 </header>`); }
 function wireTheme(root){
@@ -898,13 +936,13 @@ const cdDate = cd(ESE_DATE);
 const topDeck = el("div"); topDeck.className = "top-deck";
 topDeck.innerHTML = `
 <div style="display:flex;align-items:center;gap:8px">
-<span class="top-deck-pill press" id="cdPill" title="Target: ESE 2027">⚡ ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPill" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?'🧊':'🔥'} ${streak}d</span>
+<span class="top-deck-pill press" id="cdPill" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPill" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?IC.snow:IC.flame} ${streak}d</span>
 </div>
 <div style="display:flex;align-items:center;gap:8px">
-<button class="top-deck-pill press" id="soundPill" title="Toggle Ambient Audio">🎧 ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
-<button class="iconbtn press" id="cmdBtn" style="width:34px;height:34px;border-radius:10px" title="Command Palette">⌘</button>
-<button class="iconbtn press" id="themeBtn" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${state.theme==="dark"?IC.sun:IC.moon}</button>
+<button class="top-deck-pill press" id="soundPill" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
+<button class="iconbtn press" id="cmdBtn" style="width:34px;height:34px;border-radius:10px" title="Command Palette">${IC.cmd}</button>
+<button class="iconbtn press" id="themeBtn" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
 </div>
 `;
 topDeck.querySelector("#cdPill").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
@@ -917,7 +955,7 @@ inner.appendChild(topDeck);
 /* greeting header */
 inner.appendChild(html(`<div style="margin-bottom:14px">
 <div style="font-size:13px;color:var(--ink-3);font-weight:600;letter-spacing:.04em">${greeting()}, Teja</div>
-<div style="font-family:var(--display-font);font-size:26px;font-weight:800;color:var(--ink);margin-top:2px">${today} · ${fd.day}</div>
+<div style="font-family:var(--display-font);font-size:26px;font-weight:400;letter-spacing:.18em;color:var(--ink);margin-top:2px">${today} · ${fd.day}</div>
 </div>`));
 
 /* ── Bento Grid System ── */
@@ -951,7 +989,7 @@ heroCard.innerHTML = `
 <span class="pill" style="background:${t.s};color:${t.c};font-weight:800">${slot.label} · ${slot.time||'Focus'}</span>
 <span class="pill" style="background:var(--acc-dim);color:var(--acc);font-weight:800">${allDone?'✓ SECURED':'ACTIVE TARGET'}</span>
 </div>
-<div style="font-family:var(--display-font);font-size:20px;font-weight:800;color:var(--ink);margin-bottom:6px;line-height:1.3">${curSession.title}</div>
+<div style="font-family:var(--display-font);font-size:20px;font-weight:400;letter-spacing:.14em;color:var(--ink);margin-bottom:6px;line-height:1.3">${curSession.title}</div>
 <div style="font-size:12px;color:var(--ink-3);line-height:1.4;margin-bottom:16px">${slot.desc||'Complete tasks to master this session.'}</div>
 <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
 <div style="position:relative;width:60px;height:60px;flex-shrink:0">
@@ -968,7 +1006,7 @@ ${ring(60,6,pct,"var(--acc)")}
 </div>
 <div style="display:flex;gap:10px">
 <button class="btn ${allDone?'btn-ghost':'btn-acc'} press" id="heroStartBtn" style="flex:1;padding:12px">${allDone?'✓ Completed':'▶ Launch Focus Space'}</button>
-<button class="btn btn-ghost press" id="heroAudioBtn" style="flex:none;padding:12px" title="Audio Focus">🎧</button>
+<button class="btn btn-ghost press" id="heroAudioBtn" style="flex:none;padding:12px" title="Audio Focus">${IC.head}</button>
 </div>
 `;
 heroCard.querySelector("#heroStartBtn").onclick = () => { if(!state.pomo.running) toggleRunning(); else expandFocusOverlay(); };
@@ -1001,7 +1039,7 @@ const isFrozen = streakObj.hasFrozen && tlog.minutes === 0;
 const mCard1 = el("div"); mCard1.className = "card" + (isFrozen ? " ice-frozen-card" : "");
 Object.assign(mCard1.style, { padding: "16px", borderRadius: "var(--r)", textAlign: "center" });
 mCard1.innerHTML = `
-<div style="font-size:15px;margin-bottom:4px" id="streakIcon">${isFrozen ? '🧊' : '🔥'}</div>
+<div style="font-size:15px;margin-bottom:4px" id="streakIcon">${isFrozen ? IC.snow : IC.flame}</div>
 <div class="display ${isFrozen ? 'ice-frozen-text' : ''}" style="font-size:24px;font-weight:800;color:${isFrozen ? '#7DD3FC' : 'var(--amber)'}">${streak}</div>
 <div style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${isFrozen ? '#7DD3FC' : 'var(--ink-3)'}">${isFrozen ? 'FROZEN STREAK' : 'DAY STREAK'}</div>
 `;
@@ -1011,7 +1049,7 @@ const hrs = Math.floor(tlog.minutes / 60), mins = tlog.minutes % 60;
 const mCard2 = el("div"); mCard2.className = "card";
 Object.assign(mCard2.style, { padding: "16px", borderRadius: "var(--r)", textAlign: "center" });
 mCard2.innerHTML = `
-<div style="font-size:15px;margin-bottom:4px">⏱️</div>
+<div style="font-size:15px;margin-bottom:4px">${IC.clock}</div>
 <div class="display" style="font-size:24px;font-weight:800;color:var(--mint)">${hrs > 0 ? hrs + "h " + mins + "m" : mins + "m"}</div>
 <div style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">LOGGED TODAY</div>
 `;
@@ -1055,9 +1093,9 @@ if (streakObj.hasFrozen && tlog.minutes > 0) {
       if (window.confetti) {
         window.confetti({ particleCount: 90, colors: ["#7DD3FC", "#38BDF8", "#E0F2FE", "#FFFFFF"], spread: 100, origin: { y: 0.5 } });
       }
-      icon.innerHTML = '🧊'; icon.className = "ice-shatter";
+      icon.innerHTML = IC.snow; icon.className = "ice-shatter";
       setTimeout(() => {
-        icon.innerHTML = '🔥'; icon.className = "";
+        icon.innerHTML = IC.flame; icon.className = "";
         toast("🧊💥 Ice shattered! Streak continued 🔥");
       }, 850);
     }, 600);
@@ -1079,12 +1117,12 @@ const streakObj = computeStreak(), tlog = state.log[todayKey()]||{minutes:0};
 const topDeck = el("div"); topDeck.className = "top-deck";
 topDeck.innerHTML = `
 <div style="display:flex;align-items:center;gap:8px">
-<span class="top-deck-pill press" id="cdPillPlan" title="Target: ESE 2027">⚡ ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillPlan" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?'🧊':'🔥'} ${streakObj.count}d</span>
+<span class="top-deck-pill press" id="cdPillPlan" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillPlan" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?IC.snow:IC.flame} ${streakObj.count}d</span>
 </div>
 <div style="display:flex;align-items:center;gap:8px">
-<button class="top-deck-pill press" id="soundPillPlan" title="Toggle Ambient Audio">🎧 ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
-<button class="iconbtn press" id="themeBtnPlan" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${state.theme==="dark"?IC.sun:IC.moon}</button>
+<button class="top-deck-pill press" id="soundPillPlan" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
+<button class="iconbtn press" id="themeBtnPlan" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
 </div>
 `;
 topDeck.querySelector("#cdPillPlan").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
@@ -1199,12 +1237,12 @@ const streakObj = computeStreak(), tlog = state.log[todayKey()]||{minutes:0};
 const topDeck = el("div"); topDeck.className = "top-deck";
 topDeck.innerHTML = `
 <div style="display:flex;align-items:center;gap:8px">
-<span class="top-deck-pill press" id="cdPillFocus" title="Target: ESE 2027">⚡ ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillFocus" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?'🧊':'🔥'} ${streakObj.count}d</span>
+<span class="top-deck-pill press" id="cdPillFocus" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillFocus" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?IC.snow:IC.flame} ${streakObj.count}d</span>
 </div>
 <div style="display:flex;align-items:center;gap:8px">
-<button class="top-deck-pill press" id="soundPillFocus" title="Toggle Ambient Audio">🎧 ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
-<button class="iconbtn press" id="themeBtnFocus" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${state.theme==="dark"?IC.sun:IC.moon}</button>
+<button class="top-deck-pill press" id="soundPillFocus" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
+<button class="iconbtn press" id="themeBtnFocus" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
 </div>
 `;
 topDeck.querySelector("#cdPillFocus").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
@@ -1256,7 +1294,7 @@ inner.appendChild(controls);
 
 /* re-enter clock mode while running */
 if(state.pomo.running&&!clockOn){
-const re=html(`<button class="chip press" style="display:flex;margin:0 auto 16px;cursor:pointer;border:1px solid var(--acc);color:var(--acc)">⛶ Enter clock mode</button>`);
+const re=html(`<button class="chip press" style="display:flex;margin:0 auto 16px;cursor:pointer;border:1px solid var(--acc);color:var(--acc)">${IC.expand} Enter clock mode</button>`);
 re.onclick=()=>{ clockOn=true; requestAppFullscreen(); updateLandscape(); };
 inner.appendChild(re); }
 
@@ -1323,7 +1361,7 @@ inner.appendChild(card); }
 const hrs=Math.floor(tlog.minutes/60), mins=tlog.minutes%60;
 const stats=el("div",{display:"grid",gridTemplateColumns:tlog.distract?"1fr 1fr 1fr":"1fr 1fr",gap:"10px",marginTop:"14px"});
 stats.innerHTML=`
-<div class="card" style="padding:16px;text-align:center;border-radius:var(--r)"><div class="display" style="font-size:28px;font-weight:800;color:var(--amber)">${tlog.sessions}</div><div style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;margin-top:4px;font-weight:700">Sessions today</div></div>
+<div class="card" style="padding:16px;text-align:center;border-radius:var(--r)"><div class="display" style="font-size:28px;font-weight:800;color:var(--amber)">${tlog.sessions||0}</div><div style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;margin-top:4px;font-weight:700">Sessions today</div></div>
 <div class="card" style="padding:16px;text-align:center;border-radius:var(--r)"><div class="display" style="font-size:28px;font-weight:800;color:var(--acc)">${hrs>0?hrs+"h "+mins+"m":mins+"m"}</div><div style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;margin-top:4px;font-weight:700">Studied today</div></div>
 ${tlog.distract?`<div class="card" style="padding:16px;text-align:center;border-radius:var(--r)"><div class="display" style="font-size:28px;font-weight:800;color:var(--rose)">${tlog.distract}</div><div style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;margin-top:4px;font-weight:700">Distractions</div></div>`:""}`;
 inner.appendChild(stats);
@@ -1434,12 +1472,12 @@ const streakObj = computeStreak(), tlog = state.log[todayKey()]||{minutes:0};
 const topDeck = el("div"); topDeck.className = "top-deck";
 topDeck.innerHTML = `
 <div style="display:flex;align-items:center;gap:8px">
-<span class="top-deck-pill press" id="cdPillProg" title="Target: ESE 2027">⚡ ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillProg" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?'🧊':'🔥'} ${streakObj.count}d</span>
+<span class="top-deck-pill press" id="cdPillProg" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillProg" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?IC.snow:IC.flame} ${streakObj.count}d</span>
 </div>
 <div style="display:flex;align-items:center;gap:8px">
-<button class="top-deck-pill press" id="soundPillProg" title="Toggle Ambient Audio">🎧 ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
-<button class="iconbtn press" id="themeBtnProg" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${state.theme==="dark"?IC.sun:IC.moon}</button>
+<button class="top-deck-pill press" id="soundPillProg" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
+<button class="iconbtn press" id="themeBtnProg" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
 </div>
 `;
 topDeck.querySelector("#cdPillProg").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
@@ -1517,9 +1555,9 @@ let c="var(--heat-0)";
 if(m>0) c="var(--heat-1)"; if(m>=120) c="var(--heat-2)"; if(m>=300) c="var(--heat-3)"; if(m>=480) c="var(--heat-4)";
 const hrsTxt=m===0?"0h (No study)":`${Math.floor(m/60)}h ${m%60}m`;
 hh+=`<div title="${k} · ${hrsTxt}" style="aspect-ratio:1;border-radius:7px;background:${c};${k===tk?"box-shadow:0 0 0 2px var(--acc);":""}"></div>`; }
-hh+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:12px;justify-content:flex-end"><span style="font-size:9px;color:var(--ink-4);font-weight:700">0h (Red)</span>';
+hh+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:12px;justify-content:flex-end"><span style="font-size:9px;color:var(--ink-4);font-weight:700">0h</span>';
 ["var(--heat-0)","var(--heat-1)","var(--heat-2)","var(--heat-3)","var(--heat-4)"].forEach(c=>hh+=`<span style="width:10px;height:10px;border-radius:3px;background:${c}"></span>`);
-hh+='<span style="font-size:9px;color:var(--ink-4);font-weight:700">8h+ (Green)</span></div>';
+hh+='<span style="font-size:9px;color:var(--ink-4);font-weight:700">8h+</span></div>';
 heat.innerHTML=hh;
 inner.appendChild(heat);
 
@@ -1645,6 +1683,7 @@ const isNext=nx&&nx.a.id===a.id;
 const fresh=on&&rec.at&&(Date.now()-new Date(rec.at).getTime())<8000;
 ah+=`<div class="hexwrap ${isNext?"next":""}" title="${a.desc}">
 <div class="hex ${on?"on":"locked"} ${fresh?"fresh":""}" style="--bc:${a.bc||"var(--amber)"}">
+${on?`<span class="shine"></span>`:""}
 <div class="hicon">${a.icon}</div>
 <div class="hlabel">${a.title}</div>
 </div>
@@ -1669,12 +1708,12 @@ const streakObj = computeStreak(), tlog = state.log[todayKey()]||{minutes:0};
 const topDeck = el("div"); topDeck.className = "top-deck";
 topDeck.innerHTML = `
 <div style="display:flex;align-items:center;gap:8px">
-<span class="top-deck-pill press" id="cdPillYou" title="Target: ESE 2027">⚡ ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillYou" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?'🧊':'🔥'} ${streakObj.count}d</span>
+<span class="top-deck-pill press" id="cdPillYou" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-frozen-text':''}" id="streakPillYou" title="Streak Status">${streakObj.hasFrozen && tlog.minutes===0?IC.snow:IC.flame} ${streakObj.count}d</span>
 </div>
 <div style="display:flex;align-items:center;gap:8px">
-<button class="top-deck-pill press" id="soundPillYou" title="Toggle Ambient Audio">🎧 ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
-<button class="iconbtn press" id="themeBtnYou" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${state.theme==="dark"?IC.sun:IC.moon}</button>
+<button class="top-deck-pill press" id="soundPillYou" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
+<button class="iconbtn press" id="themeBtnYou" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
 </div>
 `;
 topDeck.querySelector("#cdPillYou").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
@@ -1735,10 +1774,10 @@ return `<span style="display:inline-block;width:44px;height:26px;border-radius:9
 <span style="position:absolute;top:3px;left:${on?"21px":"3px"};width:20px;height:20px;border-radius:50%;background:${on?"var(--acc-ink)":"var(--ink-4)"};transition:left .25s var(--spring)"></span></span>`; }
 
 const shakyCount=Object.keys(state.shaky).length;
-inner.appendChild(acc("badges","🏅","Achievements",`${unlockedCount} / ${ACHIEVEMENTS.length}`,buildAchievements));
-inner.appendChild(acc("mocks","📊","Mock scores",state.mocks.length?`${state.mocks.length} logged`:"",buildMockCard));
-inner.appendChild(acc("shaky","⚠️","Revision queue",shakyCount?`${shakyCount} shaky`:"",buildShakyCard));
-inner.appendChild(acc("timer","⏱","Timer & notifications","",()=>rows([
+inner.appendChild(acc("badges",IC.trophy,"Achievements",`${unlockedCount} / ${ACHIEVEMENTS.length}`,buildAchievements));
+inner.appendChild(acc("mocks",IC.stats,"Mock scores",state.mocks.length?`${state.mocks.length} logged`:"",buildMockCard));
+inner.appendChild(acc("shaky",IC.warn,"Revision queue",shakyCount?`${shakyCount} shaky`:"",buildShakyCard));
+inner.appendChild(acc("timer",IC.clock,"Timer & notifications","",()=>rows([
 row("Auto loop","Cycle focus → break automatically",toggleUI(state.pomo.loop),toggleLoop),
 row("Sounds","Chimes for session completion & achievements",toggleUI(state.sound),()=>{ state.sound=!state.sound; saveJSON(SOUND_KEY,state.sound); if(state.sound) playSound("complete"); render(); }),
 row("Session notifications","Ping when a focus session or break ends",toggleUI(notifOn()),toggleNotif),
@@ -1759,12 +1798,12 @@ G_HEAD("If using in the browser")+
 G_STEP(1,"Tap the lock icon in the address bar → Permissions → Notifications → Allow")); }
 else{ askNotifPermission().then(()=>render()); toast("Permission dialog requested"); } }),
 ])));
-inner.appendChild(acc("blocking","🔒","Blocking & strict mode",state.block.strict?"armed":"",()=>rows([
+inner.appendChild(acc("blocking",IC.lock,"Blocking & strict mode",state.block.strict?"armed":"",()=>rows([
 row("Strict focus lock","During focus: Stop / Pause / Back need a 5-second hold, Esc is blocked, leaving the app is logged as a distraction",toggleUI(state.block.strict),toggleStrict),
 row("Block adult sites — whole device","Free, built into Android & Windows via DNS. Tap for 2-min setup","→",showBlockGuide),
 row("Block distracting apps","Uses Android Focus Mode / Windows Focus — tap for setup","→",showAppBlockGuide),
 ])));
-inner.appendChild(acc("app","⚙️","App & data","",()=>{
+inner.appendChild(acc("app",IC.gear,"App & data","",()=>{
 const wrap=el("div");
 /* theme picker */
 const themeRow=el("div"); themeRow.style.cssText="padding:12px 2px 2px;border-top:1px solid var(--line)";
@@ -1927,6 +1966,7 @@ ov.innerHTML=`
 </div>
 <div class="celebrate-eyebrow">${eyebrow}</div>
 <div class="celebrate-title">${title}</div>
+<div class="celebrate-stamp"><span class="celebrate-seal">${IC.check}</span></div>
 <div class="celebrate-sub">${sub}</div>
 ${next?`<div class="celebrate-next">
 <span style="font-size:20px;filter:grayscale(1);opacity:.7">${next.a.icon}</span>
@@ -1981,9 +2021,11 @@ function setTheme(id){
 if(!THEME_IDS.includes(id)) return;
 state.theme=id; saveJSON(THEME_KEY,id); applyTheme(); render();
 const t=THEMES.find(x=>x.id===id); toast(t.name); }
+/* the top-deck sun/moon key promises a light ⇄ dark toggle,
+   so jump between families here; the full 4-suit picker
+   (Mono Black / Glyph Lime / Arctic Ice / Mono White) lives in You. */
 function cycleTheme(){
-const i=THEME_IDS.indexOf(state.theme);
-setTheme(THEME_IDS[(i+1)%THEME_IDS.length]); }
+setTheme(isLightTheme(state.theme)?"ember":"paper"); }
 
 function render(){
 applyTheme();
@@ -2079,19 +2121,19 @@ Loop: ${state.pomo.loop ? "ON" : "OFF"}
 ${state.pomo.phase === "work" ? "Focus Phase" : "Break Phase"}
 </button>
 <button class="press ddrawer-action" id="dockFullscreenBtn" style="flex:none" title="Expand Full Screen">
-⛶ Overlay
+${IC.expand} Overlay
 </button>
 </div>
 <div style="margin-top:10px;padding:10px;border-radius:12px;background:var(--card-2);border:1px solid var(--border)">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-<span style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)">🎧 AMBIENT FOCUS AUDIO</span>
+<span style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)">${IC.head} AMBIENT FOCUS AUDIO</span>
 <span style="font-size:10px;font-weight:700;color:var(--acc)">${currentSoundMode.toUpperCase()}</span>
 </div>
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
 <button class="press dsound-btn ${currentSoundMode==='off'?'active':''}" data-mode="off" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='off'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='off'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='off'?'var(--acc)':'var(--ink-2)'};cursor:pointer">Off</button>
-<button class="press dsound-btn ${currentSoundMode==='rain'?'active':''}" data-mode="rain" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='rain'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='rain'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='rain'?'var(--acc)':'var(--ink-2)'};cursor:pointer">🌧️ Rain</button>
-<button class="press dsound-btn ${currentSoundMode==='waves'?'active':''}" data-mode="waves" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='waves'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='waves'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='waves'?'var(--acc)':'var(--ink-2)'};cursor:pointer">🌊 432Hz</button>
-<button class="press dsound-btn ${currentSoundMode==='brown'?'active':''}" data-mode="brown" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='brown'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='brown'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='brown'?'var(--acc)':'var(--ink-2)'};cursor:pointer">🎧 Brown</button>
+<button class="press dsound-btn ${currentSoundMode==='rain'?'active':''}" data-mode="rain" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='rain'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='rain'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='rain'?'var(--acc)':'var(--ink-2)'};cursor:pointer">Rain</button>
+<button class="press dsound-btn ${currentSoundMode==='waves'?'active':''}" data-mode="waves" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='waves'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='waves'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='waves'?'var(--acc)':'var(--ink-2)'};cursor:pointer">432Hz</button>
+<button class="press dsound-btn ${currentSoundMode==='brown'?'active':''}" data-mode="brown" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='brown'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='brown'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='brown'?'var(--acc)':'var(--ink-2)'};cursor:pointer">Brown</button>
 </div>
 </div>
 `;
@@ -2164,8 +2206,8 @@ existing.innerHTML=`
 <div class="dmeta" id="dockMeta">
 <div class="dtask">${taskTitle}</div>
 </div>
-<button class="dicon-btn press ${dockDrawerOpen?'active':''}" id="dockCustom" title="Customize Timer">⚙</button>
-<button class="dbtn press main" id="dockPlayPause">${state.pomo.running?"⏸":"▶"}</button>
+<button class="dicon-btn press ${dockDrawerOpen?'active':''}" id="dockCustom" title="Customize Timer">${IC.gear}</button>
+<button class="dbtn press main" id="dockPlayPause">${state.pomo.running?IC.pause:IC.play}</button>
 `;
 document.body.appendChild(existing);
 
@@ -2180,7 +2222,7 @@ existing.classList.add("show");
 existing.querySelector(".dtime").textContent=timeStr;
 existing.querySelector(".dphase").textContent=phaseLabel;
 existing.querySelector(".dtask").textContent=taskTitle;
-existing.querySelector("#dockPlayPause").textContent=state.pomo.running?"⏸":"▶";
+existing.querySelector("#dockPlayPause").innerHTML=state.pomo.running?IC.pause:IC.play;
 const customBtn = existing.querySelector("#dockCustom");
 if(customBtn) customBtn.classList.toggle("active", dockDrawerOpen);
 }
@@ -2199,7 +2241,7 @@ const bignum=ov.querySelector(".bignum"); if(bignum) bignum.textContent=`${fmt(m
 const bigsub=ov.querySelector(".bigsub"); if(bigsub) bigsub.textContent=state.pomo.phase==="work"?"MINUTES FOCUS":"MINUTES BREAK";
 const svg=ov.querySelector(".breather svg circle:last-child");
 if(svg){ const r=114, c=2*Math.PI*r; svg.setAttribute("stroke-dashoffset",c*(1-pct/100)); }
-const toggleBtn=ov.querySelector("#fToggle"); if(toggleBtn) toggleBtn.textContent=state.pomo.running?"⏸":"▶";
+const toggleBtn=ov.querySelector("#fToggle"); if(toggleBtn) toggleBtn.innerHTML=state.pomo.running?IC.pause:IC.play;
 const loopBtn=ov.querySelector("#fLoopBtn");
 if(loopBtn){
 loopBtn.style.borderColor=state.pomo.loop?"var(--acc)":"var(--line-2)";
@@ -2228,11 +2270,11 @@ const mm=Math.floor(rem/60), ss=rem%60;
 const phaseLabel=state.pomo.phase==="work"?"FOCUS":"BREAK";
 const fd=SCHED[state.index];
 const curSession=fd.sessions.find((_,si)=>!fd.sessions[si].tasks.every((_,ti)=>state.checked[`${state.index}-${si}-${ti}`]));
-const taskTitle=curSession?curSession.subject.split("—")[0].trim():"Study session";
+const taskTitle=curSession?(curSession.subject||curSession.title||"Study session").split("—")[0].trim():"Study session";
 const pct=secs?Math.round((1-rem/secs)*100):0;
 ov.innerHTML=`
 <div class="foverlay-header">
-<button class="fbtn-sub press" id="fSettings">⚙ Full Focus View</button>
+<button class="fbtn-sub press" id="fSettings">${IC.gear} Full Focus View</button>
 <button class="fexit press">Done ✕</button>
 </div>
 <button class="fchip press" id="fPhaseToggle" title="Switch Focus/Break">${phaseLabel}</button>
@@ -2249,9 +2291,9 @@ ${ring(240,12,pct,"var(--acc)","var(--card-2)")}
 <div class="ft">${taskTitle}</div>
 </div>
 <div class="fctrl">
-<button class="fbtn press" id="fSkip" title="Skip phase">⏭</button>
-<button class="fbtn main press" id="fToggle" title="Play/Pause">${state.pomo.running?"⏸":"▶"}</button>
-<button class="fbtn press" id="fReset" title="Reset timer">⏹</button>
+<button class="fbtn press" id="fSkip" title="Skip phase">${IC.skip}</button>
+<button class="fbtn main press" id="fToggle" title="Play/Pause">${state.pomo.running?IC.pause:IC.play}</button>
+<button class="fbtn press" id="fReset" title="Reset timer">${IC.stop}</button>
 </div>
 <div class="fcustom-panel">
 <div class="fcustom-title">CUSTOMIZE SESSION TIMING</div>

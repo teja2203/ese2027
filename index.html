@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ESE2027 — Study OS</title>
 <meta name="description" content="Study sanctuary for ESE 2027 exam preparation — craft your path to mastery with focus and discipline.">
-<meta name="theme-color" content="#0A0E17">
+<meta name="theme-color" content="#000000">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -29,60 +29,57 @@
 </style>
 <link rel="stylesheet" href="./css/app.css">
 <style>
-/* ── animated splash (uses theme tokens from app.css) ─── */
+/* ── Nothing splash — monochrome dot-matrix ───────────── */
 :root{
-  --splash-bg:#070A11;
-  --splash-accent:#FF6B35;
-  --splash-text:#F9F6F0;
-  --splash-text-dim:#8A8579;
+  --splash-bg:#000000;
+  --splash-acc:#D71921;
+  --splash-text:#F5F5F2;
+  --splash-dim:#555550;
 }
 #splash{ position:fixed; inset:0; z-index:2147483200; display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:26px; background:var(--splash-bg);
   transition:opacity .45s cubic-bezier(.22,1,.36,1), visibility .45s; }
+#splash::before{ content:""; position:fixed; inset:0; pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.13) 1px, transparent 1px);
+  background-size:22px 22px; }
 #splash.out{ opacity:0; visibility:hidden; pointer-events:none; }
-#splash .disc{ position:relative; width:132px; height:132px; }
-#splash .disc img{ position:absolute; inset:0; width:100%; height:100%; border-radius:28px;
-  animation:spIcon 1.6s cubic-bezier(.34,1.5,.42,1) both,
-            spFloat 2.6s ease-in-out 1.6s infinite;
-  box-shadow:0 0 24px rgba(255,107,53,.3); }
-#splash .ring{ position:absolute; inset:-14px; border-radius:40px;
-  border:2.5px solid rgba(255,107,53,.65); opacity:0;
-  animation:spRing 1.6s cubic-bezier(.22,1,.36,1) .9s infinite; }
-#splash .ring.r2{ inset:-26px; border-radius:48px; border-color:rgba(255,107,53,.25);
-  animation-delay:1.25s; }
-#splash .halo{ position:absolute; inset:-8px; border-radius:36px;
-  box-shadow:0 0 60px 12px rgba(255,107,53,.25); opacity:0;
-  animation:spHalo 1s ease .9s both, spBreathe 2.6s ease-in-out 1.9s infinite; }
+#splash .disc{ position:relative; width:120px; height:120px; }
+#splash .disc img{ position:absolute; inset:0; width:100%; height:100%; border-radius:22px;
+  filter:grayscale(1) contrast(1.05);
+  animation:spIcon 1s cubic-bezier(.34,1.2,.42,1) both; }
+#splash .ring{ position:absolute; inset:-12px; border-radius:30px;
+  border:1.5px solid rgba(215,25,33,.6); opacity:0;
+  animation:spRing 1.4s cubic-bezier(.22,1,.36,1) .7s infinite; }
+#splash .ring.r2{ inset:-24px; border-radius:38px; border-color:rgba(215,25,33,.22);
+  animation-delay:1.05s; }
 @keyframes spIcon{
-  0%{ opacity:0; transform:scale(.25) rotate(-540deg) translateY(60px); }
-  55%{ opacity:1; transform:scale(1.12) rotate(14deg) translateY(0); }
-  75%{ transform:scale(.96) rotate(-5deg); }
-  100%{ opacity:1; transform:scale(1) rotate(0); } }
-@keyframes spFloat{ 0%,100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-7px) scale(1.02); } }
+  0%{ opacity:0; transform:scale(.5) translateY(26px); }
+  60%{ opacity:1; transform:scale(1.06) translateY(0); }
+  80%{ transform:scale(.98); }
+  100%{ opacity:1; transform:scale(1); } }
 @keyframes spRing{
-  0%{ opacity:.9; transform:scale(.7); }
-  100%{ opacity:0; transform:scale(1.45); } }
-@keyframes spHalo{ from{ opacity:0; } to{ opacity:1; } }
-@keyframes spBreathe{ 0%,100%{ opacity:1; } 50%{ opacity:.55; } }
-#splash .t{ display:flex; gap:2px; font-family:system-ui,sans-serif;
-  font-size:27px; font-weight:800; letter-spacing:-.04em; color:var(--splash-text); }
-#splash .t span{ display:inline-block; animation:spChar .7s cubic-bezier(.34,1.5,.42,1) both; }
-#splash .t span:nth-child(1){animation-delay:1.15s}#splash .t span:nth-child(2){animation-delay:1.27s}
-#splash .t span:nth-child(3){animation-delay:1.39s}#splash .t span:nth-child(4){animation-delay:1.51s}
-#splash .t span:nth-child(5){animation-delay:1.63s}#splash .t span:nth-child(6){animation-delay:1.75s}
-#splash .t span:nth-child(7){animation-delay:1.87s}
-#splash .t .lime{ color:var(--splash-accent); text-shadow:0 0 16px rgba(255,107,53,.4); }
-@keyframes spChar{ 0%{ opacity:0; transform:translateY(22px) scale(.7); }
+  0%{ opacity:.85; transform:scale(.72); }
+  100%{ opacity:0; transform:scale(1.4); } }
+#splash .t{ display:flex; gap:7px; font-family:'Ndot','Doto',monospace;
+  font-size:30px; letter-spacing:.02em; color:var(--splash-text);
+  text-rendering:geometricPrecision; }
+#splash .t span{ display:inline-block; animation:spChar .5s cubic-bezier(.34,1.2,.42,1) both; }
+#splash .t span:nth-child(1){animation-delay:1.05s}#splash .t span:nth-child(2){animation-delay:1.14s}
+#splash .t span:nth-child(3){animation-delay:1.23s}#splash .t span:nth-child(4){animation-delay:1.32s}
+#splash .t span:nth-child(5){animation-delay:1.41s}#splash .t span:nth-child(6){animation-delay:1.5s}
+#splash .t span:nth-child(7){animation-delay:1.59s}
+#splash .t .lime{ color:var(--splash-acc); }
+@keyframes spChar{ 0%{ opacity:0; transform:translateY(18px) scale(.8); }
   100%{ opacity:1; transform:none; } }
-#splash .sub{ font-family:system-ui,sans-serif; font-size:10px; font-weight:700;
-  letter-spacing:.28em; text-transform:uppercase; color:var(--splash-text-dim); margin-top:-14px;
-  animation:spChar .7s ease 2.15s both; }
-#splash .cd{ font-family:monospace; font-size:13px; font-weight:700;
-  color:var(--splash-accent); margin-top:2px; letter-spacing:.06em;
-  animation:spChar .7s ease 2.5s both, spBreathe 2.6s ease-in-out 3.4s infinite;
-  text-shadow:0 0 12px rgba(255,107,53,.3); }
+#splash .sub{ font-family:'Space Mono',monospace; font-size:10px; font-weight:700;
+  letter-spacing:.34em; text-transform:uppercase; color:var(--splash-dim); margin-top:-14px;
+  animation:spChar .5s ease 1.95s both; }
+#splash .cd{ font-family:'Space Mono',monospace; font-size:12px; font-weight:700;
+  letter-spacing:.14em; color:var(--splash-acc); margin-top:2px;
+  animation:spChar .5s ease 2.3s both, spBreathe 2.6s ease-in-out 3s infinite; }
+@keyframes spBreathe{ 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
 @media (prefers-reduced-motion: reduce){
-  #splash .disc img,#splash .ring,#splash .halo,#splash .t span,#splash .sub{ animation:none !important; opacity:1; } }
+  #splash .disc img,#splash .ring,#splash .t span,#splash .sub{ animation:none !important; opacity:1; } }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -95,7 +92,7 @@
     <div class="ring r2"></div>
   </div>
   <div class="t"><span>E</span><span>S</span><span>E</span><span class="lime">2</span><span class="lime">0</span><span class="lime">2</span><span class="lime">7</span></div>
-  <div class="sub">Mission Control</div>
+  <div class="sub">Study OS · Mission Control</div>
   <div class="cd" id="spCd"></div>
 </div>
 <script>
