@@ -178,7 +178,7 @@ button{ font-family:inherit; }
 /* streak pill must never clip its "Nd" label */
 .fire-pill,.ice-pill{ flex-shrink:0; }
 /* the long countdown pill yields first when the row is tight */
-#cdPill,#cdPillPlan,#cdPillFocus,#cdPillProg,#cdPillYou{ flex-shrink:1; min-width:0;
+.cd-pill{ flex-shrink:1; min-width:0;
   overflow:hidden; text-overflow:ellipsis; }
 /* let the left pill group shrink so the countdown (not the streak) truncates */
 .top-deck > div:first-child{ min-width:0; }

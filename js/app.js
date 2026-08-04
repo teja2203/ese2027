@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v32";
+const APP_VERSION="v33";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -268,26 +268,6 @@ function parsePlanDate(s){ const p=s.split(" "); const mi=MON.indexOf(p[0]); con
 function effDateLabel(i){ const b=parsePlanDate(SCHED[i].date); const sh=state.restedDays.filter(r=>r.i<=i).length; b.setDate(b.getDate()+sh); return MON[b.getMonth()]+" "+b.getDate(); }
 function isRestToday(){ return state.restedDays.some(r=>r.d===todayKey()); }
 function findTodayIndex(){ const t=todayDateLabel(); for(let i=0;i<SCHED.length;i++){ if(effDateLabel(i)===t) return i; } return -1; }
-function takeRestToday(){
-if(state.restDayBank<=0){ toast("No rest days left in the bank"); return; }
-if(isRestToday()){ toast("Today is already a rest day"); return; }
-const idx=findTodayIndex();
-if(idx<0){ toast("No plan day today to shift"); return; }
-if(!confirm(`Take a rest day?\n\nToday's plan (${SCHED[idx].subject}) and everything after it moves forward by one day.\n\n${state.restDayBank-1} of 7 rest days will remain.`)) return;
-state.restedDays.push({i:idx,d:todayKey()});
-state.restDayBank--;
-saveJSON(REST_KEY,state.restDayBank); saveJSON(RESTED_KEY,state.restedDays);
-state.freeze[todayKey()]="rest";              /* free freeze — sickness never kills the streak */
-saveJSON(FREEZE_KEY,state.freeze);
-render(); toast("🛌 Rest day taken — recover well"); }
-function cancelRestToday(){
-const ix=state.restedDays.findIndex(r=>r.d===todayKey());
-if(ix<0) return;
-if(!confirm("Cancel today's rest and return to the plan?")) return;
-state.restedDays.splice(ix,1); state.restDayBank++;
-if(state.freeze[todayKey()]==="rest") delete state.freeze[todayKey()];
-saveJSON(REST_KEY,state.restDayBank); saveJSON(RESTED_KEY,state.restedDays); saveJSON(FREEZE_KEY,state.freeze);
-render(); toast("Rest cancelled — back on plan 💪"); }
 
 /* ── mock test scores ─────────────────────────────────── */
 function addMockSheet(){
@@ -633,27 +613,12 @@ function toggleNotif(){
   if(!notifOn()){
     state.notif=true; saveJSON(NOTIF_KEY,true);
     askNotifPermission().then(p=>{
-      if(p==="granted"){ subscribePush(); toast("Session notifications on"); notify("Notifications enabled","You'll be pinged when a session or break ends."); }
+      if(p==="granted"){ toast("Session notifications on"); notify("Notifications enabled","You'll be pinged when a session or break ends."); }
       else if(p==="denied"){ state.notif=false; saveJSON(NOTIF_KEY,false); toast("Blocked — enable notifications for this app in Android Settings"); }
       else toast("Waiting for permission…");
       render(); });
     render();
   }else{ state.notif=false; saveJSON(NOTIF_KEY,false); toast("Session notifications off"); render(); } }
-
-/* ── web push (closed-app notifications) ──────────────── */
-const VAPID_PUBLIC="BF0fC7HEttfCmKd6cBrI92_fJI2eYRJDF3qoPaOvJ3FpLfiyhla2oc3G_G1sYMki5gBLfN176y6ShsDvvFv-eu0";
-function b64ToU8(s){ const p="=".repeat((4-s.length%4)%4), b=(s+p).replace(/-/g,"+").replace(/_/g,"/");
-const raw=atob(b), a=new Uint8Array(raw.length); for(let i=0;i<raw.length;i++) a[i]=raw.charCodeAt(i); return a; }
-async function subscribePush(){
-try{
-if(!("serviceWorker" in navigator)||!("PushManager" in window)) return null;
-if(Notification.permission!=="granted") return null;
-const reg=await navigator.serviceWorker.ready;
-let sub=await reg.pushManager.getSubscription();
-if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(VAPID_PUBLIC)});
-if(window._sbSavePush) window._sbSavePush(sub.toJSON());
-return sub;
-}catch(e){ return null; } }
 
 /* ── plan slot notifications (scheduled study reminders) ─ */
 const SLOT_NOTIF_KEY="ese_slot_notified_v1";
@@ -987,6 +952,27 @@ function iceShatterShowcase(iconEl, opts){
   }, 1050);
 }
 
+/* shared top command deck — identical across all 5 screens */
+function topDeck(){
+const cdDate = cd(ESE_DATE);
+const streakObj = computeStreak(), tlog = state.log[todayKey()]||{minutes:0};
+const d = el("div"); d.className = "top-deck";
+d.innerHTML = `
+<div style="display:flex;align-items:center;gap:8px">
+<span class="top-deck-pill cd-pill press" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
+<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-pill':'fire-pill'}" title="Streak Status">${IC.flame} ${streakObj.count}d</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<button class="top-deck-pill press sound-pill" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
+<button class="iconbtn press theme-btn" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
+</div>`;
+d.querySelector(".cd-pill").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
+d.querySelector(".fire-pill,.ice-pill").onclick = () => setNav("progress");
+d.querySelector(".sound-pill").onclick = () => toggleDockDrawer();
+d.querySelector(".theme-btn").onclick = cycleTheme;
+return d;
+}
+
 /* ════════════════ TODAY (MASTER BENTO COMMAND CENTER) ════════════════ */
 function renderToday(){
 const wrap=el("div"); wrap.className="screen view";
@@ -998,25 +984,7 @@ const streakObj=computeStreak(), streak=streakObj.count, tlog=state.log[todayKey
 const inner=el("div"); inner.className="stagger";
 
 /* ── Top Header Command Deck ── */
-const cdDate = cd(ESE_DATE);
-const topDeck = el("div"); topDeck.className = "top-deck";
-topDeck.innerHTML = `
-<div style="display:flex;align-items:center;gap:8px">
-<span class="top-deck-pill press" id="cdPill" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-pill':'fire-pill'}" id="streakPill" title="Streak Status">${IC.flame} ${streak}d</span>
-</div>
-<div style="display:flex;align-items:center;gap:8px">
-<button class="top-deck-pill press" id="soundPill" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
-<button class="iconbtn press" id="cmdBtn" style="width:34px;height:34px;border-radius:10px" title="Command Palette">${IC.cmd}</button>
-<button class="iconbtn press" id="themeBtn" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
-</div>
-`;
-topDeck.querySelector("#cdPill").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
-topDeck.querySelector("#streakPill").onclick = () => setNav("progress");
-topDeck.querySelector("#soundPill").onclick = () => toggleDockDrawer();
-topDeck.querySelector("#cmdBtn").onclick = openCmd;
-topDeck.querySelector("#themeBtn").onclick = cycleTheme;
-inner.appendChild(topDeck);
+inner.appendChild(topDeck());
 
 /* greeting header */
 inner.appendChild(html(`<div style="margin-bottom:14px">
@@ -1169,24 +1137,7 @@ const bs=badgeStyle(day.badge);
 const inner=el("div"); inner.className="stagger";
 
 /* ── Top Header Command Deck ── */
-const cdDate = cd(ESE_DATE);
-const streakObj = computeStreak(), tlog = state.log[todayKey()]||{minutes:0};
-const topDeck = el("div"); topDeck.className = "top-deck";
-topDeck.innerHTML = `
-<div style="display:flex;align-items:center;gap:8px">
-<span class="top-deck-pill press" id="cdPillPlan" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-pill':'fire-pill'}" id="streakPillPlan" title="Streak Status">${IC.flame} ${streakObj.count}d</span>
-</div>
-<div style="display:flex;align-items:center;gap:8px">
-<button class="top-deck-pill press" id="soundPillPlan" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
-<button class="iconbtn press" id="themeBtnPlan" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
-</div>
-`;
-topDeck.querySelector("#cdPillPlan").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
-topDeck.querySelector("#streakPillPlan").onclick = () => setNav("progress");
-topDeck.querySelector("#soundPillPlan").onclick = () => toggleDockDrawer();
-topDeck.querySelector("#themeBtnPlan").onclick = cycleTheme;
-inner.appendChild(topDeck);
+inner.appendChild(topDeck());
 
 const head=html(`<header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
 <h1 class="display" style="font-size:24px;font-weight:800;color:var(--ink)">Plan & Syllabus</h1>
@@ -1289,24 +1240,7 @@ const wrap=el("div"); wrap.className="screen view";
 const inner=el("div"); inner.className="stagger";
 
 /* ── Top Header Command Deck ── */
-const cdDate = cd(ESE_DATE);
-const streakObj = computeStreak(), tlog = state.log[todayKey()]||{minutes:0};
-const topDeck = el("div"); topDeck.className = "top-deck";
-topDeck.innerHTML = `
-<div style="display:flex;align-items:center;gap:8px">
-<span class="top-deck-pill press" id="cdPillFocus" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-pill':'fire-pill'}" id="streakPillFocus" title="Streak Status">${IC.flame} ${streakObj.count}d</span>
-</div>
-<div style="display:flex;align-items:center;gap:8px">
-<button class="top-deck-pill press" id="soundPillFocus" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
-<button class="iconbtn press" id="themeBtnFocus" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
-</div>
-`;
-topDeck.querySelector("#cdPillFocus").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
-topDeck.querySelector("#streakPillFocus").onclick = () => setNav("progress");
-topDeck.querySelector("#soundPillFocus").onclick = () => toggleDockDrawer();
-topDeck.querySelector("#themeBtnFocus").onclick = cycleTheme;
-inner.appendChild(topDeck);
+inner.appendChild(topDeck());
 
 inner.appendChild(header("Focus Mode","Deep work immersion hub"));
 
@@ -1415,6 +1349,7 @@ card.onclick=()=>setNav("plan");
 inner.appendChild(card); }
 
 /* today's totals */
+const tlog=state.log[todayKey()]||{sessions:0,minutes:0};
 const hrs=Math.floor(tlog.minutes/60), mins=tlog.minutes%60;
 const stats=el("div",{display:"grid",gridTemplateColumns:tlog.distract?"1fr 1fr 1fr":"1fr 1fr",gap:"10px",marginTop:"14px"});
 stats.innerHTML=`
@@ -1530,24 +1465,7 @@ const wrap=el("div"); wrap.className="screen view";
 const inner=el("div"); inner.className="stagger";
 
 /* ── Top Header Command Deck ── */
-const cdDate = cd(ESE_DATE);
-const streakObj = computeStreak(), tlog = state.log[todayKey()]||{minutes:0};
-const topDeck = el("div"); topDeck.className = "top-deck";
-topDeck.innerHTML = `
-<div style="display:flex;align-items:center;gap:8px">
-<span class="top-deck-pill press" id="cdPillProg" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-pill':'fire-pill'}" id="streakPillProg" title="Streak Status">${IC.flame} ${streakObj.count}d</span>
-</div>
-<div style="display:flex;align-items:center;gap:8px">
-<button class="top-deck-pill press" id="soundPillProg" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
-<button class="iconbtn press" id="themeBtnProg" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
-</div>
-`;
-topDeck.querySelector("#cdPillProg").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
-topDeck.querySelector("#streakPillProg").onclick = () => setNav("progress");
-topDeck.querySelector("#soundPillProg").onclick = () => toggleDockDrawer();
-topDeck.querySelector("#themeBtnProg").onclick = cycleTheme;
-inner.appendChild(topDeck);
+inner.appendChild(topDeck());
 
 inner.appendChild(header("Progress & Analytics","Mastery breakdown"));
 const ov=overall();
@@ -1764,28 +1682,12 @@ const wrap=el("div"); wrap.className="screen view";
 const inner=el("div"); inner.className="stagger";
 
 /* ── Top Header Command Deck ── */
-const cdDate = cd(ESE_DATE);
-const streakObj = computeStreak(), tlog = state.log[todayKey()]||{minutes:0};
-const topDeck = el("div"); topDeck.className = "top-deck";
-topDeck.innerHTML = `
-<div style="display:flex;align-items:center;gap:8px">
-<span class="top-deck-pill press" id="cdPillYou" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-pill':'fire-pill'}" id="streakPillYou" title="Streak Status">${IC.flame} ${streakObj.count}d</span>
-</div>
-<div style="display:flex;align-items:center;gap:8px">
-<button class="top-deck-pill press" id="soundPillYou" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
-<button class="iconbtn press" id="themeBtnYou" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
-</div>
-`;
-topDeck.querySelector("#cdPillYou").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
-topDeck.querySelector("#streakPillYou").onclick = () => setNav("progress");
-topDeck.querySelector("#soundPillYou").onclick = () => toggleDockDrawer();
-topDeck.querySelector("#themeBtnYou").onclick = cycleTheme;
-inner.appendChild(topDeck);
+inner.appendChild(topDeck());
 
 inner.appendChild(header("Profile & Settings","Mastery Dashboard"));
 
 /* identity card */
+const streakObj=computeStreak();
 const streak=streakObj.count, sstreak=computeSessionStreak();
 const unlockedCount=ACHIEVEMENTS.filter(a=>state.achievements[a.id]).length;
 const ese=cd(ESE_DATE);
@@ -1894,11 +1796,13 @@ row("Backup data","Download all progress as JSON","⬇",exportData),
 row("Restore backup","Load a previous backup file","⬆",()=>document.getElementById("importFile").click()),
 row("Reset progress","Clears every checked task — cannot be undone","",()=>{
 if(confirm("Reset ALL task progress? This cannot be undone.")){ state.checked={}; saveJSON(STORAGE_KEY,state.checked); render(); toast("Progress reset"); } }),
-row("Sign out","Stop syncing on this device","",async()=>{
-if(!confirm("Sign out from ESE2027?")) return;
+(window.eseSyncUser&&window.eseSyncUser())
+? row("Cloud sync","Signed in · progress backs up automatically","✓",async()=>{
+if(!confirm("Sign out from cloud sync? Your progress stays on this device.")) return;
 try{ if(window.sbAuth) await window.sbAuth.signOut(); }catch(e){}
-toast("Signed out"); }),
-row("Shortcuts","⌘K palette · 1-4 tabs · T theme · Z undo · Space timer",""),
+toast("Signed out — still saved on this device"); render(); })
+: row("Cloud sync","Optional — sign in to back up across devices","☁",()=>{ if(window.eseSignIn) window.eseSignIn(); }),
+row("Shortcuts","1-5 tabs · T theme · Z undo · Space timer",""),
 ]); }));
 
 inner.appendChild(html(`<div style="text-align:center;font-size:11px;color:var(--ink-4);line-height:1.9;padding:8px 0 20px">
@@ -2445,74 +2349,8 @@ renderTimerDock();
 }
 
 
-/* ── command palette ──────────────────────────────────── */
-let cmdOpen=false;
-function commandList(){
-const c=[
-{i:"◈",l:"Go to Today",r:()=>setNav("today")},
-{i:"◈",l:"Go to Plan",r:()=>setNav("plan")},
-{i:"◈",l:"Go to Focus",r:()=>setNav("focus")},
-{i:"◈",l:"Go to Progress",r:()=>setNav("progress")},
-{i:"◈",l:"Go to You",r:()=>setNav("you")},
-{i:"→",l:"Jump to today",r:()=>{ goToday(); if(state.nav!=="plan") setNav("plan"); }},
-...THEMES.map(t=>({i:"◐",l:"Theme — "+t.name,r:()=>setTheme(t.id)})),
-{i:"▸",l:state.pomo.running?"Pause timer":"Start timer",r:toggleRunning},
-{i:"↺",l:"Reset timer",r:resetPomo},
-{i:"⌫",l:"Undo last check",r:undoLast},
-{i:"⬇",l:"Backup data",r:exportData},
-];
-SCHED.forEach((d,i)=>c.push({i:"▪",l:`Open ${d.date} · ${d.subject}`,day:true,r:()=>{ jumpTo(i); if(state.nav!=="plan") setNav("plan"); }}));
-return c; }
-function openCmd(){
-if(cmdOpen) return; cmdOpen=true;
-const prevFocus=document.activeElement;
-const scrim=el("div"); scrim.className="scrim";
-scrim.setAttribute("role","dialog"); scrim.setAttribute("aria-modal","true"); scrim.setAttribute("aria-label","Command palette");
-Object.assign(scrim.style,{alignItems:"flex-start",paddingTop:"12vh"});
-const sheet=el("div"); sheet.className="sheet";
-const inp=document.createElement("input");
-inp.type="text"; inp.placeholder="Search commands or days…"; inp.setAttribute("aria-label","Search commands");
-Object.assign(inp.style,{width:"100%",boxSizing:"border-box",padding:"17px 20px",border:"none",
-borderBottom:"1px solid var(--line)",background:"transparent",color:"var(--ink)",fontSize:"15px",outline:"none",fontFamily:"inherit"});
-const list=el("div"); list.setAttribute("role","listbox");
-Object.assign(list.style,{maxHeight:"44vh",overflowY:"auto",padding:"6px"});
-let items=[],sel=0;
-function paint(q){
-const all=commandList(); const ql=(q||"").toLowerCase().trim();
-items=ql?all.filter(c=>c.l.toLowerCase().includes(ql)):all.filter(c=>!c.day).concat(all.filter(c=>c.day).slice(0,5));
-sel=0; list.innerHTML="";
-if(!items.length){ list.innerHTML=`<div style="padding:24px;text-align:center;color:var(--ink-3);font-size:13px">Nothing matches</div>`; return; }
-items.forEach((c,i)=>{
-const row=el("button"); row.setAttribute("role","option");
-Object.assign(row.style,{width:"100%",display:"flex",alignItems:"center",gap:"12px",padding:"12px 14px",
-border:"none",borderRadius:"12px",background:i===sel?"var(--acc-dim)":"transparent",
-color:i===sel?"var(--acc)":"var(--ink-2)",fontSize:"13.5px",fontWeight:"600",cursor:"pointer",textAlign:"left"});
-row.innerHTML=`<span style="width:18px;text-align:center;opacity:.8">${c.i}</span><span style="flex:1">${c.l}</span>`;
-row.onmouseenter=()=>{ sel=i; refresh(); };
-row.onclick=()=>{ close(); c.r(); };
-list.appendChild(row); }); }
-function refresh(){ [...list.children].forEach((r,i)=>{ r.style.background=i===sel?"var(--acc-dim)":"transparent"; r.style.color=i===sel?"var(--acc)":"var(--ink-2)"; }); }
-function close(){ cmdOpen=false; scrim.classList.remove("in");
-setTimeout(()=>{ scrim.remove(); if(prevFocus&&prevFocus.focus) prevFocus.focus(); },200);
-document.removeEventListener("keydown",onKey,true); }
-function onKey(e){
-if(e.key==="Escape"){ e.preventDefault(); close(); }
-else if(e.key==="ArrowDown"){ e.preventDefault(); sel=Math.min(sel+1,items.length-1); refresh(); list.children[sel]&&list.children[sel].scrollIntoView({block:"nearest"}); }
-else if(e.key==="ArrowUp"){ e.preventDefault(); sel=Math.max(sel-1,0); refresh(); list.children[sel]&&list.children[sel].scrollIntoView({block:"nearest"}); }
-else if(e.key==="Enter"){ e.preventDefault(); const c=items[sel]; if(c){ close(); c.r(); } } }
-inp.oninput=()=>paint(inp.value);
-scrim.onclick=e=>{ if(e.target===scrim) close(); };
-document.addEventListener("keydown",onKey,true);
-sheet.appendChild(inp); sheet.appendChild(list);
-sheet.appendChild(html(`<div style="display:flex;gap:16px;padding:10px 16px;border-top:1px solid var(--line);font-size:10.5px;color:var(--ink-4);font-weight:600"><span>↑↓ navigate</span><span>↵ run</span><span>esc close</span></div>`));
-scrim.appendChild(sheet); document.body.appendChild(scrim);
-requestAnimationFrame(()=>scrim.classList.add("in"));
-paint(""); inp.focus(); }
-
 /* ── global shortcuts ─────────────────────────────────── */
 document.addEventListener("keydown",e=>{
-if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){ e.preventDefault(); openCmd(); return; }
-if(cmdOpen) return;
 /* flip clock: Esc = back to normal UI */
 if(e.key==="Escape"&&clockOn){ e.preventDefault(); if(strictActive()){ toast("Strict mode — hold the Back button 5s"); return; } leaveClock(); return; }
 const t=e.target;
@@ -2647,8 +2485,6 @@ window.addEventListener("orientationchange",()=>setTimeout(()=>{ updateLandscape
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"){ syncPomoState(); render(); } else{ bankProgress(); if(strictActive()){ logDistraction(); notify("Focus broken 🚨","You left mid-session. It's logged. Get back in."); } releaseWakeLock(); saveJSON(POMO_KEY,state.pomo); } });
 window.addEventListener("pagehide",()=>{ bankProgress(); saveJSON(POMO_KEY,state.pomo); });
 window.addEventListener("pageshow",()=>{ syncPomoState(); render(); });
-/* re-assert push subscription on every launch (tokens can rotate) */
-if("Notification" in window&&Notification.permission==="granted") setTimeout(subscribePush,2500);
 
 /* ── service worker ───────────────────────────────────── */
 if("serviceWorker" in navigator && location.protocol!=="file:"){
@@ -2684,7 +2520,9 @@ card('<div style="text-align:center"><div style="font-family:Outfit,sans-serif;f
 '<input id="cp" type="password" placeholder="Password" style="width:100%;box-sizing:border-box;margin-top:10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line-2);background:var(--card-2);color:var(--ink);font-size:14px;outline:none">'+
 '<button id="cgo" class="btn btn-acc" style="width:100%;margin-top:18px">'+(mode==="up"?"Sign up":"Sign in")+"</button>"+
 '<div id="cmsg" style="font-size:12px;color:var(--rose);text-align:center;margin-top:10px;min-height:16px"></div>'+
-'<div style="text-align:center;margin-top:6px;font-size:13px;color:var(--ink-3)">'+(mode==="up"?"Have an account? ":"New here? ")+'<a id="ctog" href="#" style="color:var(--acc);font-weight:700;text-decoration:none">'+(mode==="up"?"Sign in":"Create one")+"</a></div>");
+'<div style="text-align:center;margin-top:6px;font-size:13px;color:var(--ink-3)">'+(mode==="up"?"Have an account? ":"New here? ")+'<a id="ctog" href="#" style="color:var(--acc);font-weight:700;text-decoration:none">'+(mode==="up"?"Sign in":"Create one")+"</a></div>"+
+'<div style="text-align:center;margin-top:14px"><a id="cskip" href="#" style="color:var(--ink-4);font-weight:600;font-size:12px;text-decoration:none">Maybe later — use offline</a></div>');
+document.getElementById("cskip").onclick=function(e){ e.preventDefault(); hide(); };
 document.getElementById("ctog").onclick=function(e){ e.preventDefault(); form(mode==="up"?"in":"up"); };
 document.getElementById("cgo").onclick=function(){
 var em=document.getElementById("ce").value.trim(), pw=document.getElementById("cp").value, m=document.getElementById("cmsg");
@@ -2692,22 +2530,25 @@ if(!em||!pw){ m.textContent="Enter email and password"; return; }
 m.style.color="var(--ink-3)"; m.textContent="Please wait…";
 var p=mode==="up"?sb.auth.signUp({email:em,password:pw}):sb.auth.signInWithPassword({email:em,password:pw});
 p.then(function(r){ if(r.error){ m.style.color="var(--rose)"; m.textContent=r.error.message; } }); }; }
-function loading(){ card('<div style="text-align:center;padding:20px 0;font-size:14px;color:var(--ink-3)">Loading your progress…</div>'); }
 function push(){ if(!user) return; sb.from("user_progress").upsert({user_id:user.id,data:snap(),updated_at:new Date().toISOString()}).then(function(){}); }
-window._sbSavePush=function(subJson){
-if(!user||!subJson||!subJson.endpoint) return;
-sb.from("push_subs").upsert({endpoint:subJson.endpoint,user_id:user.id,sub:subJson,updated_at:new Date().toISOString()},{onConflict:"endpoint"}).then(function(){}); };
 function afterLogin(session){
-user=session.user; loading();
+user=session.user;
+/* silent background sync — never blocks the app */
 sb.from("user_progress").select("data,updated_at").eq("user_id",user.id).maybeSingle().then(function(res){
 var cloud=res.data, localChange=localStorage.getItem(CHANGE);
 if(cloud&&cloud.data&&Object.keys(cloud.data).length){
-if(!localChange||cloud.updated_at>localChange){ restore(cloud.data); localStorage.setItem(CHANGE,cloud.updated_at); render(); }
+if(!localChange||cloud.updated_at>localChange){ restore(cloud.data); localStorage.setItem(CHANGE,cloud.updated_at); }
 else push(); }
 else push();
 lastSnap=JSON.stringify(snap()); hide(); render();
 }).catch(function(){ hide(); }); }
-sb.auth.onAuthStateChange(function(_e,session){ if(session) afterLogin(session); else form("in"); });
+/* optional cloud sync — the app is fully usable signed-out. If a session
+   is already stored we sync silently; otherwise we do NOT gate the app. */
+sb.auth.onAuthStateChange(function(_e,session){ if(session){ afterLogin(session); } else { user=null; render(); } });
+/* You → "Sign in to sync" opens the form on demand; dismissable */
+window.eseSignIn=function(){ form("in"); };
+window.eseSyncUser=function(){ return user?(user.email||"synced"):null; };
+ov.onclick=function(e){ if(e.target===ov) hide(); };
 setInterval(function(){ if(!user) return; var s=JSON.stringify(snap());
 if(s!==lastSnap){ lastSnap=s; localStorage.setItem(CHANGE,new Date().toISOString()); push(); } },3000);
 window.addEventListener("beforeunload",function(){ if(user) push(); });
