@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v33";
+const APP_VERSION="v45";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -314,7 +314,7 @@ if(state.shaky[k]) delete state.shaky[k];
 else state.shaky[k]={t:SCHED[state.index].sessions[si].tasks[ti],subj:SCHED[state.index].subject,d:SCHED[state.index].date};
 saveJSON(SHAKY_KEY,state.shaky);
 toast(state.shaky[k]?"Marked shaky — added to revision queue":"Removed from revision queue");
-render(); }
+renderQuiet(); }
 
 /* ── daily self-rating ────────────────────────────────── */
 function maybeAskRating(){
@@ -822,7 +822,7 @@ const completed=session.tasks.every((_,x)=>state.checked[`${state.index}-${si}-$
 if(completed){ state.expandedSessions[`${state.index}-${si}`]=false;
 try{ navigator.vibrate&&navigator.vibrate(40); }catch(e){} }
 saveJSON(EXP_KEY,state.expandedSessions);
-render();
+renderQuiet();
 const day=dayStats(state.index);
 if(day.tot&&day.dn===day.tot&&!state.celebratedDays[state.index]){
 state.celebratedDays[state.index]=true; saveJSON(CELEB_KEY,state.celebratedDays);
@@ -958,22 +958,43 @@ const cdDate = cd(ESE_DATE);
 const streakObj = computeStreak(), tlog = state.log[todayKey()]||{minutes:0};
 const d = el("div"); d.className = "top-deck";
 d.innerHTML = `
-<div style="display:flex;align-items:center;gap:8px">
-<span class="top-deck-pill cd-pill press" title="Target: ESE 2027">${IC.bolt} ESE 2027 · ${cdDate.d}d</span>
-<span class="top-deck-pill press ${streakObj.hasFrozen && tlog.minutes===0?'ice-pill':'fire-pill'}" title="Streak Status">${IC.flame} ${streakObj.count}d</span>
+<div class="td-left">
+<span class="nt-brand cd-pill press" title="Target: ESE 2027">ESE<span class="sl">//</span>2027</span>
+<span class="nt-tag cd-tag press" title="Days to ESE 2027">${cdDate.d}<small>D</small></span>
 </div>
-<div style="display:flex;align-items:center;gap:8px">
-<button class="top-deck-pill press sound-pill" title="Toggle Ambient Audio">${IC.head} ${currentSoundMode==='off'?'Sound':currentSoundMode.toUpperCase()}</button>
-<button class="iconbtn press theme-btn" style="width:34px;height:34px;border-radius:10px" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
+<div class="td-right">
+<span class="nt-tag streak-tag press ${streakObj.hasFrozen && tlog.minutes===0?'ice-pill':'fire-pill'}" title="Streak Status">${IC.flame} ${streakObj.count}d</span>
+<button class="nt-icon press sound-pill" title="Toggle Ambient Audio">${IC.head}</button>
+<button class="nt-icon press theme-btn" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
 </div>`;
-d.querySelector(".cd-pill").onclick = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
-d.querySelector(".fire-pill,.ice-pill").onclick = () => setNav("progress");
+const cdToast = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
+d.querySelector(".nt-brand").onclick = cdToast;
+d.querySelector(".cd-tag").onclick = cdToast;
+d.querySelector(".streak-tag").onclick = () => setNav("progress");
 d.querySelector(".sound-pill").onclick = () => toggleDockDrawer();
 d.querySelector(".theme-btn").onclick = cycleTheme;
 return d;
 }
 
-/* ════════════════ TODAY (MASTER BENTO COMMAND CENTER) ════════════════ */
+/* ── ONE celebration — a burst of hard red pixels from a point ── */
+function ntPixelBurst(x,y){
+if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+const N=16;
+for(let i=0;i<N;i++){
+const s=el("span"); s.className="nt-spark";
+s.style.left=x+"px"; s.style.top=y+"px";
+document.body.appendChild(s);
+const ang=(Math.PI*2*i/N)+(Math.random()*0.4-0.2), vel=48+Math.random()*58;
+const dx=Math.cos(ang)*vel, dy=Math.sin(ang)*vel-18;
+s.animate([
+{transform:"translate(-50%,-50%)",opacity:1},
+{transform:`translate(calc(-50% + ${dx}px), calc(-50% + ${dy+88}px))`,opacity:0}
+],{duration:560+Math.random()*260,easing:"cubic-bezier(.2,.7,.2,1)"});
+setTimeout(()=>s.remove(),880);
+}
+}
+
+/* ════════════════ TODAY — NOTHING LAYOUT (hero → spine → whisper) ════════════════ */
 function renderToday(){
 const wrap=el("div"); wrap.className="screen view";
 const today=todayDateLabel();
@@ -983,19 +1004,16 @@ const fd=SCHED[focusIdx], st=dayStats(focusIdx);
 const streakObj=computeStreak(), streak=streakObj.count, tlog=state.log[todayKey()]||{sessions:0,minutes:0};
 const inner=el("div"); inner.className="stagger";
 
-/* ── Top Header Command Deck ── */
+/* ── top command deck ── */
 inner.appendChild(topDeck());
 
-/* greeting header */
-inner.appendChild(html(`<div style="margin-bottom:14px">
-<div style="font-size:13px;color:var(--ink-3);font-weight:600;letter-spacing:.04em">${greeting()}, Teja</div>
-<div style="font-family:var(--display-font);font-size:26px;font-weight:400;letter-spacing:.18em;color:var(--ink);margin-top:2px">${today} · ${fd.day}</div>
+/* ── greeting — dot-matrix date, weekday in red ── */
+inner.appendChild(html(`<div class="nt-greet">
+<div class="k">${greeting()} · Teja</div>
+<div class="h"><span class="day">${fd.day}</span> ${today}</div>
 </div>`));
 
-/* ── Bento Grid System ── */
-const bento = el("div"); bento.className = "bento-grid";
-
-/* BENTO 1: Master Hero Focus Hub (Span 2) */
+/* ── find the current (first unfinished) session ── */
 let curSi=-1;
 for(let si=0;si<fd.sessions.length;si++){
 const done=fd.sessions[si].tasks.every((_,ti)=>state.checked[`${focusIdx}-${si}-${ti}`]);
@@ -1003,180 +1021,123 @@ if(!done){ curSi=si; break; }
 }
 if(curSi===-1) curSi=fd.sessions.length-1;
 const curSession=fd.sessions[curSi];
-const t=tagOf(curSession.tag);
 const slot=SLOTS[curSi]||{label:"Session",time:"",icon:"•",desc:""};
 const tasksDone=curSession.tasks.filter((_,ti)=>state.checked[`${focusIdx}-${curSi}-${ti}`]).length;
-const pct=Math.round(tasksDone/curSession.tasks.length*100);
-const allDone=tasksDone===curSession.tasks.length;
-const sstreak=slotStreak(curSi);
+const total=curSession.tasks.length;
+const pct=Math.round(tasksDone/total*100);
+const allDone=tasksDone===total;
 
-const heroCard = el("div"); heroCard.className = "card bento-col-full";
-Object.assign(heroCard.style, {
-  padding: "20px",
-  borderRadius: "var(--r-lg)",
-  background: "var(--card)",
-  border: "1px solid var(--border-2)",
-  boxShadow: "var(--shadow-2)"
+/* ── hero — the one subject, the one action ── */
+const segs=curSession.tasks.map((_,ti)=>`<i class="${state.checked[`${focusIdx}-${curSi}-${ti}`]?'on':''}"></i>`).join("");
+const hero=el("div"); hero.className="nt-hero";
+hero.innerHTML=`
+<div class="top">
+<span class="now"><span class="live"></span>${allDone?'Session cleared':'Study now'}</span>
+<span class="slot">${(slot.label||'Session').toUpperCase()}${slot.time?' · '+slot.time:''}</span>
+</div>
+<div class="body">
+<div class="subject">${curSession.title}</div>
+<div class="desc">${slot.desc||'Complete every task to master this session.'}</div>
+<div class="nt-seg">${segs}</div>
+<div class="nt-segrow"><span>Session ${curSi+1} / ${fd.sessions.length}</span><span><b>${tasksDone}</b> / ${total} · ${pct}%</span></div>
+<button class="btn ${allDone?'btn-ghost':'btn-acc'} press cta" id="heroStartBtn">${allDone?'✓ Completed — review':'▶ Enter Focus Space'}</button>
+<button class="btn btn-ghost press cta audio" id="heroAudioBtn">${IC.head} Ambient Focus Sound</button>
+</div>`;
+hero.querySelector("#heroStartBtn").onclick=()=>{ if(!state.pomo.running) toggleRunning(); else expandFocusOverlay(); };
+hero.querySelector("#heroAudioBtn").onclick=toggleDockDrawer;
+inner.appendChild(hero);
+
+/* ── metrics — technical 3-cell grid (streak / today / on-track) ── */
+const isFrozen=streakObj.hasFrozen && tlog.minutes===0;
+const hrs=Math.floor(tlog.minutes/60), mins=tlog.minutes%60;
+const metrics=el("div"); metrics.className="nt-metrics";
+metrics.innerHTML=`
+<div class="cell fire-cell ${isFrozen?'':'on-fire'}"><div class="n" id="streakIcon">${streak}<small>D</small></div><div class="l">${isFrozen?'Frozen':'Streak'}</div></div>
+<div class="cell"><div class="n">${hrs>0?hrs:mins}<small>${hrs>0?'H':'M'}</small>${hrs>0?mins+'<small>M</small>':''}</div><div class="l">Today</div></div>
+<div class="cell"><div class="n">${st.pct}<small>%</small></div><div class="l">On track</div></div>`;
+metrics.querySelector(".fire-cell").onclick=()=>{ if(isFrozen) iceShatterShowcase(document.getElementById("streakIcon"),{backToIce:true}); else setNav("progress"); };
+inner.appendChild(metrics);
+
+/* ── the spine — this session's checklist ── */
+const spine=el("div"); spine.className="nt-spine";
+spine.innerHTML=`
+<div class="head"><span class="t">This Session</span><span class="c">${tasksDone} / ${total}</span></div>
+<div class="sub">Tap to complete · ⚠ to flag shaky</div>`;
+const list=el("div"); list.className="tasklist";
+curSession.tasks.forEach((task,ti)=>{
+const k=`${focusIdx}-${curSi}-${ti}`, on=!!state.checked[k], shk=!!state.shaky[k];
+const row=el("div"); row.className="taskrow"+(on?" done":"");
+row.setAttribute("role","checkbox"); row.setAttribute("aria-checked",on?"true":"false"); row.tabIndex=0;
+row.innerHTML=`<span class="chk${on?" on":""}" style="color:var(--acc-ink)">${on?IC.check:""}</span><span class="txt" style="flex:1">${task}</span>
+<button class="shakybtn press" aria-label="${shk?"Remove shaky flag":"Mark as shaky"}" title="Mark topic as shaky" style="border:none;background:none;cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0;opacity:${shk?"1":".28"};filter:${shk?"none":"grayscale(1)"}">⚠️</button>`;
+row.onclick=()=>{ if(!on){ const b=row.querySelector(".chk").getBoundingClientRect(); ntPixelBurst(b.left+b.width/2,b.top+b.height/2); try{navigator.vibrate&&navigator.vibrate(12);}catch(e){} } state.index=focusIdx; toggleTask(curSi,ti); };
+row.querySelector(".shakybtn").onclick=e=>{ e.stopPropagation(); state.index=focusIdx; toggleShaky(curSi,ti); };
+row.onkeydown=e=>{ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); state.index=focusIdx; toggleTask(curSi,ti); } };
+list.appendChild(row);
 });
-heroCard.innerHTML = `
-<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
-<span class="pill" style="background:${t.s};color:${t.c};font-weight:800">${slot.label} · ${slot.time||'Focus'}</span>
-<span class="pill" style="background:var(--acc-dim);color:var(--acc);font-weight:800">${allDone?'✓ SECURED':'ACTIVE TARGET'}</span>
-</div>
-<div style="font-family:var(--display-font);font-size:20px;font-weight:400;letter-spacing:.14em;color:var(--ink);margin-bottom:6px;line-height:1.3">${curSession.title}</div>
-<div style="font-size:12px;color:var(--ink-3);line-height:1.4;margin-bottom:16px">${slot.desc||'Complete tasks to master this session.'}</div>
-<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
-<div style="position:relative;width:60px;height:60px;flex-shrink:0">
-${ring(60,6,pct,"var(--acc)")}
-<div class="mono" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--ink)">${pct}%</div>
-</div>
-<div style="flex:1">
-<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--ink-2);margin-bottom:6px">
-<span>Task Progress</span>
-<span class="mono">${tasksDone}/${curSession.tasks.length}</span>
-</div>
-<div class="track" style="height:6px"><div class="fill" style="width:${pct}%"></div></div>
-</div>
-</div>
-<div style="display:flex;gap:10px">
-<button class="btn ${allDone?'btn-ghost':'btn-acc'} press" id="heroStartBtn" style="flex:1;padding:12px">${allDone?'✓ Completed':'▶ Launch Focus Space'}</button>
-<button class="btn btn-ghost press" id="heroAudioBtn" style="flex:none;padding:12px" title="Audio Focus">${IC.head}</button>
-</div>
-`;
-heroCard.querySelector("#heroStartBtn").onclick = () => { if(!state.pomo.running) toggleRunning(); else expandFocusOverlay(); };
-heroCard.querySelector("#heroAudioBtn").onclick = toggleDockDrawer;
-bento.appendChild(heroCard);
+spine.appendChild(list);
+inner.appendChild(spine);
 
-/* BENTO 2: Ranker Motivation Carousel (Span 2) */
-const qObj = RANKER_QUOTES[quoteIndex % RANKER_QUOTES.length];
-const quoteBento = el("div"); quoteBento.className = "card bento-col-full press lift";
-Object.assign(quoteBento.style, {
-  padding: "16px",
-  borderRadius: "var(--r-lg)",
-  background: "linear-gradient(135deg, var(--card) 0%, var(--card-2) 100%)",
-  border: "1px solid var(--border-2)",
-  cursor: "pointer"
-});
-quoteBento.innerHTML = `
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-<span style="font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--acc)">🔥 ESE MASTERY MOTIVATION</span>
-<span style="font-size:10px;color:var(--ink-4);font-weight:700">Tap to cycle ↻</span>
-</div>
-<div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.45;font-style:italic">"${qObj.q}"</div>
-<div style="font-size:10.5px;font-weight:700;color:var(--ink-3);margin-top:6px;text-align:right">— ${qObj.a}</div>
-`;
-quoteBento.onclick = () => { nextQuote(); toast("Motivation refreshed 💡"); };
-bento.appendChild(quoteBento);
+/* ── whisper — motivation as a quiet mono footnote (tap to cycle) ── */
+const qObj=RANKER_QUOTES[quoteIndex % RANKER_QUOTES.length];
+const whisper=el("div"); whisper.className="nt-whisper press";
+whisper.innerHTML=`<div class="q">"${qObj.q}"</div><div class="a">— ${qObj.a} · tap to cycle</div>`;
+whisper.onclick=()=>{ nextQuote(); };
+inner.appendChild(whisper);
 
-/* BENTO 3 & 4: Quick Metrics Quad (1 Col Each) */
-const isFrozen = streakObj.hasFrozen && tlog.minutes === 0;
-const mCard1 = el("div"); mCard1.className = "card" + (isFrozen ? " ice-frozen-card" : "");
-Object.assign(mCard1.style, { padding: "16px", borderRadius: "var(--r)", textAlign: "center" });
-mCard1.innerHTML = `
-<div class="${isFrozen ? 'frost-flame' : 'fire-glow'}" style="font-size:15px;margin-bottom:4px" id="streakIcon">${IC.flame}</div>
-<div class="display ${isFrozen ? 'ice-text' : 'fire-text'}" style="font-size:24px;font-weight:800">${streak}</div>
-<div style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${isFrozen ? '#7DD3FC' : 'var(--ink-3)'}">${isFrozen ? 'FROZEN STREAK' : 'DAY STREAK'}</div>
-`;
-bento.appendChild(mCard1);
-/* tap the frozen streak to watch it shatter (preview only — no state change) */
-mCard1.style.cursor = isFrozen ? "pointer" : "default";
-mCard1.querySelector("#streakIcon").onclick = () => { if (isFrozen) iceShatterShowcase(document.getElementById("streakIcon"), { backToIce: true }); };
-
-const hrs = Math.floor(tlog.minutes / 60), mins = tlog.minutes % 60;
-const mCard2 = el("div"); mCard2.className = "card";
-Object.assign(mCard2.style, { padding: "16px", borderRadius: "var(--r)", textAlign: "center" });
-mCard2.innerHTML = `
-<div style="font-size:15px;margin-bottom:4px">${IC.clock}</div>
-<div class="display" style="font-size:24px;font-weight:800;color:var(--mint)">${hrs > 0 ? hrs + "h " + mins + "m" : mins + "m"}</div>
-<div style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">LOGGED TODAY</div>
-`;
-bento.appendChild(mCard2);
-
-inner.appendChild(bento);
-
-/* BENTO 5: Task Checklist Matrix (Span 2) */
-const taskMatrix = el("div"); taskMatrix.className = "card";
-Object.assign(taskMatrix.style, { padding: "18px", borderRadius: "var(--r-lg)", marginBottom: "16px" });
-taskMatrix.innerHTML = `
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-<div style="font-size:13px;font-weight:800;color:var(--ink)">📋 Today's Session Checklist</div>
-<span class="pill" style="background:var(--acc-dim);color:var(--acc)">${tasksDone} / ${curSession.tasks.length}</span>
-</div>
-`;
-const matrixList = el("div", { display: "flex", flexDirection: "column", gap: "8px" });
-curSession.tasks.forEach((task, ti) => {
-const k = `${focusIdx}-${curSi}-${ti}`, on = !!state.checked[k], shk = !!state.shaky[k];
-const row = el("div"); row.className = "taskrow" + (on ? " done" : "");
-row.setAttribute("role", "checkbox"); row.setAttribute("aria-checked", on ? "true" : "false"); row.tabIndex = 0;
-row.innerHTML = `<span class="chk${on ? " on" : ""}" style="color:var(--acc-ink)">${on ? IC.check : ""}</span><span class="txt" style="flex:1">${task}</span>
-<button class="shakybtn press" aria-label="${shk ? "Remove shaky flag" : "Mark as shaky"}" title="Mark topic as shaky" style="border:none;background:none;cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0;opacity:${shk ? "1" : ".28"};filter:${shk ? "none" : "grayscale(1)"}">⚠️</button>`;
-row.onclick = () => { state.index = focusIdx; toggleTask(curSi, ti); };
-row.querySelector(".shakybtn").onclick = e => { e.stopPropagation(); state.index = focusIdx; toggleShaky(curSi, ti); };
-matrixList.appendChild(row);
-});
-taskMatrix.appendChild(matrixList);
-inner.appendChild(taskMatrix);
-
-/* Ice shatter splash trigger when a frozen streak resumes (one shot per day) */
-if (streakObj.hasFrozen && tlog.minutes > 0) {
-  const y = new Date(); y.setDate(y.getDate() - 1);
-  const yk = `${y.getFullYear()}-${fmt(y.getMonth() + 1)}-${fmt(y.getDate())}`;
-  if (state.freeze[yk] && !sessionStorage.getItem("shatter-" + todayKey())) {
-    sessionStorage.setItem("shatter-" + todayKey(), "1");
-    setTimeout(() => iceShatterShowcase(document.getElementById("streakIcon")), 650);
-  }
+/* ── ice-shatter splash when a frozen streak resumes (one shot / day) ── */
+if(streakObj.hasFrozen && tlog.minutes>0){
+const y=new Date(); y.setDate(y.getDate()-1);
+const yk=`${y.getFullYear()}-${fmt(y.getMonth()+1)}-${fmt(y.getDate())}`;
+if(state.freeze[yk] && !sessionStorage.getItem("shatter-"+todayKey())){
+sessionStorage.setItem("shatter-"+todayKey(),"1");
+setTimeout(()=>iceShatterShowcase(document.getElementById("streakIcon")),650);
+}
 }
 
 wrap.appendChild(inner); wireTheme(wrap); return wrap; }
 
-/* ════════════════ PLAN ════════════════ */
+/* ════════════════ PLAN — NOTHING LAYOUT (instrument list of days) ════════════════ */
 function renderPlan(){
 const wrap=el("div"); wrap.className="screen view";
 const day=SCHED[state.index], st=dayStats(state.index);
-const bs=badgeStyle(day.badge);
-const inner=el("div"); inner.className="stagger";
+const inner=el("div"); inner.className="stagger nt-plan";
 
-/* ── Top Header Command Deck ── */
+/* ── top command deck ── */
 inner.appendChild(topDeck());
 
-const head=html(`<header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-<h1 class="display" style="font-size:24px;font-weight:800;color:var(--ink)">Plan & Syllabus</h1>
-<button id="todayBtn" class="btn btn-acc press" style="padding:8px 16px;font-size:12px">Jump Today</button>
-</header>`);
+/* ── header — title + jump-to-today ── */
+const head=html(`<div class="nt-plan-head">
+<div class="t">Plan<span style="color:var(--acc)">.</span></div>
+<button id="todayBtn" class="today-btn press">▸ Today</button>
+</div>`);
 head.querySelector("#todayBtn").onclick=goToday;
 inner.appendChild(head);
 
-/* jump select */
-const sel=el("select"); sel.setAttribute("aria-label","Jump to phase");
-Object.assign(sel.style,{width:"100%",padding:"14px 42px 14px 16px",borderRadius:"var(--r-sm)",
-border:"1px solid var(--line-2)",background:"var(--card)",color:"var(--ink)",
-fontSize:"13px",fontWeight:"600",cursor:"pointer",marginBottom:"14px"});
+/* ── phase jump ── */
+const sel=el("select"); sel.className="nt-jump"; sel.setAttribute("aria-label","Jump to phase");
 JUMPS.forEach(j=>{ const o=document.createElement("option"); o.value=j.i; o.textContent=`${j.label} · ${j.date}`; sel.appendChild(o); });
 let cur=0; for(let k=0;k<JUMPS.length;k++){ if(JUMPS[k].i<=state.index) cur=JUMPS[k].i; }
 sel.value=cur; sel.onchange=e=>jumpTo(parseInt(e.target.value,10));
 inner.appendChild(sel);
 
-/* day header card */
-inner.appendChild(html(`<div class="card" style="padding:20px;border-radius:var(--r-lg);margin-bottom:14px;border:1px solid var(--line-2)">
-<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px">
-<div style="flex:1;min-width:0">
-<div style="font-size:11px;color:var(--ink-3);font-weight:700">${day.day} · Day ${state.index+1} of ${SCHED.length}</div>
-<div class="display" style="font-size:30px;font-weight:800;color:var(--ink);margin-top:5px">${day.date}</div>
-<div style="font-size:14px;font-weight:700;color:var(--ink-2);margin-top:5px">${day.subject}</div>
-${day.badge?`<span class="pill" style="margin-top:11px;background:${bs.s};color:${bs.c}">${day.badge}</span>`:""}
-</div>
-<div style="position:relative;width:64px;height:64px;flex-shrink:0">
-${ring(64,6,st.pct,"var(--acc)")}
-<div class="mono" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--ink)">${st.pct}</div>
-</div>
+/* ── day header — dot-matrix date + segmented readout ── */
+const segMarks=day.sessions.map((s,si)=>s.tasks.every((_,ti)=>state.checked[`${state.index}-${si}-${ti}`])?'<i class="on"></i>':'<i></i>').join("");
+inner.appendChild(html(`<div class="nt-dayhdr">
+<div class="ey">${day.day} · Day ${state.index+1} / ${SCHED.length}</div>
+<div class="d">${day.date}</div>
+<div class="sub">${day.subject}</div>
+${day.badge?`<span class="badge">${day.badge}</span>`:""}
+<div class="prog">
+<div class="progrow"><span class="n">${st.pct}<small>%</small></span><span class="l">${st.dn} / ${st.tot} tasks · Day complete</span></div>
+<div class="nt-seg">${segMarks}</div>
 </div>
 </div>`));
 
-/* sessions */
-const list=el("div",{display:"flex",flexDirection:"column",gap:"12px"});
+/* ── sessions — hairline cards, "Now" = red left-border ── */
+const list=el("div"); list.className="sesslist";
 let currentFound=false;
 day.sessions.forEach((s,si)=>{
-const t=tagOf(s.tag);
 const sd=s.tasks.filter((_,ti)=>state.checked[`${state.index}-${si}-${ti}`]).length;
 const done=sd===s.tasks.length;
 const isCurrent=!done&&!currentFound; if(isCurrent) currentFound=true;
@@ -1184,37 +1145,31 @@ const expKey=`${state.index}-${si}`;
 const expanded=state.expandedSessions[expKey]!==undefined?state.expandedSessions[expKey]:!done;
 const slot=SLOTS[si]||{label:"Session",time:"",icon:"•"};
 const sstreak=slotStreak(si);
-const card=el("div"); card.className="card";
-Object.assign(card.style,{borderRadius:"var(--r)",padding:"16px",
-border:isCurrent?"1.5px solid var(--acc)":"1px solid var(--line)",
-boxShadow:isCurrent?"var(--glow)":"var(--shadow)"});
-const top=el("div"); top.className="press";
-Object.assign(top.style,{display:"flex",alignItems:"center",gap:"12px",cursor:"pointer",background:"transparent",border:"none",width:"100%",textAlign:"left",padding:"0"});
+const card=el("div"); card.className="sess"+(isCurrent?" now":"")+(done?" done":"");
+const top=el("button"); top.className="shead press";
 top.innerHTML=`
-<div style="width:38px;height:38px;border-radius:12px;background:${t.s};color:${t.c};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;font-weight:800">${sd}<span style="font-size:9px;opacity:.7">/${s.tasks.length}</span></div>
-<div style="flex:1;min-width:0">
-<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-<span style="font-size:10px;color:var(--ink-3);font-weight:700">${slot.label}${slot.time?" · "+slot.time:""}</span>
-${sstreak>0?`<span class="pill" style="background:rgba(255,138,43,.14);color:var(--fire-1);font-size:8.5px;padding:3px 8px">${IC.flame} ${sstreak}</span>`:""}
-<span class="pill" style="background:${t.s};color:${t.c};font-size:8.5px;padding:3px 8px">${t.label}</span>
-${isCurrent?`<span class="pill" style="background:var(--acc-dim);color:var(--acc);font-size:8.5px;padding:3px 8px">Now</span>`:""}
-${done?`<span class="pill" style="background:var(--mint-soft);color:var(--mint);font-size:8.5px;padding:3px 8px">Done</span>`:""}
-</div>
-<div style="font-size:14px;font-weight:700;color:${done?"var(--ink-4)":"var(--ink)"};margin-top:4px;line-height:1.35">${s.title}</div>
-<div class="track" style="height:4px;margin-top:9px"><div class="fill" style="width:${(sd/s.tasks.length)*100}%"></div></div>
-</div>
-<span style="color:var(--ink-4);transform:rotate(${expanded?"90deg":"0deg"});transition:transform .25s var(--spring)">${IC.right}</span>`;
-top.onclick=()=>{ state.expandedSessions[expKey]=!expanded; saveJSON(EXP_KEY,state.expandedSessions); render(); };
+<span class="count">${sd}<small>/${s.tasks.length}</small></span>
+<span class="meta">
+<span class="tags">
+<span class="mtag">${slot.label}${slot.time?" · "+slot.time:""}</span>
+${sstreak>0?`<span class="mtag streak">${IC.flame} ${sstreak}</span>`:""}
+${isCurrent?`<span class="mtag now">● Now</span>`:""}
+${done?`<span class="mtag done">✓ Done</span>`:""}
+</span>
+<span class="stitle">${s.title}</span>
+</span>
+<span class="caret${expanded?" open":""}">${IC.right}</span>`;
+top.onclick=()=>{ state.expandedSessions[expKey]=!expanded; saveJSON(EXP_KEY,state.expandedSessions); renderQuiet(); };
 card.appendChild(top);
 if(expanded){
-const tl=el("div",{marginTop:"12px",paddingTop:"10px",borderTop:"1px solid var(--line)"});
+const tl=el("div"); tl.className="tl";
 s.tasks.forEach((task,ti)=>{
 const k=`${state.index}-${si}-${ti}`, on=!!state.checked[k], shk=!!state.shaky[k];
 const row=el("div"); row.className="taskrow"+(on?" done":"");
 row.setAttribute("role","checkbox"); row.setAttribute("aria-checked",on?"true":"false"); row.tabIndex=0;
 row.innerHTML=`<span class="chk${on?" on":""}" style="color:var(--acc-ink)">${on?IC.check:""}</span><span class="txt" style="flex:1">${task}</span>
 <button class="shakybtn press" aria-label="${shk?"Remove shaky flag":"Mark as shaky"}" title="Mark topic as shaky" style="border:none;background:none;cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0;opacity:${shk?"1":".28"};filter:${shk?"none":"grayscale(1)"}">⚠️</button>`;
-row.onclick=()=>toggleTask(si,ti);
+row.onclick=()=>{ if(!on){ const b=row.querySelector(".chk").getBoundingClientRect(); ntPixelBurst(b.left+b.width/2,b.top+b.height/2); try{navigator.vibrate&&navigator.vibrate(12);}catch(e){} } toggleTask(si,ti); };
 row.querySelector(".shakybtn").onclick=e=>{ e.stopPropagation(); toggleShaky(si,ti); };
 row.onkeydown=e=>{ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); toggleTask(si,ti); } };
 tl.appendChild(row); });
@@ -1222,17 +1177,15 @@ card.appendChild(tl); }
 list.appendChild(card); });
 inner.appendChild(list);
 
-/* prev / next */
-const nav2=el("div",{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginTop:"14px"});
-const prev=html(`<button class="btn btn-ghost press" style="width:100%" ${state.index===0?"disabled":""}>${IC.left} Prev day</button>`);
-const next=html(`<button class="btn btn-ghost press" style="width:100%" ${state.index===SCHED.length-1?"disabled":""}>Next day ${IC.right}</button>`);
-if(state.index===0) prev.style.opacity=".4";
-if(state.index===SCHED.length-1) next.style.opacity=".4";
+/* ── prev / next ── */
+const nav2=el("div"); nav2.className="daynav";
+const prev=html(`<button class="press" ${state.index===0?"disabled":""}>${IC.left} Prev</button>`);
+const next=html(`<button class="press" ${state.index===SCHED.length-1?"disabled":""}>Next ${IC.right}</button>`);
 prev.onclick=()=>navDay(-1); next.onclick=()=>navDay(1);
 nav2.appendChild(prev); nav2.appendChild(next);
 inner.appendChild(nav2);
 
-wrap.appendChild(inner); return wrap; }
+wrap.appendChild(inner); wireTheme(wrap); return wrap; }
 
 /* ════════════════ FOCUS ════════════════ */
 function renderFocus(){
@@ -1242,80 +1195,77 @@ const inner=el("div"); inner.className="stagger";
 /* ── Top Header Command Deck ── */
 inner.appendChild(topDeck());
 
-inner.appendChild(header("Focus Mode","Deep work immersion hub"));
+/* ── section label ── */
+inner.appendChild(html(`<div class="nt-flabel"><span class="t">FOCUS SPACE</span><span class="s">DEEP WORK · POMODORO</span></div>`));
 
-/* phase switch */
-const seg=el("div",{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px",background:"var(--card-2)",padding:"6px",borderRadius:"999px",marginBottom:"16px"});
-[["work","Focus"],["break","Break"]].forEach(([p,label])=>{
-const active=state.pomo.phase===p;
-const b=html(`<button class="press" style="padding:12px;border-radius:999px;border:none;cursor:pointer;font-size:13px;font-weight:700;
-background:${active?"var(--acc)":"transparent"};color:${active?"var(--acc-ink)":"var(--ink-3)"}">${label} · ${p==="work"?state.pomo.workMins:state.pomo.breakMins}m</button>`);
-b.onclick=()=>setPhase(p); seg.appendChild(b); });
+/* ── phase switch — two square segmented keys ── */
+const seg=html(`<div class="nt-fphase">
+<button class="press ${state.pomo.phase==="work"?"on":""}" data-p="work"><span class="pl">FOCUS</span><span class="pm">${state.pomo.workMins}<i>M</i></span></button>
+<button class="press ${state.pomo.phase==="break"?"on":""}" data-p="break"><span class="pl">BREAK</span><span class="pm">${state.pomo.breakMins}<i>M</i></span></button>
+</div>`);
+seg.querySelectorAll("button").forEach(b=>b.onclick=()=>setPhase(b.dataset.p));
 inner.appendChild(seg);
 
-/* ring timer */
+/* ── the ONE readout — big dot-matrix countdown ── */
 const secs=phaseSecs(), remain=getRemainingPomo();
 const pct=secs?((secs-remain)/secs)*100:0;
-const tw=el("div",{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:"20px"});
-tw.innerHTML=`
-<div style="position:relative;width:250px;height:250px">
-<svg width="250" height="250" style="transform:rotate(-90deg)">
-<circle cx="125" cy="125" r="110" fill="none" stroke="var(--card-2)" stroke-width="12"/>
-<circle id="timer-progress" cx="125" cy="125" r="110" fill="none" stroke="var(--acc)" stroke-width="12" stroke-linecap="round"
-stroke-dasharray="${2*Math.PI*110}" stroke-dashoffset="${2*Math.PI*110*(1-pct/100)}" style="transition:stroke-dashoffset .9s linear"/>
-</svg>
-<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-<div id="phase-display" style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);font-weight:800">${state.pomo.phase==="work"?"Focus":"Break"}</div>
-<div id="timer-display" class="mono display" style="font-size:56px;font-weight:800;color:var(--ink);margin-top:4px">${fmtTime(remain)}</div>
-<div style="font-size:11px;color:var(--ink-4);font-weight:600;margin-top:4px">${state.pomo.loop?"auto loop on":"single session"}</div>
-</div>
-</div>`;
+const NSEG=24, onSeg=Math.round((pct/100)*NSEG);
+let fsegs=""; for(let i=0;i<NSEG;i++) fsegs+=`<i class="${i<onSeg?"on":""}"></i>`;
+const tw=html(`<div class="nt-fclock">
+<div class="phase" id="phase-display">${state.pomo.phase==="work"?"FOCUS":"BREAK"}</div>
+<div class="big" id="timer-display">${fmtTime(remain)}</div>
+<div class="nt-seg fseg" id="focus-seg">${fsegs}</div>
+<div class="loopnote">${state.pomo.loop?"AUTO LOOP ON":"SINGLE SESSION"}</div>
+</div>`);
+/* hidden legacy node — keeps renderTimerOnly's ring update a no-op safely */
 inner.appendChild(tw);
 
-/* controls */
-const controls=el("div",{display:"flex",gap:"10px",justifyContent:"center",alignItems:"center",marginBottom:"20px"});
-const rst=html(`<button class="iconbtn press" aria-label="Reset timer" style="border-radius:999px;width:52px;height:52px">${IC.reset}</button>`);
-rst.onclick=resetPomo;
-const play=html(`<button class="btn btn-acc press" aria-label="${state.pomo.running?"Pause":"Start"}" style="width:84px;height:84px;border-radius:999px;padding:0;font-size:0">${state.pomo.running?IC.pause:IC.play}</button>`);
-play.onclick=toggleRunning;
-const skp=html(`<button class="iconbtn press" aria-label="Skip phase" style="border-radius:999px;width:52px;height:52px">${IC.skip}</button>`);
-skp.onclick=skipPhase;
-controls.appendChild(rst); controls.appendChild(play); controls.appendChild(skp);
+/* ── controls — square keys, red run key ── */
+const controls=html(`<div class="nt-fctrl">
+<button class="fkey press" data-a="reset" aria-label="Reset timer">${IC.reset}</button>
+<button class="fkey run press" data-a="run" aria-label="${state.pomo.running?"Pause":"Start"}">${state.pomo.running?IC.pause:IC.play}</button>
+<button class="fkey press" data-a="skip" aria-label="Skip phase">${IC.skip}</button>
+</div>`);
+controls.querySelector('[data-a="reset"]').onclick=resetPomo;
+controls.querySelector('[data-a="run"]').onclick=toggleRunning;
+controls.querySelector('[data-a="skip"]').onclick=skipPhase;
 inner.appendChild(controls);
 
 /* re-enter clock mode while running */
 if(state.pomo.running&&!clockOn){
-const re=html(`<button class="chip press" style="display:flex;margin:0 auto 16px;cursor:pointer;border:1px solid var(--acc);color:var(--acc)">${IC.expand} Enter clock mode</button>`);
+const re=html(`<button class="nt-fclockbtn press">${IC.expand} ENTER CLOCK MODE</button>`);
 re.onclick=()=>{ clockOn=true; requestAppFullscreen(); updateLandscape(); };
 inner.appendChild(re); }
 
-/* presets */
-const pr=el("div",{display:"flex",gap:"8px",justifyContent:"center",marginBottom:"16px"});
+/* ── presets — mono square chips ── */
+const pr=html(`<div class="nt-fpresets"></div>`);
 PRESETS.forEach(p=>{
 const active=state.pomo.workMins===p.work&&state.pomo.breakMins===p.brk;
-const c=html(`<button class="chip mono press" style="cursor:pointer;border:1px solid ${active?"var(--acc)":"transparent"};color:${active?"var(--acc)":"var(--ink-2)"}">${p.label}</button>`);
+const c=html(`<button class="fpre press ${active?"on":""}">${p.label}</button>`);
 c.onclick=()=>applyPreset(p.work,p.brk); pr.appendChild(c); });
 inner.appendChild(pr);
 
-/* steppers + loop */
-const opts=el("div",{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"14px"});
-[["work","Focus mins",state.pomo.workMins],["break","Break mins",state.pomo.breakMins]].forEach(([w,label,val])=>{
-const s=html(`<div class="card" style="padding:12px 14px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:space-between">
-<div><div style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">${label}</div>
-<div class="mono" style="font-size:20px;font-weight:800;color:var(--ink);margin-top:2px">${val}</div></div>
-<div style="display:flex;flex-direction:column;gap:4px">
-<button class="press" data-d="5" style="width:30px;height:24px;border-radius:8px;border:1px solid var(--line-2);background:var(--card-2);color:var(--ink-2);cursor:pointer;font-weight:800">+</button>
-<button class="press" data-d="-5" style="width:30px;height:24px;border-radius:8px;border:1px solid var(--line-2);background:var(--card-2);color:var(--ink-2);cursor:pointer;font-weight:800">−</button>
+/* ── steppers — hairline cells, square +/− ── */
+const opts=html(`<div class="nt-fsteppers"></div>`);
+[["work","FOCUS MIN",state.pomo.workMins],["break","BREAK MIN",state.pomo.breakMins]].forEach(([w,label,val])=>{
+const s=html(`<div class="fstep">
+<div class="lab">
+<div class="k">${label}</div>
+<div class="v" data-role="val">${val}</div>
+</div>
+<div class="btns">
+<button class="press" data-d="5">+</button>
+<button class="press" data-d="-5">−</button>
 </div></div>`);
-s.querySelectorAll("button").forEach(b=>b.onclick=()=>adjustDuration(w,parseInt(b.dataset.d,10)));
+s.querySelectorAll(".btns button").forEach(b=>b.onclick=()=>adjustDuration(w,parseInt(b.dataset.d,10)));
 opts.appendChild(s); });
 inner.appendChild(opts);
 
-const loop=html(`<button class="card press" style="width:100%;padding:14px;border-radius:var(--r-sm);cursor:pointer;display:flex;align-items:center;justify-content:space-between;border:1px solid ${state.pomo.loop?"var(--acc)":"var(--line)"}">
-<span style="font-size:13px;font-weight:700;color:var(--ink-2)">Auto loop focus → break</span>
-<span style="width:44px;height:26px;border-radius:999px;background:${state.pomo.loop?"var(--acc)":"var(--card-2)"};position:relative;transition:background .2s">
-<span style="position:absolute;top:3px;left:${state.pomo.loop?"21px":"3px"};width:20px;height:20px;border-radius:50%;background:${state.pomo.loop?"var(--acc-ink)":"var(--ink-4)"};transition:left .25s var(--spring)"></span>
-</span></button>`);
+/* ── loop toggle — hairline row, square mechanical switch ── */
+const loop=html(`<button class="nt-floop press ${state.pomo.loop?"on":""}">
+<span class="lt">AUTO LOOP · FOCUS → BREAK</span>
+<span class="sw"><i></i></span>
+</button>`);
 loop.onclick=toggleLoop;
 inner.appendChild(loop);
 
@@ -1337,25 +1287,25 @@ if(dn<s.tasks.length){ cur=s; curSi=i; return true; } return false; });
 if(cur){
 const t=tagOf(cur.tag);
 const slot=SLOTS[curSi]||{label:"Session",time:""};
-const card=html(`<div class="card lift press" style="padding:16px;border-radius:var(--r);margin-top:14px;cursor:pointer">
-<div style="display:flex;align-items:center;gap:10px">
-<span class="pill" style="background:${t.s};color:${t.c}">${t.label}</span>
-<span style="font-size:10px;color:var(--ink-3);font-weight:700">${slot.label}${slot.time?" · "+slot.time:""}</span>
+const card=html(`<button class="nt-fnext press">
+<div class="nh">
+<span class="ntag">${t.label}</span>
+<span class="nslot">${slot.label}${slot.time?" · "+slot.time:""}</span>
 </div>
-<div style="font-size:14px;font-weight:700;color:var(--ink);margin-top:8px;line-height:1.4">${cur.title}</div>
-<div style="display:flex;align-items:center;gap:6px;margin-top:8px;color:var(--acc);font-size:12px;font-weight:700">Open in plan ${IC.right}</div>
-</div>`);
+<div class="ntitle">${cur.title}</div>
+<div class="nopen">OPEN IN PLAN ${IC.right}</div>
+</button>`);
 card.onclick=()=>setNav("plan");
 inner.appendChild(card); }
 
-/* today's totals */
+/* today's totals — hairline instrument grid */
 const tlog=state.log[todayKey()]||{sessions:0,minutes:0};
 const hrs=Math.floor(tlog.minutes/60), mins=tlog.minutes%60;
-const stats=el("div",{display:"grid",gridTemplateColumns:tlog.distract?"1fr 1fr 1fr":"1fr 1fr",gap:"10px",marginTop:"14px"});
-stats.innerHTML=`
-<div class="card" style="padding:16px;text-align:center;border-radius:var(--r)"><div class="display" style="font-size:28px;font-weight:800;color:var(--amber)">${tlog.sessions||0}</div><div style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;margin-top:4px;font-weight:700">Sessions today</div></div>
-<div class="card" style="padding:16px;text-align:center;border-radius:var(--r)"><div class="display" style="font-size:28px;font-weight:800;color:var(--acc)">${hrs>0?hrs+"h "+mins+"m":mins+"m"}</div><div style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;margin-top:4px;font-weight:700">Studied today</div></div>
-${tlog.distract?`<div class="card" style="padding:16px;text-align:center;border-radius:var(--r)"><div class="display" style="font-size:28px;font-weight:800;color:var(--rose)">${tlog.distract}</div><div style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;margin-top:4px;font-weight:700">Distractions</div></div>`:""}`;
+const stats=html(`<div class="nt-fstats ${tlog.distract?"c3":"c2"}">
+<div class="fst"><div class="n">${tlog.sessions||0}</div><div class="l">Sessions today</div></div>
+<div class="fst"><div class="n">${hrs>0?hrs+'<i>H</i> '+mins+'<i>M</i>':mins+'<i>M</i>'}</div><div class="l">Studied today</div></div>
+${tlog.distract?`<div class="fst"><div class="n">${tlog.distract}</div><div class="l">Distractions</div></div>`:""}
+</div>`);
 inner.appendChild(stats);
 
 wrap.appendChild(inner); wireTheme(wrap); return wrap; }
@@ -1381,13 +1331,17 @@ const c=parseFloat(svg.getAttribute("stroke-dasharray"))||597;
 svg.setAttribute("stroke-dashoffset",c*(1-pct/100));
 }
 }
-const disp=document.getElementById("timer-display"), prog=document.getElementById("timer-progress"), ph=document.getElementById("phase-display");
+const disp=document.getElementById("timer-display"), ph=document.getElementById("phase-display");
 updateLandscape();
-if(!disp||!prog||!ph) return;
+if(!disp) return;
 disp.textContent=fmtTime(remain);
-ph.textContent=state.pomo.phase==="work"?"Focus":"Break";
-const c=2*Math.PI*110;
-prog.setAttribute("stroke-dashoffset",c*(1-(secs?(secs-remain)/secs:0)));
+if(ph) ph.textContent=state.pomo.phase==="work"?"FOCUS":"BREAK";
+const segbar=document.getElementById("focus-seg");
+if(segbar){
+const nodes=segbar.querySelectorAll("i"), n=nodes.length;
+const on=Math.round((secs?(secs-remain)/secs:0)*n);
+nodes.forEach((el,i)=>el.classList.toggle("on",i<on));
+}
 }
 
 /* ── flip clock focus mode ────────────────────────────── */
@@ -1467,136 +1421,107 @@ const inner=el("div"); inner.className="stagger";
 /* ── Top Header Command Deck ── */
 inner.appendChild(topDeck());
 
-inner.appendChild(header("Progress & Analytics","Mastery breakdown"));
+/* ── section label ── */
+inner.appendChild(html(`<div class="nt-flabel"><span class="t">PROGRESS</span><span class="s">MASTERY BREAKDOWN</span></div>`));
 const ov=overall();
 
-/* most recent celebration teaser */
-const recentAch=ACHIEVEMENTS.filter(a=>state.achievements[a.id]).sort((a,b)=>{
-const tA=new Date(state.achievements[a.id].at).getTime();
-const tB=new Date(state.achievements[b.id].at).getTime();
-return tB-tA; })[0];
-if(recentAch){
-const rec=state.achievements[recentAch.id];
-const daysAgo=Math.floor((Date.now()-new Date(rec.at).getTime())/864e5);
-const timeStr=daysAgo===0?"Today":daysAgo===1?"Yesterday":`${daysAgo} days ago`;
-const celebCard=html(`<div class="card lift press" style="padding:16px;border-radius:var(--r-lg);margin-bottom:14px;background:linear-gradient(135deg, var(--card) 0%, var(--card-2) 100%);border:1px solid var(--line-2);cursor:pointer">
-<div style="display:flex;align-items:center;gap:12px">
-<div style="width:48px;height:48px;border-radius:14px;background:var(--acc-dim);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">${recentAch.icon}</div>
-<div style="flex:1;min-width:0">
-<div style="font-size:10px;color:var(--ink-4);font-weight:700;text-transform:uppercase;letter-spacing:.06em">Latest achievement · ${timeStr}</div>
-<div style="font-size:14px;font-weight:800;color:var(--ink);margin-top:3px">${recentAch.title}</div>
-<div style="font-size:11px;color:var(--ink-3);margin-top:2px">${recentAch.desc}</div>
-</div>
-</div></div>`);
-celebCard.onclick=()=>setNav("you");
-inner.appendChild(celebCard); }
+/* ── overall readout — big dot-matrix % + segmented ── */
+const NSEG=28, onSeg=Math.round((ov.pct/100)*NSEG);
+let osegs=""; for(let i=0;i<NSEG;i++) osegs+=`<i class="${i<onSeg?"on":""}"></i>`;
+inner.appendChild(html(`<div class="nt-phead">
+<div class="phrow"><span class="pk">OVERALL COMPLETE</span><span class="pv">${ov.dn} / ${ov.tot} TASKS</span></div>
+<div class="pbig">${ov.pct}<span class="pc">%</span></div>
+<div class="nt-seg phseg">${osegs}</div>
+</div>`));
 
-/* achievements section */
-const achSection=el("div"); achSection.className="card";
-Object.assign(achSection.style,{padding:"18px",borderRadius:"var(--r-lg)",marginBottom:"14px"});
-const unlockedCount=ACHIEVEMENTS.filter(a=>state.achievements[a.id]).length;
-achSection.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-<div style="font-size:14px;font-weight:800;color:var(--ink)">🏅 Achievements</div>
-<span class="pill" style="background:var(--acc-dim);color:var(--acc)">${unlockedCount} / ${ACHIEVEMENTS.length}</span>
-</div>`;
+/* ── counters — hairline instrument grid ── */
+const totSessions=Object.values(state.log).reduce((a,e)=>a+(e.sessions||0),0);
+const totHours=Math.floor(Object.values(state.log).reduce((a,e)=>a+(e.minutes||0),0)/60);
+inner.appendChild(html(`<div class="nt-pgrid">
+<div class="pcell"><div class="n">${doneDaysCount()}</div><div class="l">Days cleared</div></div>
+<div class="pcell"><div class="n">${ov.dn}</div><div class="l">Tasks done</div></div>
+<div class="pcell"><div class="n">${totSessions}</div><div class="l">Total sessions</div></div>
+<div class="pcell"><div class="n">${totHours}<i>H</i></div><div class="l">Total hours</div></div>
+</div>`));
+
+/* ── streaks — two hairline cells ── */
+const pStreakObj = computeStreak();
+const pIsFrozen = pStreakObj.hasFrozen && (state.log[todayKey()]||{minutes:0}).minutes === 0;
+inner.appendChild(html(`<div class="nt-pstreak">
+<div class="pstk ${pIsFrozen?"frozen":""}">
+<div class="sk">${pIsFrozen?"FROZEN STREAK":"DAY STREAK"}</div>
+<div class="sn">${pStreakObj.count}<i>D</i></div>
+<div class="ss">${pIsFrozen?"PROTECTED BY FREEZE":"CONSECUTIVE DAYS"}</div>
+</div>
+<div class="pstk">
+<div class="sk acc">SESSION STREAK</div>
+<div class="sn acc">${computeSessionStreak()}</div>
+<div class="ss">IN-SLOT FOCUS</div>
+</div>
+</div>`));
+
+/* ── achievements ── */
+const achSection=html(`<div class="nt-pach">
+<div class="pachhd"><span class="t">ACHIEVEMENTS</span><span class="c">${ACHIEVEMENTS.filter(a=>state.achievements[a.id]).length} / ${ACHIEVEMENTS.length}</span></div>
+</div>`);
 achSection.appendChild(buildAchievements());
 inner.appendChild(achSection);
 
-/* streaks section */
-const pStreakObj = computeStreak();
-const pIsFrozen = pStreakObj.hasFrozen && (state.log[todayKey()]||{minutes:0}).minutes === 0;
-const streakCard=el("div"); streakCard.className="card" + (pIsFrozen ? " ice-frozen-card" : "");
-Object.assign(streakCard.style,{padding:"20px",borderRadius:"var(--r-lg)",marginBottom:"14px"});
-streakCard.innerHTML=`
-<div style="font-size:14px;font-weight:800;color:var(--ink);margin-bottom:16px"><span style="color:${pIsFrozen ? "var(--ice-1)" : "var(--fire-1)"}">${IC.flame}</span> ${pIsFrozen ? "Frozen Streaks" : "Streaks"}</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-<div style="text-align:center;padding:16px;background:${pIsFrozen ? "rgba(56,189,248,0.12)" : "var(--card-2)"};border-radius:var(--r);border:${pIsFrozen ? "1px solid rgba(125,211,252,0.4)" : "none"}">
-<div style="font-size:11px;color:${pIsFrozen ? "#7DD3FC" : "var(--ink-3)"};font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">${pIsFrozen ? "🧊 Frozen streak" : "Day streak"}</div>
-<div class="display ${pIsFrozen ? "ice-text" : "fire-text"}" style="font-size:36px;font-weight:800">${pStreakObj.count}</div>
-<div style="font-size:10px;color:${pIsFrozen ? "#7DD3FC" : "var(--ink-3)"};margin-top:6px;font-weight:600">${pIsFrozen ? "protected by freeze" : "consecutive days"}</div>
-</div>
-<div style="text-align:center;padding:16px;background:var(--card-2);border-radius:var(--r)">
-<div style="font-size:11px;color:var(--acc);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Session streak</div>
-<div class="display" style="font-size:36px;font-weight:800;color:var(--acc)">${computeSessionStreak()}</div>
-<div style="font-size:10px;color:var(--ink-3);margin-top:6px;font-weight:600">in-slot focus</div>
-</div>
-</div>`;
-inner.appendChild(streakCard);
-
-/* heat map — 5 weeks */
-const heat=el("div"); heat.className="card";
-Object.assign(heat.style,{padding:"18px",borderRadius:"var(--r)",marginBottom:"14px"});
-let hh='<div style="font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:14px">Consistency · last 5 weeks</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">';
+/* ── consistency heat map — 5 weeks ── */
+const heat=html(`<div class="nt-pcard"><div class="pch">CONSISTENCY · LAST 5 WEEKS</div></div>`);
 const tk=todayKey();
+let hh='<div class="heatgrid">';
 for(let i=34;i>=0;i--){
 const d=new Date(); d.setDate(d.getDate()-i);
 const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
 const m=(state.log[k]||{minutes:0}).minutes;
-let c="var(--heat-0)";
-if(m>0) c="var(--heat-1)"; if(m>=120) c="var(--heat-2)"; if(m>=300) c="var(--heat-3)"; if(m>=480) c="var(--heat-4)";  const hrsTxt=m===0?"0h (No study)":`${Math.floor(m/60)}h ${m%60}m`;
-  hh+=`<div class="heat-cell" title="${k} · ${hrsTxt}" style="aspect-ratio:1;border-radius:7px;background:${c};animation-delay:${i*9}ms;${k===tk?"box-shadow:0 0 0 2px var(--acc);":""}"></div>`; }
-hh+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:12px;justify-content:flex-end"><span style="font-size:9px;color:var(--ink-4);font-weight:700">0h</span>';
-["var(--heat-0)","var(--heat-1)","var(--heat-2)","var(--heat-3)","var(--heat-4)"].forEach(c=>hh+=`<span style="width:10px;height:10px;border-radius:3px;background:${c}"></span>`);
-hh+='<span style="font-size:9px;color:var(--ink-4);font-weight:700">8h+</span></div>';
-heat.innerHTML=hh;
+let lvl=0; if(m>0) lvl=1; if(m>=120) lvl=2; if(m>=300) lvl=3; if(m>=480) lvl=4;
+const hrsTxt=m===0?"0h (No study)":`${Math.floor(m/60)}h ${m%60}m`;
+hh+=`<div class="hcell l${lvl} ${k===tk?"today":""}" title="${k} · ${hrsTxt}" style="animation-delay:${i*9}ms"></div>`; }
+hh+='</div><div class="heatleg"><span>0H</span>';
+for(let l=0;l<5;l++) hh+=`<span class="hkey l${l}"></span>`;
+hh+='<span>8H+</span></div>';
+heat.insertAdjacentHTML("beforeend",hh);
 inner.appendChild(heat);
 
-/* overall ring + counters */
-const top=el("div"); top.className="card";
-Object.assign(top.style,{padding:"20px",borderRadius:"var(--r-lg)",marginBottom:"14px",display:"flex",alignItems:"center",gap:"20px"});
-top.innerHTML=`
-<div style="position:relative;width:118px;height:118px;flex-shrink:0">
-${ring(118,11,ov.pct,"var(--acc)")}
-<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-<span class="display mono" style="font-size:26px;font-weight:800;color:var(--ink)">${ov.pct}%</span>
-<span style="font-size:9px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.08em">complete</span>
-</div></div>
-<div style="flex:1;display:flex;flex-direction:column;gap:10px">
-<div><div class="display" style="font-size:20px;font-weight:800;color:var(--mint)">${doneDaysCount()}</div><div style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">days cleared</div></div>
-<div><div class="display" style="font-size:20px;font-weight:800;color:var(--sky)">${ov.dn}</div><div style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">tasks done</div></div>
-<div><div class="display" style="font-size:20px;font-weight:800;color:var(--amber)">${Object.values(state.log).reduce((a,e)=>a+(e.sessions||0),0)}</div><div style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">total sessions</div></div>
-<div><div class="display" style="font-size:20px;font-weight:800;color:var(--acc)">${Math.floor(Object.values(state.log).reduce((a,e)=>a+(e.minutes||0),0)/60)}h</div><div style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">total hours</div></div>
-</div>`;
-inner.appendChild(top);
-
-/* 7-day study bars */
-const bars=el("div"); bars.className="card";
-Object.assign(bars.style,{padding:"18px",borderRadius:"var(--r)",marginBottom:"14px"});
-let bh='<div style="font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:14px">Study time · last 7 days</div><div style="display:flex;align-items:flex-end;gap:8px;height:104px">';
+/* ── 7-day study bars ── */
+const bars=html(`<div class="nt-pcard"><div class="pch">STUDY TIME · LAST 7 DAYS</div></div>`);
 let maxM=1; const days=[];
 for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i);
 const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
 const e=state.log[k]||{minutes:0}; maxM=Math.max(maxM,e.minutes);
 days.push({d,e,isT:i===0}); }
+let bh='<div class="barrow">';
 days.forEach(({d,e,isT})=>{
-const h=Math.max(5,Math.round(e.minutes/maxM*66));
+const h=Math.max(4,Math.round(e.minutes/maxM*72));
 const lbl=e.minutes>=60?(Math.floor(e.minutes/60)+"h"+(e.minutes%60?fmt(e.minutes%60):"")):(e.minutes>0?e.minutes+"m":"");
-bh+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
-<span class="mono" style="font-size:8.5px;font-weight:800;color:${e.minutes?(isT?"var(--acc)":"var(--ink-3)"):"transparent"};white-space:nowrap">${lbl||"·"}</span>
-<div style="width:100%;height:${h}px;border-radius:8px 8px 4px 4px;background:${e.minutes?(isT?"var(--acc)":"var(--acc-dim)"):"var(--card-2)"};transition:height .6s var(--ease)"></div>
-<span style="font-size:9px;color:${isT?"var(--acc)":"var(--ink-4)"};font-weight:700">${WD[d.getDay()]}</span></div>`; });
+bh+=`<div class="barcol">
+<span class="bv ${e.minutes?(isT?"on":""):"z"}">${lbl||"·"}</span>
+<div class="bcap ${e.minutes?(isT?"on":"dim"):"z"}" style="height:${h}px"></div>
+<span class="bd ${isT?"on":""}">${WD[d.getDay()]}</span></div>`; });
 bh+="</div>";
-bars.innerHTML=bh;
+bars.insertAdjacentHTML("beforeend",bh);
 inner.appendChild(bars);
 
-/* subject completion */
-const subj=el("div"); subj.className="card";
-Object.assign(subj.style,{padding:"18px",borderRadius:"var(--r)",marginBottom:"14px"});
-let sh='<div style="font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:14px">Subject completion</div>';
+/* ── subject completion — segmented per-subject bars ── */
+const subj=html(`<div class="nt-pcard"><div class="pch">SUBJECT COMPLETION</div></div>`);
 const bySubj={};
 SCHED.forEach((d,i)=>{ const b=baseSubj(d.subject);
 if(!bySubj[b]) bySubj[b]={tot:0,dn:0};
 d.sessions.forEach((s,si)=>{ bySubj[b].tot+=s.tasks.length;
 s.tasks.forEach((_,ti)=>{ if(state.checked[`${i}-${si}-${ti}`]) bySubj[b].dn++; }); }); });
+let sh='<div class="subjlist">';
+const SSEG=16;
 Object.keys(bySubj).forEach(name=>{
 const e=bySubj[name]; if(!e.tot) return;
 const pc=Math.round(e.dn/e.tot*100); if(pc===0&&e.tot<20) return;
-sh+=`<div style="margin-bottom:12px">
-<div style="display:flex;justify-content:space-between;margin-bottom:6px">
-<span style="font-size:12px;font-weight:600;color:var(--ink-2)">${name}</span>
-<span class="mono" style="font-size:11px;font-weight:800;color:${pc===100?"var(--acc)":"var(--ink-3)"}">${pc}%</span></div>
-<div class="track" style="height:6px"><div class="fill" style="width:${pc}%"></div></div></div>`; });
-subj.innerHTML=sh;
+const son=Math.round((pc/100)*SSEG);
+let segs=""; for(let i=0;i<SSEG;i++) segs+=`<i class="${i<son?"on":""}"></i>`;
+sh+=`<div class="subj ${pc===100?"full":""}">
+<div class="srow"><span class="sn">${name}</span><span class="sp">${pc}<i>%</i></span></div>
+<div class="nt-seg sseg">${segs}</div></div>`; });
+sh+="</div>";
+subj.insertAdjacentHTML("beforeend",sh);
 inner.appendChild(subj);
 
 wrap.appendChild(inner); wireTheme(wrap); return wrap; }
@@ -1655,21 +1580,18 @@ const m=achMetrics();
 const nx=nextAchievement();
 const ach=el("div");
 function fmtUnlockDate(iso){ try{ const d=new Date(iso); return MON[d.getMonth()]+" "+d.getDate()+", "+d.getFullYear(); }catch(e){ return ""; } }
-let ah=`<div class="hex-grid">`;
+let ah=`<div class="nt-achgrid">`;
 ACHIEVEMENTS.forEach(a=>{
 const rec=state.achievements[a.id], on=!!rec;
 const have=achProgress(a,m), pct=Math.round(have/a.goal*100);
 const isNext=nx&&nx.a.id===a.id;
 const fresh=on&&rec.at&&(Date.now()-new Date(rec.at).getTime())<8000;
-ah+=`<div class="hexwrap ${isNext?"next":""}" style="--bc:${a.bc||"var(--amber)"}" title="${a.desc}">
-<div class="hex ${on?"on":"locked"} ${fresh?"fresh":""}">
-<div class="hicon">${a.icon}</div>
-<div class="hlabel">${a.title}</div>
-</div>
-${on?`<div class="hdate">${fmtUnlockDate(rec.at)}</div>`
-:isNext?`<div class="hprog"><div class="track" style="height:4px"><div class="fill" style="width:${pct}%;background:${a.bc||"var(--amber)"}"></div></div>
-<div style="font-size:9px;color:var(--ink-3);margin-top:4px;font-weight:700">${have} / ${a.goal}</div></div>`
-:`<div class="hdate" style="color:var(--ink-4)">${have} / ${a.goal}</div>`}
+ah+=`<div class="achwrap ${on?"on":"locked"} ${isNext?"next":""} ${fresh?"fresh":""}" title="${a.desc}">
+<div class="achicon">${a.icon}</div>
+<div class="achtitle">${a.title}</div>
+${on?`<div class="achdate">${fmtUnlockDate(rec.at)}</div>`
+:isNext?`<div class="achprog"><div class="nt-seg achseg"><i class="${pct>=25?"on":""}"></i><i class="${pct>=50?"on":""}"></i><i class="${pct>=75?"on":""}"></i><i class="${pct>=100?"on":""}"></i></div><div class="achpc">${have} / ${a.goal}</div></div>`
+:`<div class="achdate locked">${have} / ${a.goal}</div>`}
 </div>`; });
 ah+="</div>";
 ach.innerHTML=ah;
@@ -1692,49 +1614,47 @@ const streak=streakObj.count, sstreak=computeSessionStreak();
 const unlockedCount=ACHIEVEMENTS.filter(a=>state.achievements[a.id]).length;
 const ese=cd(ESE_DATE);
 const totMin=Object.values(state.log).reduce((a,e)=>a+(e.minutes||0),0);
-inner.appendChild(html(`<div class="card" style="padding:20px;border-radius:var(--r-lg);margin-bottom:14px;border:1px solid var(--line-2)">
-<div style="display:flex;align-items:center;gap:14px">
-<div style="width:58px;height:58px;border-radius:50%;background:var(--acc);color:var(--acc-ink);display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;flex-shrink:0">T</div>
-<div style="flex:1;min-width:0">
-<div class="display" style="font-size:20px;font-weight:800;color:var(--ink)">Teja</div>
-<div style="font-size:11.5px;color:var(--ink-3);font-weight:600;margin-top:2px">ESE 2027 aspirant · ${ese.d} days to go</div>
-</div></div>
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px">
-<div style="text-align:center"><div class="display" style="font-size:17px;font-weight:800;color:var(--amber)">${streak}</div><div style="font-size:8.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em">streak</div></div>
-<div style="text-align:center"><div class="display" style="font-size:17px;font-weight:800;color:var(--acc)">${sstreak}</div><div style="font-size:8.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em">sessions</div></div>
-<div style="text-align:center"><div class="display" style="font-size:17px;font-weight:800;color:var(--sky)">${Math.floor(totMin/60)}h</div><div style="font-size:8.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em">studied</div></div>
-<div style="text-align:center"><div class="display" style="font-size:17px;font-weight:800;color:var(--mint)">${unlockedCount}</div><div style="font-size:8.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em">badges</div></div>
-</div></div>`));
+inner.appendChild(html(`<div class="nt-you">
+<div class="ytop">
+<div class="yav">T</div>
+<div class="ymeta">
+<div class="yname">TEJA</div>
+<div class="ysub">ESE 2027 ASPIRANT · ${ese.d}D TO GO</div>
+</div>
+</div>
+<div class="ystats">
+<div class="yst"><div class="n">${streak}</div><div class="l">Streak</div></div>
+<div class="yst"><div class="n">${sstreak}</div><div class="l">Sessions</div></div>
+<div class="yst"><div class="n">${Math.floor(totMin/60)}<i>H</i></div><div class="l">Studied</div></div>
+<div class="yst"><div class="n">${unlockedCount}</div><div class="l">Badges</div></div>
+</div>
+</div>`));
 
 /* accordion */
 function acc(id,icon,title,badge,build){
 const open=!!profExp[id];
-const card=el("div"); card.className="card";
-Object.assign(card.style,{borderRadius:"var(--r)",marginBottom:"10px",overflow:"hidden"});
-const head=el("button"); head.className="press";
-Object.assign(head.style,{display:"flex",alignItems:"center",gap:"12px",width:"100%",padding:"15px 16px",border:"none",background:"transparent",cursor:"pointer",textAlign:"left"});
-head.innerHTML=`<span style="font-size:16px;width:22px;text-align:center">${icon}</span>
-<span style="flex:1;font-size:13.5px;font-weight:700;color:var(--ink)">${title}</span>
-${badge?`<span class="pill" style="background:var(--card-2);color:var(--ink-3);font-size:9px">${badge}</span>`:""}
-<span style="color:var(--ink-4);transform:rotate(${open?"90deg":"0deg"});transition:transform .25s var(--spring)">${IC.right}</span>`;
+const card=el("div"); card.className="nt-acc";
+const head=el("button"); head.className="acchead press";
+head.innerHTML=`<span class="ai">${icon}</span>
+<span class="at">${title}</span>
+${badge?`<span class="ab">${badge}</span>`:""}
+<span class="acar ${open?"open":""}">${IC.right}</span>`;
 head.onclick=()=>{ profExp[id]=!open; saveJSON("ese_prof_exp_v1",profExp); render(); };
 card.appendChild(head);
-if(open){ const body=el("div",{padding:"0 16px 16px"}); body.appendChild(build()); card.appendChild(body); }
+if(open){ const body=el("div"); body.className="accbody"; body.appendChild(build()); card.appendChild(body); }
 return card; }
 function rows(list){ const d=el("div"); list.forEach(r=>d.appendChild(r)); return d; }
 function row(label,desc,right,onclick){
-const r=el("button"); r.className="press";
-Object.assign(r.style,{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",width:"100%",
-padding:"13px 2px",border:"none",borderTop:"1px solid var(--line)",background:"transparent",cursor:onclick?"pointer":"default",textAlign:"left"});
-r.innerHTML=`<div style="flex:1;min-width:0">
-<div style="font-size:13px;font-weight:700;color:var(--ink)">${label}</div>
-${desc?`<div style="font-size:11px;color:var(--ink-3);margin-top:3px;line-height:1.4">${desc}</div>`:""}</div>
-<div style="flex-shrink:0;color:var(--ink-3)">${right||""}</div>`;
+const r=el("button"); r.className="nt-setrow press";
+if(!onclick) r.classList.add("static");
+r.innerHTML=`<div class="sl">
+<div class="slt">${label}</div>
+${desc?`<div class="sld">${desc}</div>`:""}</div>
+<div class="sr">${right||""}</div>`;
 if(onclick) r.onclick=onclick;
 return r; }
 function toggleUI(on){
-return `<span style="display:inline-block;width:44px;height:26px;border-radius:999px;background:${on?"var(--acc)":"var(--card-2)"};position:relative;transition:background .2s">
-<span style="position:absolute;top:3px;left:${on?"21px":"3px"};width:20px;height:20px;border-radius:50%;background:${on?"var(--acc-ink)":"var(--ink-4)"};transition:left .25s var(--spring)"></span></span>`; }
+return `<span class="nt-sw ${on?"on":""}"><i></i></span>`; }
 
 const shakyCount=Object.keys(state.shaky).length;
 inner.appendChild(acc("badges",IC.trophy,"Achievements",`${unlockedCount} / ${ACHIEVEMENTS.length}`,buildAchievements));
@@ -1769,10 +1689,10 @@ row("Block distracting apps","Uses Android Focus Mode / Windows Focus — tap fo
 inner.appendChild(acc("app",IC.gear,"App & data","",()=>{
 const wrap=el("div");
 /* theme picker */
-const themeRow=el("div"); themeRow.style.cssText="padding:12px 2px 2px;border-top:1px solid var(--line)";
-const themeLabel=el("div"); themeLabel.style.cssText="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px";
-themeLabel.textContent="Theme suit";
-const themeDesc=el("div"); themeDesc.style.cssText="font-size:11px;color:var(--ink-3);margin-bottom:10px;line-height:1.4";
+const themeRow=el("div"); themeRow.className="nt-themerow";
+const themeLabel=el("div"); themeLabel.className="ntl";
+themeLabel.textContent="THEME SUIT";
+const themeDesc=el("div"); themeDesc.className="ntd";
 themeDesc.textContent="Choose a palette — applies instantly everywhere.";
 const grid=el("div"); grid.className="theme-grid";
 THEMES.forEach(t=>{
@@ -1805,8 +1725,7 @@ toast("Signed out — still saved on this device"); render(); })
 row("Shortcuts","1-5 tabs · T theme · Z undo · Space timer",""),
 ]); }));
 
-inner.appendChild(html(`<div style="text-align:center;font-size:11px;color:var(--ink-4);line-height:1.9;padding:8px 0 20px">
-ESE2027 Study OS · ${APP_VERSION}<br>Built for one goal — Jan 31, 2027</div>`));
+inner.appendChild(html(`<div class="nt-youfoot">ESE<span class="sl">//</span>2027 STUDY OS · ${APP_VERSION}<br>BUILT FOR ONE GOAL — JAN 31 2027</div>`));
 wrap.appendChild(inner); wireTheme(wrap); return wrap; }
 
 /* ════════════════ ACHIEVEMENTS ════════════════ */
@@ -1883,8 +1802,9 @@ const ctx=cv.getContext("2d");
 cv.width=innerWidth*devicePixelRatio; cv.height=innerHeight*devicePixelRatio;
 ctx.scale(devicePixelRatio,devicePixelRatio);
 const isL=document.body.classList.contains("light");
-const colors=isL?["#5C8A00","#7AAA14","#B07508","#1C7FB5","#C24040","#6D4FC9"]
-:["#C9F24E","#A8D437","#E8B04B","#5BB8E8","#E86A6A","#A78BFA","#F2F4F1"];
+/* Nothing palette — red / white / grey only, no rainbow */
+const colors=isL?["#D71921","#000000","#5A5A5A","#9A9A9A","#D71921"]
+:["#D71921","#FFFFFF","#9A9A9A","#5A5A5A","#D71921"];
 const parts=[];
 const cx=innerWidth/2, cy=innerHeight*0.42;
 for(let i=0;i<o.count;i++){
@@ -1895,7 +1815,7 @@ vx:Math.cos(ang)*v*o.spread, vy:Math.sin(ang)*v-9,
 w:5+Math.random()*6, h:8+Math.random()*8,
 rot:Math.random()*Math.PI*2, vr:(Math.random()-0.5)*0.32,
 c:colors[i%colors.length],
-shape:Math.random()<0.25?"circle":"rect",
+shape:Math.random()<0.12?"circle":"rect",
 life:1, decay:0.006+Math.random()*0.008, wob:Math.random()*Math.PI*2 }); }
 let raf;
 function step(){
@@ -1941,16 +1861,16 @@ ${(nxtSess||next)?`<div class="celebrate-next">
 ${nxtSess?`<div class="nrow">
 <span style="font-size:19px">${nxtSess.icon}</span>
 <div style="flex:1;min-width:0">
-<div style="font-size:9.5px;font-weight:700;color:var(--acc);letter-spacing:.18em;text-transform:uppercase">Next session · ${nxtSess.time}</div>
-<div style="font-size:12.5px;font-weight:800;color:var(--ink);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nxtSess.title}</div>
+<div style="font-family:var(--mono-font);font-size:9.5px;font-weight:700;color:var(--acc);letter-spacing:.18em;text-transform:uppercase">Next session · ${nxtSess.time}</div>
+<div style="font-size:12.5px;font-weight:700;color:var(--ink);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nxtSess.title}</div>
 </div></div>`:""}
 ${next?`<div class="nrow">
 <span style="font-size:19px;filter:grayscale(1);opacity:.7">${next.a.icon}</span>
 <div style="flex:1;min-width:0">
-<div style="font-size:9.5px;font-weight:700;color:var(--ink-4);letter-spacing:.18em;text-transform:uppercase">Next achievement</div>
-<div style="font-size:11px;font-weight:800;color:var(--ink-2);margin-top:2px">${next.a.title}</div>
-<div class="track" style="height:5px;margin-top:5px"><div class="fill" style="width:${next.pct}%"></div></div>
-<div style="font-size:10px;color:var(--ink-4);margin-top:4px;font-weight:600">${next.have} / ${next.a.goal} · ${next.pct}%</div>
+<div style="font-family:var(--mono-font);font-size:9.5px;font-weight:700;color:var(--ink-4);letter-spacing:.18em;text-transform:uppercase">Next achievement</div>
+<div style="font-size:11px;font-weight:700;color:var(--ink-2);margin-top:2px">${next.a.title}</div>
+<div class="nt-seg" style="margin-top:6px"><i class="${next.pct>=25?"on":""}"></i><i class="${next.pct>=50?"on":""}"></i><i class="${next.pct>=75?"on":""}"></i><i class="${next.pct>=100?"on":""}"></i></div>
+<div style="font-family:var(--mono-font);font-size:10px;color:var(--ink-4);margin-top:4px;font-weight:700">${next.have} / ${next.a.goal} · ${next.pct}%</div>
 </div></div>`:""}
 </div>`:""}
 <button class="btn btn-acc press celebrate-cta">${cta||"Keep going"}</button>
@@ -2005,23 +1925,27 @@ const t=THEMES.find(x=>x.id===id); toast(t.name); }
 function cycleTheme(){
 setTheme(isLightTheme(state.theme)?"ember":"paper"); }
 
-function render(){
+function render(quiet){
+document.body.classList.toggle("no-stagger", !!quiet);
 applyTheme();
 syncPomoState();
 syncWakeLock();
-view.innerHTML="";
 /* migrate old nav values */
 if(state.nav==="home") state.nav="today";
 if(state.nav==="stats") state.nav="progress";
 if(state.nav==="settings") state.nav="you";
-/* render current screen */
-if(state.nav==="today") view.appendChild(renderToday());
-else if(state.nav==="plan") view.appendChild(renderPlan());
-else if(state.nav==="focus") view.appendChild(renderFocus());
-else if(state.nav==="progress") view.appendChild(renderProgress());
-else if(state.nav==="you") view.appendChild(renderYou());
-else view.appendChild(renderToday()); /* fallback */
+/* build the new screen OFF-DOM, then swap atomically — never blank the view (kills the blink) */
+let screen;
+if(state.nav==="today") screen=renderToday();
+else if(state.nav==="plan") screen=renderPlan();
+else if(state.nav==="focus") screen=renderFocus();
+else if(state.nav==="progress") screen=renderProgress();
+else if(state.nav==="you") screen=renderYou();
+else screen=renderToday(); /* fallback */
+view.replaceChildren(screen);
 renderNav(); renderTimerDock(); updateLandscape(); }
+/* re-render in place (task toggles) without replaying the entrance animation */
+function renderQuiet(){ render(true); }
 function renderNav(){
 navEl.innerHTML="";
 [["today","Today",IC.home],["plan","Plan",IC.plan],["focus","Focus",IC.focus],["progress","Progress",IC.stats],["you","You",IC.settings]].forEach(([id,label,icon])=>{
@@ -2175,25 +2099,19 @@ else if(fd.subject) taskTitle=fd.subject.split("—")[0].trim();
 if(!existing){
 existing=el("div"); existing.id="timerDock"; existing.className="show";
 existing.innerHTML=`
-<button class="dstep-btn press" id="dockMinus5" title="Subtract 5 mins">−5m</button>
 <div class="dtime-box" id="dockTimeBox">
 <div class="dtime">${timeStr}</div>
 <div class="dphase">${phaseLabel}</div>
 </div>
-<button class="dstep-btn press" id="dockPlus5" title="Add 5 mins">+5m</button>
 <div class="dmeta" id="dockMeta">
 <div class="dtask">${taskTitle}</div>
 </div>
-<button class="dicon-btn press ${dockDrawerOpen?'active':''}" id="dockCustom" title="Customize Timer">${IC.gear}</button>
 <button class="dbtn press main" id="dockPlayPause">${state.pomo.running?IC.pause:IC.play}</button>
 `;
 document.body.appendChild(existing);
 
-existing.querySelector("#dockMinus5").onclick=(e)=>{ e.stopPropagation(); adjustDuration(state.pomo.phase, -5); };
-existing.querySelector("#dockPlus5").onclick=(e)=>{ e.stopPropagation(); adjustDuration(state.pomo.phase, 5); };
 existing.querySelector("#dockTimeBox").onclick=()=>expandFocusOverlay();
 existing.querySelector("#dockMeta").onclick=()=>expandFocusOverlay();
-existing.querySelector("#dockCustom").onclick=(e)=>{ e.stopPropagation(); toggleDockDrawer(); };
 existing.querySelector("#dockPlayPause").onclick=(e)=>{ e.stopPropagation(); toggleRunning(); };
 }else{
 existing.classList.add("show");
@@ -2557,14 +2475,14 @@ window.addEventListener("beforeunload",function(){ if(user) push(); });
 /* ── boot ─────────────────────────────────────────────── */
 applyTheme();
 render();
-/* cinematic logo reveal → hand off to the app once the intro has played */
+/* dot-matrix logo reveal → hand off to the app once the intro has played */
 (function(){
 const sp=document.getElementById("splash"); if(!sp) return;
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
-const hold=reduce?300:9600;                       /* full 10s reveal, then settle */
+const hold=reduce?300:3400;                       /* ~3.4s reveal, then settle */
 let done=false;
 const dismiss=()=>{ if(done)return; done=true;
-  sp.classList.add("out"); setTimeout(()=>sp.remove(),640); };
+  sp.classList.add("out"); setTimeout(()=>sp.remove(),560); };
 const timer=setTimeout(dismiss,hold);
 /* tap/click anywhere to skip — returning users needn't wait each launch */
 sp.addEventListener("click",()=>{ clearTimeout(timer); dismiss(); },{once:true});
