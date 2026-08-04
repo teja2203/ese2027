@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v31";
+const APP_VERSION="v32";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -2716,11 +2716,17 @@ window.addEventListener("beforeunload",function(){ if(user) push(); });
 /* ── boot ─────────────────────────────────────────────── */
 applyTheme();
 render();
-/* animated splash → hand off to the app once the intro has played */
+/* cinematic logo reveal → hand off to the app once the intro has played */
 (function(){
 const sp=document.getElementById("splash"); if(!sp) return;
-const min=matchMedia("(prefers-reduced-motion: reduce)").matches?250:4800;
-setTimeout(()=>{ sp.classList.add("out"); setTimeout(()=>sp.remove(),520); },min);
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const hold=reduce?300:9600;                       /* full 10s reveal, then settle */
+let done=false;
+const dismiss=()=>{ if(done)return; done=true;
+  sp.classList.add("out"); setTimeout(()=>sp.remove(),640); };
+const timer=setTimeout(dismiss,hold);
+/* tap/click anywhere to skip — returning users needn't wait each launch */
+sp.addEventListener("click",()=>{ clearTimeout(timer); dismiss(); },{once:true});
 })();
 /* refresh countdowns + streak once a minute while on Today */
 setInterval(()=>{ if(state.nav==="today"&&!document.hidden) render(); },60000);

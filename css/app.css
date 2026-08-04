@@ -171,9 +171,17 @@ button{ font-family:inherit; }
   border-radius:999px; font-family:var(--mono-font); font-size:10px; font-weight:700;
   letter-spacing:.07em; text-transform:uppercase; background:var(--card-2);
   border:1px solid var(--border); color:var(--ink-2); cursor:pointer;
+  white-space:nowrap; flex-shrink:0;
   transition:color .18s var(--ease), border-color .18s var(--ease),
              background .18s var(--ease), transform .12s var(--spring); }
 .top-deck-pill svg{ flex-shrink:0; }
+/* streak pill must never clip its "Nd" label */
+.fire-pill,.ice-pill{ flex-shrink:0; }
+/* the long countdown pill yields first when the row is tight */
+#cdPill,#cdPillPlan,#cdPillFocus,#cdPillProg,#cdPillYou{ flex-shrink:1; min-width:0;
+  overflow:hidden; text-overflow:ellipsis; }
+/* let the left pill group shrink so the countdown (not the streak) truncates */
+.top-deck > div:first-child{ min-width:0; }
 .top-deck-pill:hover{ border-color:var(--ink-3); color:var(--ink); }
 .top-deck-pill:active{ transform:scale(.94); }
 
