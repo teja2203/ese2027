@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v45";
+const APP_VERSION="v50";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -16,33 +16,34 @@ const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
 function loadJSON(k,f){ try{ const r=localStorage.getItem(k); return r===null?f:JSON.parse(r);}catch(e){ return f; } }
 function saveJSON(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 
-/* ── tag + subject styling (design-system tokens) ─────── */
+/* ── tag + subject styling — monochrome, red = stakes ───
+   tier 2 = high-stakes (mock/PYQ) → solid red
+   tier 1 = core subject work      → dim red
+   tier 0 = revision / recovery    → grey            */
 const TAGS={
-ctrl:{label:"Controls",  c:"var(--amber)", s:"var(--amber-soft)"},
-edc:{label:"EDC",        c:"var(--acc)",   s:"var(--acc-dim)"},
-dig:{label:"Digital",    c:"var(--lilac)", s:"var(--lilac-soft)"},
-emft:{label:"EMFT",      c:"var(--amber)", s:"var(--amber-soft)"},
-mat:{label:"Material Sci",c:"var(--amber)",s:"var(--amber-soft)"},
-mpmc:{label:"MPMC",      c:"var(--sky)",   s:"var(--sky-soft)"},
-comm:{label:"Comm",      c:"var(--mint)",  s:"var(--mint-soft)"},
-sig:{label:"Signals",    c:"var(--mint)",  s:"var(--mint-soft)"},
-ana:{label:"Analogs",    c:"var(--lilac)", s:"var(--lilac-soft)"},
-coa:{label:"COA",        c:"var(--sky)",   s:"var(--sky-soft)"},
-meas:{label:"Measurements",c:"var(--mint)",s:"var(--mint-soft)"},
-net:{label:"Networks",   c:"var(--sky)",   s:"var(--sky-soft)"},
-pyq:{label:"PYQ",        c:"var(--rose)",  s:"var(--rose-soft)"},
-rev:{label:"Revision",   c:"var(--ink-3)", s:"var(--card-2)"},
-mock:{label:"Mock Test", c:"var(--rose)",  s:"var(--rose-soft)"},
+ctrl:{label:"Controls",  t:1},
+edc:{label:"EDC",        t:1},
+dig:{label:"Digital",    t:1},
+emft:{label:"EMFT",      t:1},
+mat:{label:"Material Sci",t:1},
+mpmc:{label:"MPMC",      t:1},
+comm:{label:"Comm",      t:1},
+sig:{label:"Signals",    t:1},
+ana:{label:"Analogs",    t:1},
+coa:{label:"COA",        t:1},
+meas:{label:"Measurements",t:1},
+net:{label:"Networks",   t:1},
+pyq:{label:"PYQ",        t:2},
+rev:{label:"Revision",   t:0},
+mock:{label:"Mock Test", t:2},
 };
 const tagOf=t=>TAGS[t]||TAGS.rev;
-function badgeStyle(b){
-const R={c:"var(--rose)",s:"var(--rose-soft)"},A={c:"var(--amber)",s:"var(--amber-soft)"},
-      S={c:"var(--sky)",s:"var(--sky-soft)"},G={c:"var(--mint)",s:"var(--mint-soft)"},
-      N={c:"var(--ink-3)",s:"var(--card-2)"},L={c:"var(--acc)",s:"var(--acc-dim)"};
-const m={"MOCK":R,"GRAND TEST":R,"MOCK MARATHON":R,"ESE EXAM DAY":L,"APTRANSCO EXAM":R,
-"EXAM PREP":R,"APTRANSCO SPRINT":R,"APTRANSCO + ESE":S,"ESE":S,"ESE ONLY":S,
-"REVISION":N,"REVISION PASS 1":G,"REVISION PASS 2":G,"PYQ SPRINT":R,"TAPER":A,"RECOVERY":N};
-return m[b]||N;
+function badgeTier(b){
+const HOT=["MOCK","GRAND TEST","MOCK MARATHON","ESE EXAM DAY","APTRANSCO EXAM","EXAM PREP","APTRANSCO SPRINT","PYQ SPRINT"];
+const REST=["REVISION","RECOVERY","TAPER"];
+if(HOT.includes(b)) return "hot";
+if(REST.includes(b)) return "rest";
+return "core";
 }
 
 /* ── countdowns ───────────────────────────────────────── */
@@ -261,7 +262,7 @@ const mon=yk.slice(0,7);
 const used=Object.keys(state.freeze).some(k=>k.slice(0,7)===mon);
 if(used) return;                                        /* token already spent this month */
 state.freeze[yk]=true; saveJSON(FREEZE_KEY,state.freeze);
-setTimeout(()=>toast("🧊 Streak freeze used for "+yk.slice(5)+" — one per month"),1200); }
+setTimeout(()=>toast("Streak freeze used for "+yk.slice(5)+" — one per month"),1200); }
 
 /* ── rest days — shift the remaining plan forward ─────── */
 function parsePlanDate(s){ const p=s.split(" "); const mi=MON.indexOf(p[0]); const y=mi>=6?2026:2027; return new Date(y,mi,parseInt(p[1],10)); }
@@ -285,7 +286,7 @@ ${inp("mkMax","Out of (e.g. 200)","number",'inputmode="decimal" value="200"')}
 </div>
 ${inp("mkNeg","Marks lost to negatives (optional)","number",'inputmode="decimal"')}
 ${inp("mkNote","Weak areas noted (optional)")}
-<div id="mkErr" style="font-size:12px;color:var(--rose);margin-top:8px;min-height:15px"></div>
+<div id="mkErr" style="font-size:12px;color:var(--acc);margin-top:8px;min-height:15px"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
 <button id="mkCancel" class="btn btn-ghost press">Cancel</button>
 <button id="mkSave" class="btn btn-acc press">Save</button>
@@ -301,7 +302,7 @@ const ng=parseFloat(sheet.querySelector("#mkNeg").value)||0;
 const note=sheet.querySelector("#mkNote").value.trim();
 if(!name||isNaN(sc)){ sheet.querySelector("#mkErr").textContent="Name and marks are required"; return; }
 state.mocks.push({name,score:sc,max:mx,neg:ng,note,date:todayKey()});
-saveJSON(MOCK_KEY,state.mocks); close(); render(); toast("Mock logged 📊"); checkAchievements(); };
+saveJSON(MOCK_KEY,state.mocks); close(); render(); toast("Mock logged"); checkAchievements(); };
 scrim.appendChild(sheet); document.body.appendChild(scrim);
 requestAnimationFrame(()=>{ scrim.classList.add("in"); sheet.querySelector("#mkName").focus(); }); }
 function deleteMock(i){ if(!confirm("Delete this mock entry?")) return;
@@ -690,7 +691,7 @@ fired[si]=true;
 const done=s.tasks.every((_,ti)=>state.checked[`${di}-${si}-${ti}`]);
 if(!done){
 const slot=SLOTS[si];
-notify(`${slot.icon} ${slot.label} · ${slot.time}`,`${s.title} — ${slot.desc}`);
+notify(`${slot.label} · ${slot.time}`,`${s.title} — ${slot.desc}`);
 } });
 saveJSON(SLOT_NOTIF_KEY,fired); }
 
@@ -699,7 +700,7 @@ function strictActive(){ return state.block.strict&&state.pomo.running&&state.po
 function toggleStrict(){
 if(!state.block.strict){
 if(!confirm("Strict mode:\n\n• During a focus session, Stop/Pause/Back require a 5-second hold\n• Leaving the app mid-session is counted as a distraction\n\nEnable?")) return;
-state.block.strict=true; toast("Strict mode armed 🔒");
+state.block.strict=true; toast("Strict mode armed");
 }else{
 if(state.pomo.running&&state.pomo.phase==="work"){ toast("Can't disarm during a focus session"); return; }
 state.block.strict=false; toast("Strict mode off");
@@ -755,11 +756,11 @@ logSession(state.pomo.workMins);
 const postHits=(state.log[todayKey()]||{}).slotHits||{};
 if(Object.keys(postHits).length>preCount){
 const si=currentSlotIndex(), slot=SLOTS[si]||{label:"slot"};
-setTimeout(()=>toast(`🎯 ${slot.label} secured — session streak alive`),600);
+setTimeout(()=>toast(`${slot.label} secured — session streak alive`),600);
 } }
 try{ navigator.vibrate&&navigator.vibrate([120,60,120]); }catch(e){}
 playSound(wasWork?"complete":"break");
-notify(wasWork?"Focus session complete 🎉":"Break over ⏰",
+notify(wasWork?"Focus session complete":"Break over",
 wasWork?`${state.pomo.workMins} min of deep work logged.${state.pomo.loop?` ${state.pomo.breakMins} min break starts now.`:" Take a breather."}`
 :`Time to get back to focus${state.pomo.loop?` — ${state.pomo.workMins} min session starting.`:"."}`);
 if(state.pomo.loop){
@@ -798,7 +799,7 @@ state.pomo.logged=0;
 const wasRunning=state.pomo.running;
 state.pomo.running=false; state.pomo.targetTs=null; state.pomo.timeLeft=phaseSecs(); stopPomoInterval(); saveJSON(POMO_KEY,state.pomo); render();
 if(wasRunning) playSound("stop");
-if(hadMins) toast("Stopped — partial time logged ✓"); }
+if(hadMins) toast("Stopped — partial time logged"); }
 function skipPhase(){ completePhase(); }
 function setPhase(p){ bankProgress(); state.pomo.logged=0; state.pomo.phase=p; state.pomo.running=false; state.pomo.targetTs=null; state.pomo.timeLeft=phaseSecs(); stopPomoInterval(); saveJSON(POMO_KEY,state.pomo); render(); }
 function applyPreset(w,b){ bankProgress(); state.pomo.logged=0; state.pomo.workMins=w; state.pomo.breakMins=b; state.pomo.running=false; state.pomo.targetTs=null; state.pomo.timeLeft=phaseSecs(); stopPomoInterval(); saveJSON(POMO_KEY,state.pomo); render(); }
@@ -848,7 +849,7 @@ if(!e||!e.minutes||!e.sessions){
 /* if nothing was studied by 9pm, flag today as a rest day */
 const d=SCHED[state.index];
 if(d&&d.badge!=="RECOVERY"){
-setTimeout(()=>{ if(!(state.log[todayKey()]||{}).sessions){ toast("🌙 Rest day detected — no sessions tracked. Health comes first."); } },22*3600000-60000*new Date().getHours()); /* ~10pm */
+setTimeout(()=>{ if(!(state.log[todayKey()]||{}).sessions){ toast("Rest day detected — no sessions tracked. Health comes first."); } },22*3600000-60000*new Date().getHours()); /* ~10pm */
 } } })();
 function setNav(id){
 if(state.nav===id) return;
@@ -947,7 +948,7 @@ function iceShatterShowcase(iconEl, opts){
       iconEl.classList.remove("ice-shatter");
       iconEl.innerHTML = IC.flame;
       iconEl.classList.add(opts.backToIce ? "frost-flame" : "fire-glow");
-      if (!opts.backToIce) toast("🧊💥 Ice shattered! Streak continued 🔥");
+      if (!opts.backToIce) toast("Ice shattered — streak continues");
     }, 820);
   }, 1050);
 }
@@ -967,7 +968,7 @@ d.innerHTML = `
 <button class="nt-icon press sound-pill" title="Toggle Ambient Audio">${IC.head}</button>
 <button class="nt-icon press theme-btn" aria-label="Toggle theme">${isLightTheme(state.theme)?IC.moon:IC.sun}</button>
 </div>`;
-const cdToast = () => toast(`🎯 Target: ESE 2027 Exam · ${cdDate.d} days remaining`);
+const cdToast = () => toast(`Target: ESE 2027 · ${cdDate.d} days remaining`);
 d.querySelector(".nt-brand").onclick = cdToast;
 d.querySelector(".cd-tag").onclick = cdToast;
 d.querySelector(".streak-tag").onclick = () => setNav("progress");
@@ -1040,7 +1041,7 @@ hero.innerHTML=`
 <div class="desc">${slot.desc||'Complete every task to master this session.'}</div>
 <div class="nt-seg">${segs}</div>
 <div class="nt-segrow"><span>Session ${curSi+1} / ${fd.sessions.length}</span><span><b>${tasksDone}</b> / ${total} · ${pct}%</span></div>
-<button class="btn ${allDone?'btn-ghost':'btn-acc'} press cta" id="heroStartBtn">${allDone?'✓ Completed — review':'▶ Enter Focus Space'}</button>
+<button class="btn ${allDone?'btn-ghost':'btn-acc'} press cta" id="heroStartBtn">${allDone?'Completed — review':'Enter Focus Space'}</button>
 <button class="btn btn-ghost press cta audio" id="heroAudioBtn">${IC.head} Ambient Focus Sound</button>
 </div>`;
 hero.querySelector("#heroStartBtn").onclick=()=>{ if(!state.pomo.running) toggleRunning(); else expandFocusOverlay(); };
@@ -1062,14 +1063,14 @@ inner.appendChild(metrics);
 const spine=el("div"); spine.className="nt-spine";
 spine.innerHTML=`
 <div class="head"><span class="t">This Session</span><span class="c">${tasksDone} / ${total}</span></div>
-<div class="sub">Tap to complete · ⚠ to flag shaky</div>`;
+<div class="sub">Tap to complete · ! to flag shaky</div>`;
 const list=el("div"); list.className="tasklist";
 curSession.tasks.forEach((task,ti)=>{
 const k=`${focusIdx}-${curSi}-${ti}`, on=!!state.checked[k], shk=!!state.shaky[k];
 const row=el("div"); row.className="taskrow"+(on?" done":"");
 row.setAttribute("role","checkbox"); row.setAttribute("aria-checked",on?"true":"false"); row.tabIndex=0;
 row.innerHTML=`<span class="chk${on?" on":""}" style="color:var(--acc-ink)">${on?IC.check:""}</span><span class="txt" style="flex:1">${task}</span>
-<button class="shakybtn press" aria-label="${shk?"Remove shaky flag":"Mark as shaky"}" title="Mark topic as shaky" style="border:none;background:none;cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0;opacity:${shk?"1":".28"};filter:${shk?"none":"grayscale(1)"}">⚠️</button>`;
+<button class="shakybtn press${shk?" on":""}" aria-label="${shk?"Remove shaky flag":"Mark as shaky"}" title="Mark topic as shaky">!</button>`;
 row.onclick=()=>{ if(!on){ const b=row.querySelector(".chk").getBoundingClientRect(); ntPixelBurst(b.left+b.width/2,b.top+b.height/2); try{navigator.vibrate&&navigator.vibrate(12);}catch(e){} } state.index=focusIdx; toggleTask(curSi,ti); };
 row.querySelector(".shakybtn").onclick=e=>{ e.stopPropagation(); state.index=focusIdx; toggleShaky(curSi,ti); };
 row.onkeydown=e=>{ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); state.index=focusIdx; toggleTask(curSi,ti); } };
@@ -1109,7 +1110,7 @@ inner.appendChild(topDeck());
 /* ── header — title + jump-to-today ── */
 const head=html(`<div class="nt-plan-head">
 <div class="t">Plan<span style="color:var(--acc)">.</span></div>
-<button id="todayBtn" class="today-btn press">▸ Today</button>
+<button id="todayBtn" class="today-btn press">TODAY</button>
 </div>`);
 head.querySelector("#todayBtn").onclick=goToday;
 inner.appendChild(head);
@@ -1127,7 +1128,7 @@ inner.appendChild(html(`<div class="nt-dayhdr">
 <div class="ey">${day.day} · Day ${state.index+1} / ${SCHED.length}</div>
 <div class="d">${day.date}</div>
 <div class="sub">${day.subject}</div>
-${day.badge?`<span class="badge">${day.badge}</span>`:""}
+${day.badge?`<span class="badge ${badgeTier(day.badge)}">${day.badge}</span>`:""}
 <div class="prog">
 <div class="progrow"><span class="n">${st.pct}<small>%</small></span><span class="l">${st.dn} / ${st.tot} tasks · Day complete</span></div>
 <div class="nt-seg">${segMarks}</div>
@@ -1153,8 +1154,8 @@ top.innerHTML=`
 <span class="tags">
 <span class="mtag">${slot.label}${slot.time?" · "+slot.time:""}</span>
 ${sstreak>0?`<span class="mtag streak">${IC.flame} ${sstreak}</span>`:""}
-${isCurrent?`<span class="mtag now">● Now</span>`:""}
-${done?`<span class="mtag done">✓ Done</span>`:""}
+${isCurrent?`<span class="mtag now">NOW</span>`:""}
+${done?`<span class="mtag done">DONE</span>`:""}
 </span>
 <span class="stitle">${s.title}</span>
 </span>
@@ -1168,7 +1169,7 @@ const k=`${state.index}-${si}-${ti}`, on=!!state.checked[k], shk=!!state.shaky[k
 const row=el("div"); row.className="taskrow"+(on?" done":"");
 row.setAttribute("role","checkbox"); row.setAttribute("aria-checked",on?"true":"false"); row.tabIndex=0;
 row.innerHTML=`<span class="chk${on?" on":""}" style="color:var(--acc-ink)">${on?IC.check:""}</span><span class="txt" style="flex:1">${task}</span>
-<button class="shakybtn press" aria-label="${shk?"Remove shaky flag":"Mark as shaky"}" title="Mark topic as shaky" style="border:none;background:none;cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0;opacity:${shk?"1":".28"};filter:${shk?"none":"grayscale(1)"}">⚠️</button>`;
+<button class="shakybtn press${shk?" on":""}" aria-label="${shk?"Remove shaky flag":"Mark as shaky"}" title="Mark topic as shaky">!</button>`;
 row.onclick=()=>{ if(!on){ const b=row.querySelector(".chk").getBoundingClientRect(); ntPixelBurst(b.left+b.width/2,b.top+b.height/2); try{navigator.vibrate&&navigator.vibrate(12);}catch(e){} } toggleTask(si,ti); };
 row.querySelector(".shakybtn").onclick=e=>{ e.stopPropagation(); toggleShaky(si,ti); };
 row.onkeydown=e=>{ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); toggleTask(si,ti); } };
@@ -1289,7 +1290,7 @@ const t=tagOf(cur.tag);
 const slot=SLOTS[curSi]||{label:"Session",time:""};
 const card=html(`<button class="nt-fnext press">
 <div class="nh">
-<span class="ntag">${t.label}</span>
+<span class="ntag t${t.t}">${t.label}</span>
 <span class="nslot">${slot.label}${slot.time?" · "+slot.time:""}</span>
 </div>
 <div class="ntitle">${cur.title}</div>
@@ -1356,7 +1357,7 @@ function leaveClock(){ clockOn=false; exitAppFullscreen(); render(); }
 function buildWfc(){
 if(wfcEl) return wfcEl;
 wfcEl=html(`<div class="wfc-overlay" id="wfcOverlay" role="dialog" aria-label="Focus clock">
-<button class="wfc-end press" id="wfcBack" aria-label="Back to app">← Back</button>
+<button class="wfc-end press" id="wfcBack" aria-label="Back to app">&larr; BACK</button>
 <div class="wfc-state"><div class="phase" id="wfcPhase">Focus</div><div class="sub" id="wfcSub">Auto loop on</div></div>
 <div class="wfc-clock">
 <div class="wfc" id="wfcMin"><div class="wfc-top"><span></span></div><div class="wfc-bottom"><span></span></div>
@@ -1365,9 +1366,9 @@ wfcEl=html(`<div class="wfc-overlay" id="wfcOverlay" role="dialog" aria-label="F
 <div class="wfc" id="wfcSec"><div class="wfc-top"><span></span></div><div class="wfc-bottom"><span></span></div>
 <div class="wfc-flip top"><span></span></div><div class="wfc-flip bottom"><span></span></div><div class="wfc-seam"></div></div>
 </div>
-<div style="display:flex;gap:12px">
-<button class="wfc-end press" id="wfcStop" style="position:static;background:var(--rose-soft);color:var(--rose)">■ Stop</button>
-<button class="wfc-end press" id="wfcPause" style="position:static;background:var(--acc);color:var(--acc-ink)">⏸ Pause</button>
+<div class="wfc-btns">
+<button class="wfc-end press wfc-stop" id="wfcStop">STOP</button>
+<button class="wfc-end press wfc-pause" id="wfcPause">PAUSE</button>
 </div></div>`);
 document.body.appendChild(wfcEl);
 holdToConfirm(wfcEl.querySelector("#wfcBack"),5,leaveClock,"Hold…");
@@ -1402,12 +1403,12 @@ ov.classList.toggle("active",clockOn);
 document.body.style.overflow=clockOn?"hidden":"";
 if(!clockOn) return;
 const remain=getRemainingPomo();
-const phaseTxt=state.pomo.phase==="work"?"Focus Session":"Break";
-const subTxt=state.pomo.running?(state.pomo.loop?"Auto loop on":"Single session"):"Paused";
+const phaseTxt=state.pomo.phase==="work"?"FOCUS":"BREAK";
+const subTxt=state.pomo.running?(state.pomo.loop?"AUTO LOOP ON":"SINGLE SESSION"):"PAUSED";
 const ph=ov.querySelector("#wfcPhase"), sb=ov.querySelector("#wfcSub"), pb=ov.querySelector("#wfcPause");
 if(ph.textContent!==phaseTxt) ph.textContent=phaseTxt;
 if(sb.textContent!==subTxt) sb.textContent=subTxt;
-const pbTxt=state.pomo.running?"⏸ Pause":"▶ Resume";
+const pbTxt=state.pomo.running?"PAUSE":"RESUME";
 if(pb._label!==pbTxt){ pb.innerHTML=pbTxt; pb._label=pbTxt; }
 const instant=!wasActive;                         /* opening frame: snap digits, no fold */
 setFlip(ov.querySelector("#wfcMin"),fmt(Math.floor(remain/60)),instant);
@@ -1503,6 +1504,36 @@ bh+="</div>";
 bars.insertAdjacentHTML("beforeend",bh);
 inner.appendChild(bars);
 
+/* ── session quality — evening self-ratings, finally on screen ──
+   equalizer trace (last 14 days) + avg + quality↔hours correlation */
+(function(){
+const entries=[];                              /* [{k,r,m}] rated days, oldest→newest */
+for(let i=13;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i);
+const k=`${d.getFullYear()}-${fmt(d.getMonth()+1)}-${fmt(d.getDate())}`;
+const r=state.ratings[k];
+entries.push({k,r:(typeof r==="number"?r:0),m:(state.log[k]||{minutes:0}).minutes,isT:i===0}); }
+const rated=Object.keys(state.ratings).filter(k=>typeof state.ratings[k]==="number");
+if(!rated.length) return;                      /* nothing rated yet — stay silent */
+const avg=rated.reduce((s,k)=>s+state.ratings[k],0)/rated.length;
+/* correlation: avg minutes on high-rated (4-5) vs low-rated (1-2) days */
+let hiM=0,hiN=0,loM=0,loN=0;
+rated.forEach(k=>{ const m=(state.log[k]||{minutes:0}).minutes, r=state.ratings[k];
+if(r>=4){ hiM+=m; hiN++; } else if(r<=2){ loM+=m; loN++; } });
+const hrs=m=>Math.round(m/60*10)/10;
+let insight="RATE EVERY EVENING — THE PATTERN WILL SURFACE";
+if(hiN&&loN) insight=`GOOD DAYS AVERAGE ${hrs(hiM/hiN)}H · ROUGH DAYS ${hrs(loM/loN)}H`;
+else if(hiN) insight=`YOUR ${rated.length>1?avg.toFixed(1):"5.0"}★ FORM RUNS ON ${hrs(hiM/hiN)}H DAYS`;
+const q=html(`<div class="nt-pcard"><div class="pch">SESSION QUALITY · SELF-RATED</div></div>`);
+let qh='<div class="qrow"><div class="qavg"><span class="qn">'+avg.toFixed(1)+'</span><span class="qd">AVG · '+rated.length+' DAYS RATED</span></div><div class="qtrace">';
+entries.forEach(({r,isT,k,m})=>{
+let col=`<div class="qcol ${isT?"today":""}" title="${k} · ${r?r+"/5":"not rated"}${m?" · "+Math.floor(m/60)+"h"+(m%60?m%60:""):""}">`;
+for(let l=5;l>=1;l--) col+=`<i class="${r>=l?"on":""} ${r>=4&&r>=l?"hi":""}"></i>`;
+qh+=col+"</div>"; });
+qh+='</div></div><div class="qinsight">'+insight+'</div>';
+q.insertAdjacentHTML("beforeend",qh);
+inner.appendChild(q);
+})();
+
 /* ── subject completion — segmented per-subject bars ── */
 const subj=html(`<div class="nt-pcard"><div class="pch">SUBJECT COMPLETION</div></div>`);
 const bySubj={};
@@ -1541,12 +1572,12 @@ mh+=`<div style="display:flex;align-items:flex-end;gap:6px;height:70px;margin-bo
 last.forEach((m,i)=>{ const h=Math.max(6,Math.round(pcts[i]/mmax*64));
 const up=i>0&&pcts[i]>=pcts[i-1];
 mh+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px" title="${m.name} · ${m.score}/${m.max}">
-<span class="mono" style="font-size:9px;font-weight:800;color:${up?"var(--acc)":"var(--rose)"}">${pcts[i]}%</span>
-<div style="width:100%;height:${h}px;border-radius:6px 6px 3px 3px;background:${up?"var(--acc)":"var(--rose)"};opacity:${i===last.length-1?1:.55}"></div></div>`; });
+<span class="mono" style="font-size:9px;font-weight:800;color:${up?"var(--acc)":"var(--ink-3)"}">${pcts[i]}%</span>
+<div style="width:100%;height:${h}px;border-radius:6px 6px 3px 3px;background:${up?"var(--acc)":"var(--ink-4)"};opacity:${i===last.length-1?1:.55}"></div></div>`; });
 mh+=`</div>`;
 const lastM=state.mocks[state.mocks.length-1];
 const trend=state.mocks.length>1?(pcts[pcts.length-1]-pcts[pcts.length-2]):0;
-mh+=`<div style="font-size:11.5px;color:var(--ink-3);font-weight:600">Latest: <b style="color:var(--ink)">${lastM.name}</b> — ${lastM.score}/${lastM.max}${lastM.neg?` · ${lastM.neg} lost to negatives`:""}${state.mocks.length>1?` · <b style="color:${trend>=0?"var(--acc)":"var(--rose)"}">${trend>=0?"+":""}${trend}%</b> vs previous`:""}</div>`;
+mh+=`<div style="font-size:11.5px;color:var(--ink-3);font-weight:600">Latest: <b style="color:var(--ink)">${lastM.name}</b> — ${lastM.score}/${lastM.max}${lastM.neg?` · ${lastM.neg} lost to negatives`:""}${state.mocks.length>1?` · <b style="color:${trend>=0?"var(--acc)":"var(--ink-2)"}">${trend>=0?"+":""}${trend}%</b> vs previous`:""}</div>`;
 mh+=`<div style="margin-top:10px;max-height:130px;overflow-y:auto">`;
 state.mocks.slice().reverse().forEach((m,ri)=>{ const i=state.mocks.length-1-ri;
 mh+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:12px">
@@ -1563,14 +1594,14 @@ function buildShakyCard(){
 const shakyKeys=Object.keys(state.shaky);
 const sq=el("div");
 if(!shakyKeys.length){
-sq.innerHTML=`<div style="font-size:12.5px;color:var(--ink-3);text-align:center;padding:8px 0 4px">Nothing flagged. Tap ⚠️ on any task in the Plan to queue it for revision.</div>`;
+sq.innerHTML=`<div style="font-size:12.5px;color:var(--ink-3);text-align:center;padding:8px 0 4px">Nothing flagged. Tap ! on any task in the Plan to queue it for revision.</div>`;
 return sq; }
 let qh=`<div style="max-height:200px;overflow-y:auto">`;
 shakyKeys.forEach(k=>{ const s=state.shaky[k];
 qh+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid var(--line)">
 <div style="flex:1;min-width:0"><div style="font-size:12.5px;color:var(--ink-2);font-weight:600;line-height:1.4">${s.t}</div>
 <div style="font-size:10px;color:var(--ink-4);margin-top:2px;font-weight:600">${s.subj} · ${s.d}</div></div>
-<button data-sk="${k}" class="press" style="border:1px solid var(--line-2);background:var(--card-2);color:var(--mint);border-radius:9px;padding:5px 10px;cursor:pointer;font-size:10.5px;font-weight:700;flex-shrink:0">Solid now</button></div>`; });
+<button data-sk="${k}" class="press" style="border:1px solid var(--line-2);background:var(--card-2);color:var(--ink-2);border-radius:9px;padding:5px 10px;cursor:pointer;font-size:10.5px;font-weight:700;flex-shrink:0">Solid now</button></div>`; });
 qh+=`</div>`;
 sq.innerHTML=qh;
 sq.querySelectorAll("[data-sk]").forEach(b=>b.onclick=()=>{ delete state.shaky[b.dataset.sk]; saveJSON(SHAKY_KEY,state.shaky); render(); toast("Cleared — well recovered"); });
@@ -1668,7 +1699,7 @@ row("Notification status",
 `App ${APP_VERSION} · permission: <b>${notifSupported()?Notification.permission:"unsupported"}</b> · pref: ${state.notif?"on":"off"}${notifSupported()&&Notification.permission==="denied"?"<br>Blocked by the system — tap to see the fix":""}`,
 "ⓘ",()=>{
 if(!notifSupported()){ toast("This browser has no Notification API"); return; }
-if(Notification.permission==="granted"){ notify("Test notification 🔔","If you can read this, notifications work."); toast("Test sent — did it appear?"); }
+if(Notification.permission==="granted"){ notify("Test notification","If you can read this, notifications work."); toast("Test sent — did it appear?"); }
 else if(Notification.permission==="denied"){
 guideSheet("Unblock notifications",
 G_NOTE("Android is blocking notifications for this app — the in-app switch can't override it.")+
@@ -1710,18 +1741,18 @@ wrap.appendChild(themeRow);
 return rows([
 wrap,
 isStandalone()
-? row("Installed as app","Running standalone · offline ready","✓")
+? row("Installed as app","Running standalone · offline ready","ON")
 : row("Install app","Add to home screen — full screen, offline, notifications","⬇",installApp),
 row("Backup data","Download all progress as JSON","⬇",exportData),
 row("Restore backup","Load a previous backup file","⬆",()=>document.getElementById("importFile").click()),
 row("Reset progress","Clears every checked task — cannot be undone","",()=>{
 if(confirm("Reset ALL task progress? This cannot be undone.")){ state.checked={}; saveJSON(STORAGE_KEY,state.checked); render(); toast("Progress reset"); } }),
 (window.eseSyncUser&&window.eseSyncUser())
-? row("Cloud sync","Signed in · progress backs up automatically","✓",async()=>{
+? row("Cloud sync","Signed in · progress backs up automatically","ON",async()=>{
 if(!confirm("Sign out from cloud sync? Your progress stays on this device.")) return;
 try{ if(window.sbAuth) await window.sbAuth.signOut(); }catch(e){}
 toast("Signed out — still saved on this device"); render(); })
-: row("Cloud sync","Optional — sign in to back up across devices","☁",()=>{ if(window.eseSignIn) window.eseSignIn(); }),
+: row("Cloud sync","Optional — sign in to back up across devices","OFF",()=>{ if(window.eseSignIn) window.eseSignIn(); }),
 row("Shortcuts","1-5 tabs · T theme · Z undo · Space timer",""),
 ]); }));
 
@@ -1729,37 +1760,38 @@ inner.appendChild(html(`<div class="nt-youfoot">ESE<span class="sl">//</span>202
 wrap.appendChild(inner); wireTheme(wrap); return wrap; }
 
 /* ════════════════ ACHIEVEMENTS ════════════════ */
+/* icon = dot-matrix goal numeral (rendered in --display-font); all 30 kept */
 const ACHIEVEMENTS=[
-{id:"first_session",icon:"🥇",title:"First Focus Session",desc:"Complete your first timed session",goal:1,type:"sessions",bc:"#E8B04B"},
-{id:"first_day",icon:"🌅",title:"Day One Done",desc:"Clear every task of a day",goal:1,type:"days",bc:"#5BB8E8"},
-{id:"sessions10",icon:"🎬",title:"10 Sessions",desc:"Ten focus sessions in the bank",goal:10,type:"sessions",bc:"#5BD6A9"},
-{id:"sessions50",icon:"🎖",title:"50 Sessions",desc:"Fifty rounds of deep work",goal:50,type:"sessions",bc:"#4BA8E8"},
-{id:"sessions150",icon:"🛡",title:"150 Sessions",desc:"A hundred and fifty battles fought",goal:150,type:"sessions",bc:"#A78BFA"},
-{id:"streak3",icon:"🔥",title:"3-Day Streak",desc:"Study three days in a row",goal:3,type:"streak",bc:"#E8834B"},
-{id:"streak7",icon:"🔥",title:"7-Day Streak",desc:"A full week without breaking",goal:7,type:"streak",bc:"#E86A6A"},
-{id:"streak30",icon:"⚡",title:"30-Day Streak",desc:"One month of pure discipline",goal:30,type:"streak",bc:"#A78BFA"},
-{id:"streak60",icon:"🌪",title:"60-Day Streak",desc:"Two months. Relentless",goal:60,type:"streak",bc:"#E8574B"},
-{id:"streak100",icon:"💫",title:"100-Day Streak",desc:"Triple digits of consistency",goal:100,type:"streak",bc:"#D6B84B"},
-{id:"sstreak3",icon:"🎯",title:"On Schedule ×3",desc:"3-day session streak — in-slot focus",goal:3,type:"sstreak",bc:"#C9F24E"},
-{id:"sstreak7",icon:"🎯",title:"On Schedule ×7",desc:"A week of hitting your slots",goal:7,type:"sstreak",bc:"#A8D437"},
-{id:"sstreak21",icon:"🏹",title:"Slot Sniper",desc:"21 days of in-slot discipline",goal:21,type:"sstreak",bc:"#7AAA14"},
-{id:"hours10",icon:"⏱",title:"10 Study Hours",desc:"Ten hours of tracked focus",goal:10,type:"hours",bc:"#5BD6A9"},
-{id:"hours50",icon:"⏳",title:"50 Study Hours",desc:"Fifty hours — serious momentum",goal:50,type:"hours",bc:"#4BA8E8"},
-{id:"hours100",icon:"🕰",title:"100 Study Hours",desc:"Triple digits. Elite territory",goal:100,type:"hours",bc:"#8B6FD9"},
-{id:"hours250",icon:"🌗",title:"250 Study Hours",desc:"A quarter-thousand hours deep",goal:250,type:"hours",bc:"#E8B04B"},
-{id:"hours500",icon:"🌕",title:"500 Study Hours",desc:"Half a thousand. Rank material",goal:500,type:"hours",bc:"#D6B84B"},
-{id:"tasks100",icon:"📚",title:"100 Tasks Done",desc:"A hundred boxes ticked",goal:100,type:"tasks",bc:"#5BB8E8"},
-{id:"tasks500",icon:"📖",title:"500 Tasks Done",desc:"Five hundred steps closer",goal:500,type:"tasks",bc:"#E8B04B"},
-{id:"tasks1000",icon:"🏛",title:"1000 Tasks Done",desc:"A thousand. Unstoppable",goal:1000,type:"tasks",bc:"#E86A6A"},
-{id:"tasks2000",icon:"🗿",title:"2000 Tasks Done",desc:"Two thousand. Monumental",goal:2000,type:"tasks",bc:"#8B6FD9"},
-{id:"days10",icon:"🏆",title:"10 Days Cleared",desc:"Ten perfect days",goal:10,type:"days",bc:"#D6B84B"},
-{id:"days50",icon:"👑",title:"50 Days Cleared",desc:"Fifty flawless days",goal:50,type:"days",bc:"#E8A04B"},
-{id:"days100",icon:"💎",title:"100 Days Cleared",desc:"One hundred perfect days",goal:100,type:"days",bc:"#5BE8D6"},
-{id:"mock1",icon:"📝",title:"First Mock Logged",desc:"Face the scoreboard once",goal:1,type:"mocks",bc:"#E86A6A"},
-{id:"mock5",icon:"📊",title:"5 Mocks Logged",desc:"Five honest data points",goal:5,type:"mocks",bc:"#5BB8E8"},
-{id:"mock15",icon:"🧪",title:"15 Mocks Logged",desc:"Fifteen tests faced head-on",goal:15,type:"mocks",bc:"#A78BFA"},
-{id:"subject1",icon:"🎓",title:"First Subject Mastered",desc:"Finish 100% of any subject",goal:1,type:"subjects",bc:"#5BD6A9"},
-{id:"subject3",icon:"🧠",title:"Three Subjects Down",desc:"Master three full subjects",goal:3,type:"subjects",bc:"#C9F24E"},
+{id:"first_session",icon:"01",title:"First Focus Session",desc:"Complete your first timed session",goal:1,type:"sessions"},
+{id:"first_day",icon:"D1",title:"Day One Done",desc:"Clear every task of a day",goal:1,type:"days"},
+{id:"sessions10",icon:"10",title:"10 Sessions",desc:"Ten focus sessions in the bank",goal:10,type:"sessions"},
+{id:"sessions50",icon:"50",title:"50 Sessions",desc:"Fifty rounds of deep work",goal:50,type:"sessions"},
+{id:"sessions150",icon:"150",title:"150 Sessions",desc:"A hundred and fifty battles fought",goal:150,type:"sessions"},
+{id:"streak3",icon:"3D",title:"3-Day Streak",desc:"Study three days in a row",goal:3,type:"streak"},
+{id:"streak7",icon:"7D",title:"7-Day Streak",desc:"A full week without breaking",goal:7,type:"streak"},
+{id:"streak30",icon:"30D",title:"30-Day Streak",desc:"One month of pure discipline",goal:30,type:"streak"},
+{id:"streak60",icon:"60D",title:"60-Day Streak",desc:"Two months. Relentless",goal:60,type:"streak"},
+{id:"streak100",icon:"100",title:"100-Day Streak",desc:"Triple digits of consistency",goal:100,type:"streak"},
+{id:"sstreak3",icon:"S3",title:"On Schedule ×3",desc:"3-day session streak — in-slot focus",goal:3,type:"sstreak"},
+{id:"sstreak7",icon:"S7",title:"On Schedule ×7",desc:"A week of hitting your slots",goal:7,type:"sstreak"},
+{id:"sstreak21",icon:"S21",title:"Slot Sniper",desc:"21 days of in-slot discipline",goal:21,type:"sstreak"},
+{id:"hours10",icon:"10H",title:"10 Study Hours",desc:"Ten hours of tracked focus",goal:10,type:"hours"},
+{id:"hours50",icon:"50H",title:"50 Study Hours",desc:"Fifty hours — serious momentum",goal:50,type:"hours"},
+{id:"hours100",icon:"100",title:"100 Study Hours",desc:"Triple digits. Elite territory",goal:100,type:"hours"},
+{id:"hours250",icon:"250",title:"250 Study Hours",desc:"A quarter-thousand hours deep",goal:250,type:"hours"},
+{id:"hours500",icon:"500",title:"500 Study Hours",desc:"Half a thousand. Rank material",goal:500,type:"hours"},
+{id:"tasks100",icon:"100",title:"100 Tasks Done",desc:"A hundred boxes ticked",goal:100,type:"tasks"},
+{id:"tasks500",icon:"500",title:"500 Tasks Done",desc:"Five hundred steps closer",goal:500,type:"tasks"},
+{id:"tasks1000",icon:"1K",title:"1000 Tasks Done",desc:"A thousand. Unstoppable",goal:1000,type:"tasks"},
+{id:"tasks2000",icon:"2K",title:"2000 Tasks Done",desc:"Two thousand. Monumental",goal:2000,type:"tasks"},
+{id:"days10",icon:"10D",title:"10 Days Cleared",desc:"Ten perfect days",goal:10,type:"days"},
+{id:"days50",icon:"50D",title:"50 Days Cleared",desc:"Fifty flawless days",goal:50,type:"days"},
+{id:"days100",icon:"100",title:"100 Days Cleared",desc:"One hundred perfect days",goal:100,type:"days"},
+{id:"mock1",icon:"M1",title:"First Mock Logged",desc:"Face the scoreboard once",goal:1,type:"mocks"},
+{id:"mock5",icon:"M5",title:"5 Mocks Logged",desc:"Five honest data points",goal:5,type:"mocks"},
+{id:"mock15",icon:"M15",title:"15 Mocks Logged",desc:"Fifteen tests faced head-on",goal:15,type:"mocks"},
+{id:"subject1",icon:"S//1",title:"First Subject Mastered",desc:"Finish 100% of any subject",goal:1,type:"subjects"},
+{id:"subject3",icon:"S//3",title:"Three Subjects Down",desc:"Master three full subjects",goal:3,type:"subjects"},
 ];
 function achMetrics(){
 let sessions=0,minutes=0;
@@ -1837,7 +1869,7 @@ cancelAnimationFrame(raf); step(); }
 
 /* ── celebration popup (badge unlock / day conquered) ─── */
 let celebrating=false;
-function showCelebration({eyebrow,icon,title,sub,next,cta,bc}){
+function showCelebration({eyebrow,icon,title,sub,next,cta}){
 if(celebrating) return; celebrating=true;
 const prevFocus=document.activeElement;
 const ov=el("div"); ov.id="celebrate";
@@ -1845,13 +1877,13 @@ ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true"); ov.setAt
 /* next study session of the current day */
 const day=SCHED[state.index]; let nxtSess=null;
 if(day&&day.sessions){ const si=day.sessions.findIndex((s,i)=>!s.tasks.every((_,ti)=>state.checked[`${state.index}-${i}-${ti}`]));
-if(si>=0){ const s=day.sessions[si], slot=SLOTS[si]||{}; nxtSess={icon:slot.icon||"📖",time:slot.time||"",title:s.title}; } }
+if(si>=0){ const s=day.sessions[si], slot=SLOTS[si]||{}; nxtSess={icon:"S"+(si+1),time:slot.time||"",title:s.title}; } }
 ov.innerHTML=`
 <div class="celebrate-stage">
 <div class="medallion">
 <div class="burst"></div>
 <div class="halo"></div>
-<div class="core" style="--bc:${bc||'var(--acc)'}">${icon}</div>
+<div class="core">${icon}</div>
 </div>
 <div class="celebrate-eyebrow">${eyebrow}</div>
 <div class="celebrate-title">${title}</div>
@@ -1859,13 +1891,13 @@ ov.innerHTML=`
 <div class="celebrate-sub">${sub}</div>
 ${(nxtSess||next)?`<div class="celebrate-next">
 ${nxtSess?`<div class="nrow">
-<span style="font-size:19px">${nxtSess.icon}</span>
+<span class="nchip">${nxtSess.icon}</span>
 <div style="flex:1;min-width:0">
 <div style="font-family:var(--mono-font);font-size:9.5px;font-weight:700;color:var(--acc);letter-spacing:.18em;text-transform:uppercase">Next session · ${nxtSess.time}</div>
 <div style="font-size:12.5px;font-weight:700;color:var(--ink);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nxtSess.title}</div>
 </div></div>`:""}
 ${next?`<div class="nrow">
-<span style="font-size:19px;filter:grayscale(1);opacity:.7">${next.a.icon}</span>
+<span class="nchip dim">${next.a.icon}</span>
 <div style="flex:1;min-width:0">
 <div style="font-family:var(--mono-font);font-size:9.5px;font-weight:700;color:var(--ink-4);letter-spacing:.18em;text-transform:uppercase">Next achievement</div>
 <div style="font-size:11px;font-weight:700;color:var(--ink-2);margin-top:2px">${next.a.title}</div>
@@ -1898,13 +1930,13 @@ const n=nextAchievement();
 const LINES=["That's how ranks are built.","Momentum looks good on you.","The syllabus is shrinking.","Consistency is your superpower.","Another brick in the wall."];
 showCelebration({eyebrow:"Achievement unlocked",icon:a.icon,title:a.title,
 sub:a.desc+". "+LINES[Math.floor(Math.random()*LINES.length)],
-next:n,cta:"Claim it",bc:a.bc}); }
+next:n,cta:"Claim it"}); }
 function celebrateDay(){
 playSound("day");
 const day=SCHED[state.index];
 const streak=computeStreak().count;
 const n=nextAchievement();
-showCelebration({eyebrow:"Day conquered",icon:"🏆",
+showCelebration({eyebrow:"Day conquered",icon:"100",
 title:day.date+" — 100%",
 sub:`Every task of "${day.subject}" is done.${streak>1?` ${streak}-day streak alive.`:""} Tomorrow builds on today.`,
 next:n,cta:"On to tomorrow"}); }
@@ -2437,7 +2469,7 @@ card('<div style="text-align:center"><div style="font-family:Outfit,sans-serif;f
 '<input id="ce" type="email" placeholder="Email" style="width:100%;box-sizing:border-box;margin-top:20px;padding:14px 16px;border-radius:14px;border:1px solid var(--line-2);background:var(--card-2);color:var(--ink);font-size:14px;outline:none">'+
 '<input id="cp" type="password" placeholder="Password" style="width:100%;box-sizing:border-box;margin-top:10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line-2);background:var(--card-2);color:var(--ink);font-size:14px;outline:none">'+
 '<button id="cgo" class="btn btn-acc" style="width:100%;margin-top:18px">'+(mode==="up"?"Sign up":"Sign in")+"</button>"+
-'<div id="cmsg" style="font-size:12px;color:var(--rose);text-align:center;margin-top:10px;min-height:16px"></div>'+
+'<div id="cmsg" style="font-size:12px;color:var(--acc);text-align:center;margin-top:10px;min-height:16px"></div>'+
 '<div style="text-align:center;margin-top:6px;font-size:13px;color:var(--ink-3)">'+(mode==="up"?"Have an account? ":"New here? ")+'<a id="ctog" href="#" style="color:var(--acc);font-weight:700;text-decoration:none">'+(mode==="up"?"Sign in":"Create one")+"</a></div>"+
 '<div style="text-align:center;margin-top:14px"><a id="cskip" href="#" style="color:var(--ink-4);font-weight:600;font-size:12px;text-decoration:none">Maybe later — use offline</a></div>');
 document.getElementById("cskip").onclick=function(e){ e.preventDefault(); hide(); };
@@ -2447,7 +2479,7 @@ var em=document.getElementById("ce").value.trim(), pw=document.getElementById("c
 if(!em||!pw){ m.textContent="Enter email and password"; return; }
 m.style.color="var(--ink-3)"; m.textContent="Please wait…";
 var p=mode==="up"?sb.auth.signUp({email:em,password:pw}):sb.auth.signInWithPassword({email:em,password:pw});
-p.then(function(r){ if(r.error){ m.style.color="var(--rose)"; m.textContent=r.error.message; } }); }; }
+p.then(function(r){ if(r.error){ m.style.color="var(--acc)"; m.textContent=r.error.message; } }); }; }
 function push(){ if(!user) return; sb.from("user_progress").upsert({user_id:user.id,data:snap(),updated_at:new Date().toISOString()}).then(function(){}); }
 function afterLogin(session){
 user=session.user;
@@ -2479,7 +2511,7 @@ render();
 (function(){
 const sp=document.getElementById("splash"); if(!sp) return;
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
-const hold=reduce?300:3400;                       /* ~3.4s reveal, then settle */
+const hold=reduce?300:4200;                       /* ~4.2s reveal, then settle */
 let done=false;
 const dismiss=()=>{ if(done)return; done=true;
   sp.classList.add("out"); setTimeout(()=>sp.remove(),560); };

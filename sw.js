@@ -1,6 +1,6 @@
 /* ESE2027 Study OS — Service Worker
    Cache-first for app shell, network-first for Supabase, offline-ready. */
-const VERSION = "ese2027-v45";
+const VERSION = "ese2027-v50";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -8,7 +8,6 @@ const APP_SHELL = [
   "./js/data.js",
   "./js/app.js",
   "./manifest.json",
-  "./icon.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/maskable-192.png",
@@ -17,8 +16,13 @@ const APP_SHELL = [
 ];
 
 self.addEventListener("install", (event) => {
+  // Cache each asset independently — one 404 must not abort the whole precache.
   event.waitUntil(
-    caches.open(VERSION).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
+    caches.open(VERSION)
+      .then((cache) => Promise.all(
+        APP_SHELL.map((url) => cache.add(url).catch(() => {}))
+      ))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -27,22 +31,6 @@ self.addEventListener("activate", (event) => {
     caches.keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
-  );
-});
-
-// Web Push — fires even when the app is fully closed.
-self.addEventListener("push", (event) => {
-  let d = { title: "ESE2027", body: "Time to study." };
-  try { d = event.data.json(); } catch (e) {}
-  event.waitUntil(
-    self.registration.showNotification(d.title, {
-      body: d.body,
-      icon: "./icons/icon-192.png",
-      badge: "./icons/icon-192.png",
-      tag: d.tag || "ese-push",
-      renotify: true,
-      vibrate: [120, 60, 120]
-    })
   );
 });
 

@@ -1,0 +1,44 @@
+# ── ESE2027 · repo hygiene ─────────────────────────────────
+# AI/IDE tool dirs — never app code, bloats every clone & Vercel build
+.21st/
+.agents/
+.augment/
+.claude/
+.codebuddy/
+.codewhale/
+.continue/
+.cursor/
+.factory/
+.freebuff/
+.gemini/
+.github/
+.idea/
+.kilocode/
+.kiro/
+.opencode/
+.qoder/
+.roo/
+.trae/
+.warp/
+.windsurf/
+
+# Local scratch / one-off review mockups
+scratch/
+prototype.html
+splash-preview.html
+today-nothing-preview.html
+today-redesign-preview.html
+
+# Node (not needed for this static site, but harmless to ignore)
+node_modules/
+npm-debug.log*
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local env / secrets — never commit these
+.env
+.env.*
+*.local
