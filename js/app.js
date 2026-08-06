@@ -4,7 +4,7 @@
    Schedule data lives in js/data.js (verbatim user prep plan).
    ════════════════════════════════════════════════════════════ */
 "use strict";
-const APP_VERSION="v50";
+const APP_VERSION="v51";
 
 /* ── storage ─────────────────────────────────────────── */
 const STORAGE_KEY="ese_planner_checked_v3", IDX_KEY="ese_planner_index_v9",
@@ -110,6 +110,8 @@ if(state.index<0||state.index>=SCHED.length) state.index=0;
 let audioCtx = null;
 let soundNodes = { noise: null, gain: null, osc1: null, osc2: null };
 let currentSoundMode = loadJSON("ese_sound_mode", "off");
+/* migrate old mode names → reset to off if stale */
+if (!["off","gamma40","beta17","alpha10"].includes(currentSoundMode)) currentSoundMode = "off";
 let soundVolume = loadJSON("ese_sound_vol", 0.4);
 
 function initAudioContext(){
@@ -136,64 +138,44 @@ function playFocusSound(mode, vol){
   if (mode === "off") return;
   initAudioContext();
   if (!audioCtx) return;
-  
+
   try {
     const masterGain = audioCtx.createGain();
     masterGain.gain.value = vol !== undefined ? vol : soundVolume;
     masterGain.connect(audioCtx.destination);
     soundNodes.gain = masterGain;
 
-    if (mode === "rain" || mode === "brown") {
-      const bufferSize = audioCtx.sampleRate * 2;
-      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-      const output = noiseBuffer.getChannelData(0);
-      let lastOut = 0.0;
-      for (let i = 0; i < bufferSize; i++) {
-        const white = Math.random() * 2 - 1;
-        if (mode === "brown") {
-          output[i] = (lastOut + (0.02 * white)) / 1.02;
-          lastOut = output[i];
-          output[i] *= 3.5;
-        } else {
-          output[i] = white * 0.4;
-        }
-      }
-      const whiteSource = audioCtx.createBufferSource();
-      whiteSource.buffer = noiseBuffer;
-      whiteSource.loop = true;
+    /* ── binaural beats ───────────────────────────────────────────
+       Left ear: carrier tone at BASE Hz
+       Right ear: carrier + beat frequency
+       Brain perceives the difference as an internal beat pulse.
+       Requires headphones for the effect; still pleasant on speakers.
+       gamma40 : 40 Hz  — deep focus, working memory, information binding
+       beta17  : 17 Hz  — alert concentration, active study
+       alpha10 : 10 Hz  — relaxed focus, stress reduction, calm clarity  */
+    const BEATS = { gamma40: 40, beta17: 17, alpha10: 10 };
+    const beat = BEATS[mode];
+    if (beat === undefined) return;
 
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = "lowpass";
-      filter.frequency.value = mode === "rain" ? 900 : 350;
+    const BASE = 200;           /* carrier: low enough to be unobtrusive */
+    const osc1 = audioCtx.createOscillator(); /* left ear  */
+    const osc2 = audioCtx.createOscillator(); /* right ear */
+    osc1.type = "sine";
+    osc2.type = "sine";
+    osc1.frequency.value = BASE;
+    osc2.frequency.value = BASE + beat;
 
-      whiteSource.connect(filter);
-      filter.connect(masterGain);
-      whiteSource.start();
-      soundNodes.noise = whiteSource;
-    } else if (mode === "waves") {
-      const osc1 = audioCtx.createOscillator();
-      const osc2 = audioCtx.createOscillator();
-      osc1.type = "sine";
-      osc2.type = "sine";
-      osc1.frequency.value = 432;
-      osc2.frequency.value = 440;
+    /* hard-pan L/R — binaural effect requires each tone in one ear */
+    const panL = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+    const panR = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+    if (panL) { panL.pan.value = -1; osc1.connect(panL).connect(masterGain); }
+    else osc1.connect(masterGain);
+    if (panR) { panR.pan.value =  1; osc2.connect(panR).connect(masterGain); }
+    else osc2.connect(masterGain);
 
-      const panner1 = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
-      const panner2 = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
-      if (panner1) panner1.pan.value = -0.8;
-      if (panner2) panner2.pan.value = 0.8;
-
-      if (panner1) osc1.connect(panner1).connect(masterGain);
-      else osc1.connect(masterGain);
-
-      if (panner2) osc2.connect(panner2).connect(masterGain);
-      else osc2.connect(masterGain);
-
-      osc1.start();
-      osc2.start();
-      soundNodes.osc1 = osc1;
-      soundNodes.osc2 = osc2;
-    }
+    osc1.start(); osc2.start();
+    soundNodes.osc1 = osc1;
+    soundNodes.osc2 = osc2;
   } catch(e){ console.error("Audio error:", e); }
 }
 
@@ -2065,9 +2047,9 @@ ${IC.expand} Overlay
 </div>
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
 <button class="press dsound-btn ${currentSoundMode==='off'?'active':''}" data-mode="off" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='off'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='off'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='off'?'var(--acc)':'var(--ink-2)'};cursor:pointer">Off</button>
-<button class="press dsound-btn ${currentSoundMode==='rain'?'active':''}" data-mode="rain" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='rain'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='rain'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='rain'?'var(--acc)':'var(--ink-2)'};cursor:pointer">Rain</button>
-<button class="press dsound-btn ${currentSoundMode==='waves'?'active':''}" data-mode="waves" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='waves'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='waves'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='waves'?'var(--acc)':'var(--ink-2)'};cursor:pointer">432Hz</button>
-<button class="press dsound-btn ${currentSoundMode==='brown'?'active':''}" data-mode="brown" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='brown'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='brown'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='brown'?'var(--acc)':'var(--ink-2)'};cursor:pointer">Brown</button>
+<button class="press dsound-btn ${currentSoundMode==='gamma40'?'active':''}" data-mode="gamma40" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='gamma40'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='gamma40'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='gamma40'?'var(--acc)':'var(--ink-2)'};cursor:pointer">40Hz</button>
+<button class="press dsound-btn ${currentSoundMode==='beta17'?'active':''}" data-mode="beta17" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='beta17'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='beta17'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='beta17'?'var(--acc)':'var(--ink-2)'};cursor:pointer">17Hz</button>
+<button class="press dsound-btn ${currentSoundMode==='alpha10'?'active':''}" data-mode="alpha10" style="padding:6px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid ${currentSoundMode==='alpha10'?'var(--acc)':'var(--line-2)'};background:${currentSoundMode==='alpha10'?'var(--acc-dim)':'var(--surface-2)'};color:${currentSoundMode==='alpha10'?'var(--acc)':'var(--ink-2)'};cursor:pointer">10Hz</button>
 </div>
 </div>
 `;
