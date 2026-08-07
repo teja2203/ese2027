@@ -1283,6 +1283,66 @@ select:focus{ border-color:var(--acc); }
   font-family:var(--mono-font); font-size:8.5px; font-weight:700; letter-spacing:.1em;
   color:var(--ink-3); text-transform:uppercase; }
 
+/* ── habit tracker ─────────────────────────────────────── */
+.hbt-body{ display:flex; flex-direction:column; gap:6px; }
+.hbt-row{ display:flex; align-items:center; gap:10px; padding:10px 12px;
+  border:1px solid var(--line); border-radius:var(--r-sm);
+  transition:opacity .18s, border-color .18s; }
+.hbt-done{ opacity:.5; border-color:transparent; }
+.hbt-check{ background:none; border:none; cursor:pointer; padding:0; color:var(--acc); line-height:1; }
+.hbt-box{ font-size:18px; display:block; }
+.hbt-name{ flex:1; font-family:var(--mono-font); font-size:11px; font-weight:700;
+  letter-spacing:.08em; color:var(--ink); text-transform:uppercase; }
+.hbt-done .hbt-name{ color:var(--ink-3); text-decoration:line-through; }
+.hbt-streak{ font-family:var(--display-font); font-size:14px; color:var(--acc); min-width:28px; text-align:right; }
+.hbt-del{ background:none; border:none; cursor:pointer; color:var(--ink-4); font-size:10px;
+  padding:4px; border-radius:4px; transition:color .15s; }
+.hbt-del:hover{ color:var(--acc); }
+.hbt-empty{ font-family:var(--mono-font); font-size:10px; color:var(--ink-4);
+  letter-spacing:.06em; text-align:center; padding:16px 0; }
+.hbt-addrow{ display:flex; gap:8px; align-items:center; margin-top:4px; }
+.hbt-input{ flex:1; background:var(--card); border:1px solid var(--line); border-radius:var(--r-sm);
+  color:var(--ink); font-family:var(--mono-font); font-size:10px; font-weight:700;
+  letter-spacing:.08em; padding:9px 12px; outline:none; text-transform:uppercase; }
+.hbt-input::placeholder{ color:var(--ink-4); }
+.hbt-input:focus{ border-color:var(--acc); }
+.hbt-add{ padding:8px 14px; font-size:10px; letter-spacing:.1em; flex-shrink:0; }
+
+/* ── habit evening ritual sheet ─────────────────────── */
+.hbt-scrim{}
+.hbt-sheet{ max-width:360px !important; border-radius:var(--r-lg) !important; overflow:hidden; }
+.hbt-ritual{ display:flex; flex-direction:column; align-items:center; padding:36px 28px 28px;
+  background:var(--bg); text-align:center; }
+.hbt-prog{ font-family:var(--mono-font); font-size:9px; font-weight:700; letter-spacing:.18em;
+  color:var(--ink-4); text-transform:uppercase; margin-bottom:32px; }
+.hbt-title{ font-family:var(--display-font); font-size:30px; font-weight:400; color:var(--ink);
+  letter-spacing:.05em; line-height:1.1; margin-bottom:12px;
+  font-variation-settings:"ROND" 100; text-transform:uppercase; }
+.hbt-q{ font-family:var(--mono-font); font-size:9px; font-weight:700; letter-spacing:.22em;
+  color:var(--ink-3); text-transform:uppercase; margin-bottom:32px; }
+.hbt-btns{ display:flex; gap:12px; width:100%; }
+.hbt-btns .btn{ flex:1; padding:16px 0; font-size:12px; font-weight:800; letter-spacing:.14em;
+  border-radius:var(--r-sm); }
+.hbt-skip{ margin-top:20px; background:none; border:none; color:var(--ink-4);
+  font-family:var(--mono-font); font-size:9px; font-weight:700; letter-spacing:.12em;
+  text-transform:uppercase; cursor:pointer; }
+
+/* ── habit expand chevron + history grid ────────────────── */
+.hbt-exp{ background:none; border:none; color:var(--ink-4); font-size:11px;
+  cursor:pointer; padding:4px 6px; margin-left:auto; line-height:1; }
+.hbt-exp:hover{ color:var(--acc); }
+.hbt-row.hbt-expanded .hbt-name{ color:var(--acc); }
+.hbt-hist{ padding:10px 4px 8px; border-bottom:1px solid var(--line); margin-bottom:2px; }
+.hbt-hist-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.hbt-hd{ aspect-ratio:1; border-radius:2px; background:var(--line);
+  transition:opacity .15s; cursor:default; }
+.hbt-hd.done{ background:var(--acc); }
+.hbt-hd.miss{ background:transparent; border:1px solid var(--line-2); }
+.hbt-hd.today-dot{ outline:1px solid var(--acc); outline-offset:1px; }
+.hbt-hist-stats{ font-family:var(--mono-font); font-size:8.5px; font-weight:700;
+  letter-spacing:.12em; color:var(--ink-4); text-align:center; margin-top:8px;
+  text-transform:uppercase; }
+
 /* ════════════════ YOU — Nothing settings ════════════════ */
 /* identity card */
 .nt-you{ border:1px solid var(--line-2); border-radius:var(--r); padding:20px; margin-bottom:16px; }
