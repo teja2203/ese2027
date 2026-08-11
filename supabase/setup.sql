@@ -1,4 +1,15 @@
 -- ESE2027 push setup — run once in Supabase SQL Editor
+-- 0) Offline-first progress envelope used by the native client and web app.
+create table if not exists user_progress (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+alter table user_progress enable row level security;
+create policy "own progress select" on user_progress for select using (auth.uid() = user_id);
+create policy "own progress insert" on user_progress for insert with check (auth.uid() = user_id);
+create policy "own progress update" on user_progress for update using (auth.uid() = user_id);
+
 -- 1) table for device push subscriptions
 create table if not exists push_subs (
   endpoint text primary key,

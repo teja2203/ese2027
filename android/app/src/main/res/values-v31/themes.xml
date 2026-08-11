@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ system splash. Background matches the app's black canvas and
+         the icon is blank, so launch goes straight to the in-app splash intro.
+         Parent keeps every base-theme value; the splash attrs are inert after
+         the splash and the activity simply continues on this theme. -->
+    <style name="Theme.ESE2027.Starting" parent="Theme.ESE2027">
+        <item name="android:windowSplashScreenBackground">#000000</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_blank</item>
+    </style>
+</resources>
