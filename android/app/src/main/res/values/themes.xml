@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ESE2027" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">#D71921</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="android:colorBackground">#000000</item>
+        <item name="colorSurface">#0A0A0A</item>
+        <item name="android:statusBarColor">#000000</item>
+        <item name="android:navigationBarColor">#000000</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <style name="Theme.ESE2027.Starting" parent="Theme.ESE2027">
+        <item name="android:windowBackground">@drawable/launch_screen</item>
+    </style>
+
+    <!-- Block screens (Regain-style Activity-based locks): opaque black,
+         fullscreen, no status bar. taskAffinity/excludeFromRecents/lifecycle
+         are set in the manifest per the Regain recipe. -->
+    <style name="Theme.ESE2027.Block" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.85</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="colorPrimary">#D71921</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+    </style>
+</resources>

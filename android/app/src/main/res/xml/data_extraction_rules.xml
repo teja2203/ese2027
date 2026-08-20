@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <!-- Preserve offline-first state as well as preferences during cloud restore. -->
+    <cloud-backup>
+        <include domain="sharedpref" path="."/>
+        <include domain="database" path="."/>
+        <include domain="file" path="."/>
+        <include domain="external" path="Documents/ESE2027/backups"/>
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="."/>
+        <include domain="database" path="."/>
+        <include domain="file" path="."/>
+        <include domain="external" path="Documents/ESE2027/backups"/>
+    </device-transfer>
+</data-extraction-rules>

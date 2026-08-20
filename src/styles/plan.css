@@ -1,0 +1,79 @@
+/* ══════════════════════════════════════════════════════════════
+   plan.css — PLAN tab (ported from legacy app.css).
+   ══════════════════════════════════════════════════════════════ */
+
+.nt-plan-head{ display:flex; align-items:flex-end; justify-content:space-between;
+  gap:12px; margin-bottom:16px; }
+.nt-plan-head .t{ font-family:var(--display-font); font-size:clamp(22px,7vw,30px);
+  font-weight:400; letter-spacing:.05em; text-transform:uppercase; color:var(--ink); line-height:.95; }
+.nt-plan-head .today-btn{ font-family:var(--mono-font); font-size:10px; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase; padding:9px 14px; border-radius:8px;
+  border:none; background:var(--acc); color:var(--acc-ink); cursor:pointer; flex-shrink:0;
+  transition:transform .2s var(--spring), background .2s var(--ease); }
+.nt-plan-head .today-btn:active{ transform:scale(.96); }
+
+.nt-jump{ width:100%; padding:13px 16px; margin-bottom:16px;
+  font-family:var(--mono-font); font-size:11px; font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-2); cursor:pointer;
+  background:var(--bg-2); border:1px solid var(--line-2); border-radius:var(--r); }
+
+.nt-dayhdr{ border:1px solid var(--line-2); border-radius:var(--r);
+  padding:18px 16px; margin-bottom:20px; background:var(--bg-2); }
+.nt-dayhdr .ey{ font-family:var(--mono-font); font-size:9.5px; font-weight:700;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); }
+.nt-dayhdr .d{ font-family:var(--display-font); font-size:clamp(26px,8vw,34px);
+  font-weight:400; letter-spacing:.05em; text-transform:uppercase; color:var(--ink);
+  margin-top:8px; line-height:1; }
+.nt-dayhdr .sub{ font-size:13.5px; font-weight:600; color:var(--ink-2); margin-top:8px; }
+.nt-dayhdr .badge{ display:inline-block; font-family:var(--mono-font); font-size:9px;
+  font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-top:12px;
+  padding:4px 9px; border:1px solid var(--acc); color:var(--acc); border-radius:5px; }
+.nt-dayhdr .badge.hot{ background:var(--acc); color:var(--acc-ink); }
+.nt-dayhdr .badge.rest{ border-color:var(--line-2); color:var(--ink-3); }
+.nt-dayhdr .prog{ margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
+.nt-dayhdr .progrow{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:9px; }
+.nt-dayhdr .progrow .n{ font-family:var(--display-font); font-size:22px; font-weight:400;
+  letter-spacing:.04em; color:var(--acc); display:flex; align-items:baseline; gap:2px; }
+.nt-dayhdr .progrow .n small{ font-family:var(--mono-font); font-size:11px; color:var(--ink-3); }
+.nt-dayhdr .progrow .l{ font-family:var(--mono-font); font-size:9.5px; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+
+.nt-plan .sesslist{ display:flex; flex-direction:column; gap:10px; }
+.nt-plan .sess{ border:1px solid var(--line); border-radius:var(--r);
+  padding:14px 16px; background:transparent; }
+.nt-plan .sess.now{ border-left:2px solid var(--acc); }
+.nt-plan .sess.done{ opacity:.62; }
+.nt-plan .sess .shead{ display:flex; align-items:center; gap:12px; cursor:pointer;
+  background:none; border:none; width:100%; text-align:left; padding:0; }
+.nt-plan .sess .count{ width:40px; height:40px; flex-shrink:0; border:1px solid var(--line-2);
+  border-radius:8px; display:flex; align-items:center; justify-content:center;
+  font-family:var(--display-font); font-size:16px; font-weight:400; color:var(--ink); }
+.nt-plan .sess.done .count{ border-color:var(--acc); color:var(--acc); }
+.nt-plan .sess .count small{ font-family:var(--mono-font); font-size:8px; color:var(--ink-3); }
+.nt-plan .sess .meta{ flex:1; min-width:0; }
+.nt-plan .sess .tags{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.nt-plan .sess .mtag{ font-family:var(--mono-font); font-size:8.5px; font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); display:flex; align-items:center; gap:3px; }
+.nt-plan .sess .mtag.now{ color:var(--acc-text); }
+.nt-plan .sess .mtag.done{ color:var(--ink-4); }
+.nt-plan .sess .mtag.streak{ color:var(--acc); }
+.nt-plan .sess .stitle{ font-size:14px; font-weight:700; line-height:1.35;
+  color:var(--ink); margin-top:5px; }
+.nt-plan .sess.done .stitle{ color:var(--ink-4); }
+.nt-plan .sess .caret{ color:var(--ink-4); flex-shrink:0;
+  transition:transform .25s var(--spring); }
+.nt-plan .sess .caret.open{ transform:rotate(90deg); }
+.nt-plan .sess .tl{ margin-top:12px; padding-top:4px; border-top:1px solid var(--line); }
+.nt-plan .sess .taskrow{ border-bottom:1px solid var(--line); border-radius:0; padding:13px 2px; }
+.nt-plan .sess .taskrow:last-child{ border-bottom:none; }
+.nt-plan .sess .chk{ border-radius:4px; }
+
+.nt-plan .daynav{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
+.nt-plan .daynav button{ font-family:var(--mono-font); font-size:10px; font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase; padding:14px; border-radius:var(--r);
+  border:1px solid var(--line-2); background:transparent; color:var(--ink-2); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:transform .2s var(--spring), border-color .2s var(--ease), color .2s var(--ease); }
+.nt-plan .daynav button:hover:not(:disabled){ border-color:var(--ink-3); color:var(--ink); }
+.nt-plan .daynav button:active:not(:disabled){ transform:scale(.97); }
+.nt-plan .daynav button:disabled{ opacity:.35; cursor:default; }

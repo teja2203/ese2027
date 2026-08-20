@@ -1,0 +1,175 @@
+﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   ESE2027 Study OS â€” Design tokens (Nothing system, 4 suits)
+   Primitive â†’ semantic â†’ component. Tokens are the ONLY source of
+   truth for colour/type/radius/motion. Values are ported verbatim
+   from legacy/css/app.css â€” nothing new invented.
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+@font-face {
+  font-family: 'Ndot';
+  src: url('/fonts/Ndot-57-Aligned.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/SpaceGrotesk-400.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/SpaceGrotesk-500.ttf') format('truetype');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/SpaceGrotesk-600.ttf') format('truetype');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/SpaceGrotesk-700.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Mono';
+  src: url('/fonts/SpaceMono-400.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Mono';
+  src: url('/fonts/SpaceMono-700.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* â”€â”€ structure: one radius + one motion language â”€â”€ */
+:root {
+  --r-lg: 16px;
+  --r: 12px;
+  --r-sm: 8px;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --ease-slow: cubic-bezier(.25, .46, .45, .94);
+  --spring: cubic-bezier(.2, .9, .25, 1.18);
+  --rail-nav-h: 74px;
+  --rail-timer-h: 60px;
+}
+
+/* â”€â”€ ember â€” Mono Black (default) â”€â”€ */
+:root,
+[data-theme='ember'] {
+  --bg: #000000;
+  --bg-2: #0A0A0A;
+  --void: #000000;
+  --surface: rgba(255, 255, 255, .05);
+  --surface-lift: rgba(255, 255, 255, .09);
+  --surface-glass: rgba(255, 255, 255, .06);
+  --surface-2: rgba(255, 255, 255, .08);
+  --card: rgba(255, 255, 255, .10);
+  --card-2: rgba(255, 255, 255, .15);
+  --border: rgba(255, 255, 255, .16);
+  --border-2: rgba(255, 255, 255, .30);
+  --line: var(--border);
+  --line-2: var(--border-2);
+  --ink: #F5F5F2;
+  --ink-2: #C7C7C2;
+  --ink-3: #8A8A85;
+  --ink-4: #7A7A73;
+  --acc: #D71921;
+  --acc-2: #E8322B;
+  --acc-ink: #FFFFFF;
+  --acc-dim: rgba(215, 25, 33, .14);
+  --acc-text: var(--acc-2);
+  --sky: #8FB8D9;
+  --sky-soft: rgba(143, 184, 217, .13);
+  --fire-0: #FFE259;
+  --fire-1: #FFA32B;
+  --fire-2: #FF5A1F;
+  --fire-3: #EA3A0C;
+}
+
+/* â”€â”€ lime â€” Glyph Lime â”€â”€ */
+[data-theme='lime'] {
+  --acc: #9EEB3B;
+  --acc-2: #B7F55C;
+  --acc-ink: #0A0A0A;
+  --acc-dim: rgba(158, 235, 59, .14);
+  --acc-text: var(--acc-2);
+}
+
+/* â”€â”€ ice â€” Arctic Ice â”€â”€ */
+[data-theme='ice'] {
+  --acc: #7FB8D9;
+  --acc-2: #9CCBE6;
+  --acc-ink: #0A0A0A;
+  --acc-dim: rgba(127, 184, 217, .14);
+  --acc-text: var(--acc-2);
+}
+
+/* â”€â”€ paper â€” Mono White â”€â”€ */
+[data-theme='paper'] {
+  --bg: #F0EEE9;
+  --bg-2: #FAF9F6;
+  --void: #E8E6E1;
+  --surface: rgba(20, 18, 14, .045);
+  --surface-lift: rgba(20, 18, 14, .07);
+  --surface-glass: rgba(250, 249, 246, .8);
+  --surface-2: rgba(20, 18, 14, .055);
+  --card: rgba(20, 18, 14, .07);
+  --card-2: rgba(20, 18, 14, .11);
+  --border: rgba(20, 18, 14, .14);
+  --border-2: rgba(20, 18, 14, .28);
+  --line: var(--border);
+  --line-2: var(--border-2);
+  --ink: #1A1A18;
+  --ink-2: #4A4A46;
+  --ink-3: #6A6861;
+  --ink-4: #6E6C64;
+  --acc: #C11218;
+  --acc-2: #A80F15;
+  --acc-ink: #FFFFFF;
+  --acc-dim: rgba(193, 18, 24, .10);
+  --acc-text: var(--acc-2);
+  --sky: #2F6FA3;
+  --sky-soft: rgba(47, 111, 163, .11);
+}
+
+/* â”€â”€ shadcn/Radix semantic aliases â†’ point at the tokens above â”€â”€ */
+:root,
+[data-theme='ember'],
+[data-theme='lime'],
+[data-theme='ice'],
+[data-theme='paper'] {
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card-foreground: var(--ink);
+  --popover: var(--bg-2);
+  --popover-foreground: var(--ink);
+  --primary: var(--acc);
+  --primary-foreground: var(--acc-ink);
+  --secondary: var(--surface-lift);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface);
+  --muted-foreground: var(--ink-3);
+  --accent: var(--surface-lift);
+  --accent-foreground: var(--ink);
+  --destructive: var(--acc);
+  --destructive-foreground: var(--acc-ink);
+  --border-color: var(--border);
+  --input: var(--border);
+  --ring: var(--acc);
+  --radius: var(--r);
+}
+
+/* â”€â”€ typography â”€â”€ */
+:root {
+  --display-font: 'Ndot', 'Doto', 'Space Grotesk', monospace;
+  --ui-font: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+  --mono-font: 'Space Mono', 'JetBrains Mono', monospace;
+}

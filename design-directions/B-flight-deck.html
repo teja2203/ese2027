@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Direction B — Flight Deck</title>
+<style>
+:root{
+  --bg:#0E1113; --bg-2:#151A1D; --panel:#1A2024; --line:#262E33; --line-2:#36404A;
+  --ink:#E8EDEF; --ink-2:#9AA7AF; --ink-3:#5F6B74;
+  --amber:#F5B841; --cyan:#4FC3D9; --green:#5FBF77; --red:#E5484D;
+  --mono:'Cascadia Mono',Consolas,'SF Mono',monospace;
+  --sans:'Segoe UI',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.rack{max-width:960px;margin:0 auto;padding:20px}
+
+.topbar{display:flex;align-items:center;gap:14px;padding:10px 14px;background:var(--bg-2);border:1px solid var(--line);border-radius:8px;margin-bottom:14px}
+.topbar .sys{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--ink-3);text-transform:uppercase}
+.topbar .sys b{color:var(--amber)}
+.topbar .spacer{flex:1}
+.topbar .chip{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);border:1px solid var(--line-2);padding:5px 9px;border-radius:5px;background:var(--panel)}
+.topbar .chip.on{color:var(--green);border-color:var(--green)}
+
+.grid{display:grid;grid-template-columns:200px 1fr;gap:14px}
+.rail{border:1px solid var(--line);border-radius:8px;background:var(--bg-2);padding:10px;display:flex;flex-direction:column;gap:4px}
+.rail .route{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);padding:8px 10px}
+.rail button{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);background:none;border:1px solid transparent;border-radius:6px;padding:11px 10px;cursor:pointer;text-align:left}
+.rail button .k{font-size:9px;color:var(--ink-3);border:1px solid var(--line-2);border-radius:3px;padding:1px 5px}
+.rail button.on{color:var(--ink);background:var(--panel);border-color:var(--line-2)}
+.rail button.on .k{color:var(--amber);border-color:var(--amber)}
+
+.main{display:flex;flex-direction:column;gap:14px}
+.brief{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:16px}
+.brief .lh{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+.brief .lh .l{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.brief .lh .pct{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--amber)}
+.statrow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.stat{border:1px solid var(--line);border-radius:6px;background:var(--bg-2);padding:10px 12px}
+.stat .v{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:.02em;color:var(--ink)}
+.stat .v.amber{color:var(--amber)} .stat .v.cyan{color:var(--cyan)} .stat .v.green{color:var(--green)} .stat .v.red{color:var(--red)}
+.stat .l{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+
+.sess{border:1px solid var(--line);border-radius:8px;background:var(--panel);overflow:hidden}
+.sess .shead{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;user-select:none}
+.sess .shead:hover{background:var(--bg-2)}
+.sess .stime{font-family:var(--mono);font-size:10px;color:var(--ink-3);min-width:86px;letter-spacing:.06em}
+.sess .sname{font-size:14.5px;font-weight:600}
+.sess .stag{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:3px;border:1px solid var(--amber);color:var(--amber)}
+.sess .stag.warn{border-color:var(--red);color:var(--red)}
+.sess .stag.mute{border-color:var(--ink-3);color:var(--ink-3)}
+.sess .sscore{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+.sess .sscore .done{color:var(--green);font-weight:700}
+.sess .sscore .bar{display:inline-block;width:52px;height:5px;background:var(--line);border-radius:2px;vertical-align:middle;margin-left:8px}
+.sess .sscore .bar i{display:block;height:100%;background:var(--green);border-radius:2px}
+.sess .sbody{display:none;padding:4px 16px 14px;border-top:1px solid var(--line)}
+.sess.open .sbody{display:block}
+.task{display:flex;align-items:center;gap:11px;padding:10px 2px;border-bottom:1px dashed var(--line);cursor:pointer;user-select:none}
+.task:last-child{border-bottom:none}
+.task .tdot{width:13px;height:13px;border:1.5px solid var(--ink-3);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--bg)}
+.task.done .tdot{background:var(--green);border-color:var(--green)}
+.task.done .tdot::after{content:"✓"}
+.task .tcode{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);min-width:76px}
+.task .txt{font-size:13.5px}
+.task.done .txt{color:var(--ink-3);text-decoration:line-through}
+
+.footer{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:2px 4px}
+.footer .amber{color:var(--amber)}
+
+@media (max-width:760px){
+  .grid{grid-template-columns:1fr}
+  .rail{flex-direction:row;overflow-x:auto;order:2}
+  .statrow{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="rack">
+  <div class="topbar">
+    <span class="sys">ESE<span style="color:var(--red)">◢</span>2027 <b>MISSION OS</b></span>
+    <span class="spacer"></span>
+    <span class="chip on">■ SESSION READY</span>
+    <span class="chip">SYNC 23:41</span>
+  </div>
+
+  <div class="grid">
+    <nav class="rail">
+      <span class="route">TODAY — 19 AUG</span>
+      <button class="on"><span class="k">1</span> Today</button>
+      <button><span class="k">2</span> Plan</button>
+      <button><span class="k">3</span> Focus</button>
+      <button><span class="k">4</span> Progress</button>
+      <button><span class="k">5</span> You</button>
+    </nav>
+
+    <main class="main">
+      <section class="brief">
+        <div class="lh">
+          <span class="l">DAILY BRIEF · SPRINT 3</span>
+          <span class="pct">4/8 TASKS — 50%</span>
+        </div>
+        <div class="statrow">
+          <div class="stat"><div class="v amber">165d</div><div class="l">Streak</div></div>
+          <div class="stat"><div class="v cyan">50</div><div class="l">Sessions</div></div>
+          <div class="stat"><div class="v green">2</div><div class="l">Rest shifts</div></div>
+          <div class="stat"><div class="v">08:30</div><div class="l">Next slot</div></div>
+        </div>
+      </section>
+
+      <section class="sess open">
+        <div class="shead">
+          <span class="stime">06:30–08:00</span>
+          <span class="sname">Networks</span>
+          <span class="stag">CORE</span>
+          <span class="sscore">2/2 <span class="done">DONE</span><span class="bar"><i style="width:100%"></i></span></span>
+        </div>
+        <div class="sbody">
+          <div class="task done"><span class="tdot"></span><span class="tcode">ESE-2027</span><span class="txt">OSI 7-layer deep drill — table + memory hooks</span></div>
+          <div class="task done"><span class="tdot"></span><span class="tcode">PYQ-2024</span><span class="txt">Routing vs switching — 12-question set</span></div>
+        </div>
+      </section>
+
+      <section class="sess open">
+        <div class="shead">
+          <span class="stime">08:30–10:00</span>
+          <span class="sname">Controls</span>
+          <span class="stag">CORE</span>
+          <span class="sscore">1/2 <span class="bar"><i style="width:50%"></i></span></span>
+        </div>
+        <div class="sbody">
+          <div class="task done"><span class="tdot"></span><span class="tcode">PYQ</span><span class="txt">Bode plots — gain/phase margin set</span></div>
+          <div class="task"><span class="tdot"></span><span class="tcode">ESE-2027</span><span class="txt">Routh–Hurwitz — 3 problem deep-dive</span></div>
+        </div>
+      </section>
+
+      <section class="sess">
+        <div class="shead">
+          <span class="stime">10:30–12:00</span>
+          <span class="sname">EDC</span>
+          <span class="stag warn">REST</span>
+          <span class="sscore">1/2 <span class="bar"><i style="width:50%"></i></span></span>
+        </div>
+        <div class="sbody">
+          <div class="task done"><span class="tdot"></span><span class="tcode">NOTES</span><span class="txt">Diode clampers — rewrite set 4</span></div>
+          <div class="task"><span class="tdot"></span><span class="tcode">REV</span><span class="txt">Transistor biasing — 20 min skim + flags</span></div>
+        </div>
+      </section>
+
+      <div class="footer">
+        <span>◂ PREV DAY</span>
+        <span class="amber">NEXT: CONTROLS · BODE @ 19:00</span>
+        <span>NEXT DAY ▸</span>
+      </div>
+    </main>
+  </div>
+</div>
+<script>
+document.querySelectorAll('.sess .shead').forEach(h=>{
+  h.addEventListener('click',()=>h.parentElement.classList.toggle('open'))
+})
+document.querySelectorAll('.task').forEach(t=>{
+  t.addEventListener('click',()=>t.classList.toggle('done'))
+})
+</script>
+</body>
+</html>

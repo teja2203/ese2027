@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Direction C — Warm Minimal</title>
+<style>
+:root{
+  --bg:#F7F5F2; --card:#FFFFFF; --line:#E8E3DB; --ink:#211F1C; --ink-2:#6B655C; --ink-3:#A49D92;
+  --acc:#5B8DEF; --acc-2:#3E6FD8; --green:#5C9E6D; --amber:#D9A441; --red:#D45B4F;
+  --font:'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;line-height:1.5}
+.wrap{max-width:520px;margin:0 auto;padding:22px 18px 90px}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.topbar .brand{font-weight:700;font-size:17px;letter-spacing:-.01em}
+.topbar .brand span{color:var(--acc)}
+.topbar .avatar{width:36px;height:36px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+
+.date-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.date-row h1{font-size:26px;font-weight:700;letter-spacing:-.02em}
+.date-row .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;font-size:12px;font-weight:600;color:var(--ink-2);padding:6px 12px}
+p.sub{color:var(--ink-2);font-size:13.5px;margin-bottom:16px}
+p.sub b{color:var(--acc)}
+
+.stats{display:flex;gap:10px;margin-bottom:18px}
+.stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.stat .v{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.stat .l{font-size:11px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.stat.green .v{color:var(--green)} .stat.acc .v{color:var(--acc)} .stat.amber .v{color:var(--amber)} .stat.red .v{color:var(--red)}
+
+.sec-h{display:flex;align-items:center;justify-content:space-between;margin:20px 0 10px}
+.sec-h h2{font-size:14px;font-weight:700;letter-spacing:.02em}
+.sec-h span{font-size:12.5px;font-weight:600;color:var(--ink-3)}
+
+.progress{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:18px}
+.progress .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.progress .pct{font-size:15px;font-weight:700;color:var(--acc)}
+.progress .bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.progress .bar i{display:block;height:100%;width:50%;background:var(--acc);border-radius:99px}
+
+.slot{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.slot .row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.slot .time{font-size:11px;font-weight:700;color:var(--acc);background:rgba(91,141,239,.12);padding:4px 8px;border-radius:7px;letter-spacing:.02em}
+.slot .name{font-weight:700;font-size:15.5px}
+.slot .dot{margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--line)}
+.slot .dot.done{background:var(--green)}
+.slot .tag{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);background:var(--bg);padding:3px 7px;border-radius:6px}
+.slot .tag.hot{color:var(--red);background:rgba(212,91,79,.1)}
+
+.task{display:flex;align-items:center;gap:12px;padding:9px 2px;border-top:1px solid var(--line);cursor:pointer;user-select:none}
+.task:first-child{border-top:none}
+.task .chk{width:22px;height:22px;border:2px solid var(--line);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:transparent;transition:all .15s}
+.task.done .chk{background:var(--green);border-color:var(--green);color:#fff}
+.task .txt{font-size:14px;flex:1}
+.task .txt .sub{display:block;font-size:10.5px;color:var(--ink-3);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.task.done .txt{color:var(--ink-3);text-decoration:line-through}
+
+.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;background:rgba(33,31,28,.96);backdrop-filter:blur(10px);border-radius:18px;padding:6px;display:flex;gap:4px;box-shadow:0 8px 30px rgba(33,31,28,.25)}
+.tabs button{border:none;background:none;color:#C9C3BA;font-size:11px;font-weight:600;padding:10px 13px;border-radius:12px;cursor:pointer}
+.tabs button.on{background:var(--acc);color:#fff}
+
+@media (prefers-color-scheme: dark){
+  :root{--bg:#16141F;--card:#1E1B28;--line:#2C2838;--ink:#F1EEE9;--ink-2:#A39DB0;--ink-3:#6E6880}
+  .slot .tag{background:var(--bg)}
+  .slot .time{background:rgba(91,141,239,.16)}
+  .slot .tag.hot{background:rgba(212,91,79,.14)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">ese<span>2027</span></div>
+    <div class="avatar">T</div>
+  </div>
+
+  <div class="date-row">
+    <h1>Wednesday, 19 Aug</h1>
+    <span class="chip">Day 165</span>
+  </div>
+  <p class="sub">Morning window · <b>3 sessions</b> scheduled · 2 rest days banked</p>
+
+  <div class="stats">
+    <div class="stat green"><div class="v">165d</div><div class="l">Streak</div></div>
+    <div class="stat acc"><div class="v">50</div><div class="l">Sessions</div></div>
+    <div class="stat amber"><div class="v">4/8</div><div class="l">Done today</div></div>
+  </div>
+
+  <div class="progress">
+    <div class="row"><span>Today's plan</span><span class="pct">50%</span></div>
+    <div class="bar"><i></i></div>
+  </div>
+
+  <div class="sec-h"><h2>Morning</h2><span>2 of 6 done</span></div>
+
+  <div class="slot">
+    <div class="row"><span class="time">6:30</span><span class="name">Networks</span><span class="tag">Core</span><span class="dot done"></span></div>
+    <div class="task done"><span class="chk">✓</span><span class="txt"><span class="sub">ESE 2027</span>OSI 7-layer deep drill — table + memory hooks</span></div>
+    <div class="task done"><span class="chk">✓</span><span class="txt"><span class="sub">PYQ 2024</span>Routing vs switching — 12-question set</span></div>
+  </div>
+
+  <div class="slot">
+    <div class="row"><span class="time">8:30</span><span class="name">Controls</span><span class="tag">Core</span><span class="dot"></span></div>
+    <div class="task done"><span class="chk">✓</span><span class="txt"><span class="sub">PYQ</span>Bode plots — gain/phase margin set</span></div>
+    <div class="task"><span class="chk">✓</span><span class="txt"><span class="sub">ESE 2027</span>Routh–Hurwitz — 3 problem deep-dive</span></div>
+  </div>
+
+  <div class="slot">
+    <div class="row"><span class="time">10:30</span><span class="name">EDC</span><span class="tag hot">Revision</span><span class="dot"></span></div>
+    <div class="task done"><span class="chk">✓</span><span class="txt"><span class="sub">NOTES</span>Diode clampers — rewrite set 4</span></div>
+    <div class="task"><span class="chk">✓</span><span class="txt"><span class="sub">REV</span>Transistor biasing — 20 min skim + flags</span></div>
+  </div>
+</div>
+
+<nav class="tabs">
+  <button>Today</button>
+  <button>Plan</button>
+  <button class="on">Focus</button>
+  <button>Progress</button>
+  <button>You</button>
+</nav>
+
+<script>
+document.querySelectorAll('.task').forEach(t=>{
+  t.addEventListener('click',()=>t.classList.toggle('done'))
+})
+</script>
+</body>
+</html>

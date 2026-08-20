@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ESE2027</string>
+    <string name="accessibility_service_description">Required to detect and block distracting applications during Focus Sessions</string>
+    <string name="return_to_focus">RETURN TO FOCUS</string>
+</resources>

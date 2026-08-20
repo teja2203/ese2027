@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Direction E — Mono-Luxe · editorial minimal</title>
+<style>
+:root{
+  --bg:#0A0A0A; --panel:#101010; --panel-2:#151515;
+  --line:rgba(244,243,239,.07); --line-2:rgba(244,243,239,.14);
+  --ink:#F4F3EF; --mute:#9A9893; --faint:#5E5C58;
+  --sig:#E63946; --sig-dim:rgba(230,57,70,.1);
+  --disp:'Segoe UI',system-ui,sans-serif;
+  --mono:'Cascadia Mono',Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--disp);-webkit-font-smoothing:antialiased;line-height:1.5}
+.app{max-width:760px;margin:0 auto;padding:0 26px 120px}
+
+/* top strip — type only, no chrome */
+.top{display:flex;align-items:baseline;gap:14px;padding:26px 2px 8px;border-bottom:1px solid var(--line)}
+.top .mark{font-family:var(--mono);font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink)}
+.top .mark i{color:var(--sig);font-style:normal}
+.top .sp{flex:1}
+.top .meta{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.top .meta b{color:var(--mute);font-weight:600}
+
+/* editorial date band */
+.band{display:grid;grid-template-columns:1fr auto;align-items:end;gap:20px;padding:44px 2px 30px;border-bottom:1px solid var(--line)}
+.band .dt{font-family:var(--mono);font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:var(--faint)}
+.band .dnum{font-size:clamp(84px,20vw,150px);font-weight:700;letter-spacing:-.045em;line-height:.8;font-variant-numeric:tabular-nums;color:var(--ink)}
+.band .dnum span{color:var(--faint)}
+.band .dayright{text-align:right;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);line-height:2}
+.band .dayright b{display:block;font-size:13px;color:var(--sig);font-weight:600}
+
+/* rule + progress */
+.progress{padding:26px 2px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto;align-items:center;gap:18px}
+.progress .pl{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
+.progress .pn{font-size:30px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.progress .pn small{font-size:13px;color:var(--faint)}
+.rule{grid-column:1/-1;height:2px;background:var(--panel-2);position:relative}
+.rule::after{content:"";position:absolute;left:0;top:0;bottom:0;width:50%;background:var(--sig);transition:width .8s cubic-bezier(.16,1,.3,1)}
+.rule .head{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:8px;height:8px;background:var(--sig);border-radius:50%}
+
+/* sessions — asymmetric editorial rows */
+.sess{padding:26px 2px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:150px 1fr auto;gap:22px;align-items:baseline}
+.sess .t{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--faint);font-variant-numeric:tabular-nums}
+.sess .mid .nm{font-size:21px;font-weight:600;letter-spacing:-.02em}
+.sess .mid .tg{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-top:5px}
+.sess .mid .tg.sig{color:var(--sig)}
+.sess .cnt{font-family:var(--mono);font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+.sess .cnt b{color:var(--ink);font-size:15px}
+.sess .cnt .bar{display:block;width:64px;height:1.5px;background:var(--panel-2);margin-top:8px;position:relative}
+.sess .cnt .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--sig)}
+.tasks{padding:6px 2px 4px 150px}
+.task{display:grid;grid-template-columns:22px 1fr auto;gap:14px;align-items:center;padding:13px 0;border-bottom:1px dotted var(--line-2);cursor:pointer;user-select:none}
+.task:last-child{border-bottom:none}
+.task .st{width:18px;height:18px;border:1.5px solid var(--line-2);position:relative;transition:border-color .2s,background .2s}
+.task .st::before{content:"";position:absolute;inset:3px;background:var(--sig);transform:scale(0);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.task.done .st{border-color:var(--sig)}
+.task.done .st::before{transform:scale(1)}
+.task .cd{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.task .tx{font-size:14.5px}
+.task.done .tx{color:var(--faint);text-decoration:line-through;text-decoration-color:var(--sig)}
+
+/* nav — square rail, type-only */
+.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;display:flex;background:#0D0D0D;border:1px solid var(--line);box-shadow:0 14px 40px rgba(0,0,0,.6)}
+.nbtn{background:none;border:none;color:var(--faint);font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;padding:13px 18px;cursor:pointer;position:relative;transition:color .2s}
+.nbtn+.nbtn{border-left:1px solid var(--line)}
+.nbtn.on{color:var(--ink)}
+.nbtn.on::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--sig)}
+.nbtn:hover{color:var(--mute)}
+.nbtn.ct{color:var(--sig);font-weight:700}
+
+/* celebrations — type-first, no confetti */
+.swell{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:90;background:rgba(10,10,10,.88)}
+.swell.show{display:flex}
+.swell .num{font-size:clamp(110px,30vw,240px);font-weight:700;letter-spacing:-.05em;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;animation:swel 1s cubic-bezier(.34,1.56,.64,1)}
+@keyframes swel{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+.swell .cap{font-family:var(--mono);font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:var(--sig);margin-top:18px;text-align:center}
+.seal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(0);z-index:95;width:120px;height:120px;border:2px solid var(--sig);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--sig);text-align:center;background:radial-gradient(circle,rgba(230,57,70,.14),transparent 70%);transition:transform .5s cubic-bezier(.34,1.56,.64,1);box-shadow:0 0 60px -10px rgba(230,57,70,.5)}
+.seal.show{transform:translate(-50%,-50%) scale(1)}
+.demo{position:fixed;right:16px;bottom:92px;z-index:70;font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);background:#0D0D0D;border:1px solid var(--line);padding:9px 14px;cursor:pointer}
+.demo:hover{color:var(--sig)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <span class="mark">ESE<i>2027</i></span>
+    <span class="sp"></span>
+    <span class="meta">streak <b>165d</b> · sessions <b>50</b> · sync <b>ok</b></span>
+  </header>
+
+  <section class="band">
+    <div><div class="dt">Wednesday · 19 August 2026</div>
+    <div class="dnum">19<span>·165</span></div></div>
+    <div class="dayright"><b>SPRINT 3</b>peak week<br/>rest banked ×2</div>
+  </section>
+
+  <section class="progress">
+    <span class="pl">Today's burn — 4 of 8</span>
+    <span class="pn">50<small>%</small></span>
+    <div class="rule"><span class="head"></span></div>
+  </section>
+
+  <section class="sess">
+    <span class="t">06:30 – 08:00</span>
+    <div class="mid"><div class="nm">Networks</div><div class="tg">ESE 2027 · Core</div></div>
+    <span class="cnt"><b>2</b>/2<span class="bar"><i style="width:100%"></i></span></span>
+  </section>
+  <div class="tasks">
+    <div class="task done"><span class="st"></span><span class="cd">ESE-2027</span><span class="tx">OSI 7-layer deep drill — table + memory hooks</span></div>
+    <div class="task done"><span class="st"></span><span class="cd">PYQ-2024</span><span class="tx">Routing vs switching — 12-question set</span></div>
+  </div>
+
+  <section class="sess">
+    <span class="t">08:30 – 10:00</span>
+    <div class="mid"><div class="nm">Controls</div><div class="tg sig">now · core</div></div>
+    <span class="cnt"><b>1</b>/2<span class="bar"><i style="width:50%"></i></span></span>
+  </section>
+  <div class="tasks">
+    <div class="task done"><span class="st"></span><span class="cd">PYQ</span><span class="tx">Bode plots — gain/phase margin set</span></div>
+    <div class="task"><span class="st"></span><span class="cd">ESE-2027</span><span class="tx">Routh–Hurwitz — 3 problem deep-dive</span></div>
+  </div>
+
+  <section class="sess" style="border-bottom:none">
+    <span class="t">10:30 – 12:00</span>
+    <div class="mid"><div class="nm">EDC</div><div class="tg">Revision</div></div>
+    <span class="cnt"><b>1</b>/2<span class="bar"><i style="width:50%"></i></span></span>
+  </section>
+  <div class="tasks">
+    <div class="task done"><span class="st"></span><span class="cd">NOTES</span><span class="tx">Diode clampers — rewrite set 4</span></div>
+    <div class="task"><span class="st"></span><span class="cd">REV</span><span class="tx">Transistor biasing — 20 min skim + flags</span></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nbtn on">Today</button>
+  <button class="nbtn">Plan</button>
+  <button class="nbtn ct">Focus</button>
+  <button class="nbtn">Progress</button>
+  <button class="nbtn">You</button>
+</nav>
+
+<button class="demo" onclick="demo()">demo ▸</button>
+<div class="swell" id="swell"><div><div class="num" id="swellNum">100%</div><div class="cap">DAY COMPLETE</div></div></div>
+<div class="seal" id="seal">100<br/>DAY<br/>STREAK</div>
+
+<script>
+document.querySelectorAll('.task').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('done')))
+function swell(){document.getElementById('swellNum').textContent='100%';document.getElementById('swell').classList.add('show');setTimeout(()=>document.getElementById('swell').classList.remove('show'),1600)}
+function seal(){const e=document.getElementById('seal');e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2600)}
+let d=0
+function demo(){ [seal,swell][d++%2]() }
+</script>
+</body>
+</html>

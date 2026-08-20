@@ -1,0 +1,1197 @@
+/* ══════════════════════════════════════════════════════════════
+   focus.css — Focus Space + fullscreen overlay + flip clock + dock.
+   Ported from legacy app.css with the Nothing identity applied to
+   the overlay (24-seg bar replaces the legacy breathing ring).
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Focus screen ── */
+.nt-flabel {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.nt-flabel .t {
+  font-family: var(--display-font);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.nt-flabel .s {
+  font-family: var(--mono-font);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--ink-3);
+}
+
+.nt-fphase {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.nt-fphase button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.nt-fphase button:active {
+  transform: scale(0.97);
+}
+.nt-fphase button .pl {
+  font-family: var(--mono-font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+}
+.nt-fphase button .pm {
+  font-family: var(--display-font);
+  font-size: 20px;
+  font-weight: 400;
+}
+.nt-fphase button .pm i {
+  font-family: var(--mono-font);
+  font-size: 10px;
+  font-style: normal;
+  color: var(--ink-3);
+}
+.nt-fphase button.on {
+  border-color: var(--acc);
+  background: var(--acc-dim);
+}
+.nt-fphase button.on .pl {
+  color: var(--acc);
+}
+.nt-fphase button.on .pm {
+  color: var(--ink);
+}
+
+.nt-fclock {
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  padding: 26px 20px 22px;
+  text-align: center;
+  margin-bottom: 18px;
+}
+.nt-fclock .phase {
+  font-family: var(--mono-font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  color: var(--acc);
+  margin-bottom: 10px;
+}
+.nt-fclock .big {
+  font-family: var(--display-font);
+  font-weight: 400;
+  font-size: clamp(56px, 16vw, 84px);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  margin-bottom: 16px;
+}
+.nt-fclock .fseg {
+  margin-bottom: 14px;
+}
+.nt-fclock .fseg i {
+  height: 8px;
+}
+.nt-fclock .loopnote {
+  font-family: var(--mono-font);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--ink-3);
+}
+
+.nt-fctrl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.nt-fctrl .fkey {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.nt-fctrl .fkey svg {
+  width: 20px;
+  height: 20px;
+}
+.nt-fctrl .fkey:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+.nt-fctrl .fkey:active {
+  transform: scale(0.9);
+}
+.nt-fctrl .fkey.run {
+  width: 84px;
+  height: 64px;
+  background: var(--acc);
+  border-color: var(--acc);
+  color: var(--acc-ink);
+}
+.nt-fctrl .fkey.run svg {
+  width: 24px;
+  height: 24px;
+}
+.nt-fctrl .fkey.run:hover {
+  border-color: var(--acc);
+}
+
+.nt-fclockbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--acc);
+  font-family: var(--mono-font);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  margin-bottom: 16px;
+  cursor: pointer;
+}
+.nt-fclockbtn svg {
+  width: 15px;
+  height: 15px;
+}
+.nt-fclockbtn:active {
+  transform: scale(0.97);
+}
+
+.nt-fpresets {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.nt-fpresets .fpre {
+  flex: 1;
+  font-family: var(--mono-font);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 10px 0;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.nt-fpresets .fpre:active {
+  transform: scale(0.96);
+}
+.nt-fpresets .fpre.on {
+  border-color: var(--acc);
+  color: var(--acc);
+  background: var(--acc-dim);
+}
+
+.nt-fsteppers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.nt-fsteppers .fstep {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+}
+.nt-fsteppers .fstep .lab .k {
+  font-family: var(--mono-font);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+  margin-bottom: 4px;
+}
+.nt-fsteppers .fstep .lab .v {
+  font-family: var(--display-font);
+  font-size: 24px;
+  font-weight: 400;
+}
+.nt-fsteppers .fstep .btns {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.nt-fsteppers .fstep .btns button {
+  width: 34px;
+  height: 24px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--mono-font);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.nt-fsteppers .fstep .btns button:active {
+  transform: scale(0.85);
+}
+
+.nt-floop {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+.nt-floop .lt {
+  font-family: var(--mono-font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+}
+.nt-floop .sw {
+  width: 44px;
+  height: 24px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  position: relative;
+  transition: background 0.25s, border-color 0.25s;
+}
+.nt-floop .sw i {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--ink-3);
+  transition: left 0.25s, background 0.25s;
+}
+.nt-floop.on {
+  border-color: var(--acc);
+}
+.nt-floop.on .sw {
+  background: var(--acc-dim);
+  border-color: var(--acc);
+}
+.nt-floop.on .sw i {
+  left: 22px;
+  background: var(--acc);
+}
+
+.nt-fstats {
+  display: grid;
+  gap: 0;
+  margin-top: 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.nt-fstats.c2 {
+  grid-template-columns: 1fr 1fr;
+}
+.nt-fstats.c3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.nt-fstats .fst {
+  padding: 16px 14px;
+  text-align: center;
+  border-right: 1px solid var(--line);
+}
+.nt-fstats .fst:last-child {
+  border-right: none;
+}
+.nt-fstats .fst .n {
+  font-family: var(--display-font);
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1;
+}
+.nt-fstats .fst .n i {
+  font-family: var(--mono-font);
+  font-size: 12px;
+  font-style: normal;
+  color: var(--ink-3);
+}
+.nt-fstats .fst .l {
+  font-family: var(--mono-font);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+/* ── fullscreen focus overlay (Nothing: 24-seg bar, no ring) ── */
+.foverlay-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 2147482601;
+  background: var(--void);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  animation: foverlayIn 0.35s var(--ease) both;
+}
+@keyframes foverlayIn {
+  from {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.foverlay-stack {
+  width: 100%;
+  max-width: 420px;
+  margin: auto;
+  padding: 22px 18px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100dvh;
+}
+.foverlay-header {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.fbtn-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--mono-font);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+.fbtn-sub:active {
+  transform: scale(0.94);
+}
+.fexit {
+  padding: 8px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--mono-font);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+.fexit:active {
+  transform: scale(0.94);
+}
+.fchip {
+  font-family: var(--mono-font);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  padding: 8px 18px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--acc);
+  cursor: pointer;
+  margin-bottom: 26px;
+}
+.fchip:hover {
+  background: var(--acc-dim);
+}
+.fchip:active {
+  transform: scale(0.94);
+}
+.fseg-wrap {
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 26px;
+}
+.fseg.big {
+  width: 100%;
+}
+.fseg.big i {
+  height: 10px;
+}
+.bignum {
+  font-family: var(--mono-font);
+  font-size: clamp(44px, 13vw, 64px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.bigsub {
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  color: var(--ink-3);
+  font-weight: 700;
+  margin-bottom: 26px;
+}
+.ftask {
+  margin-top: 14px;
+  text-align: center;
+  max-width: 270px;
+  margin-bottom: 22px;
+}
+.ftask .fk {
+  font-family: var(--mono-font);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--ink-3);
+  margin-bottom: 8px;
+}
+.ftask .ft {
+  font-family: var(--display-font);
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.4;
+}
+.fctrl {
+  display: flex;
+  gap: 11px;
+  margin-bottom: 20px;
+}
+.fbtn {
+  width: 58px;
+  height: 58px;
+  border-radius: 10px;
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.fbtn:active {
+  transform: scale(0.9);
+}
+.fbtn.main {
+  width: 88px;
+  background: var(--acc);
+  border-color: var(--acc);
+  color: var(--acc-ink);
+}
+.fcustom-panel {
+  width: 100%;
+  max-width: 400px;
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+.fcustom-title {
+  font-family: var(--mono-font);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--ink-3);
+  margin-bottom: 12px;
+  text-align: center;
+}
+.fpresets-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.fpreset-chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--mono-font);
+  border: 1px solid var(--line-2);
+  color: var(--ink-2);
+  background: var(--card-2);
+  cursor: pointer;
+}
+.fpreset-chip.active {
+  border-color: var(--acc);
+  color: var(--acc);
+  background: var(--acc-dim);
+}
+.fsteppers-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.fstepper-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.fstepper-box > div {
+  display: flex;
+  gap: 6px;
+}
+.fstep-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-2);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.fstep-btn:hover {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+.fstep-btn:active {
+  transform: scale(0.94);
+}
+.floop-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: var(--card-2);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 12px;
+  font-family: var(--mono-font);
+  letter-spacing: 0.06em;
+}
+.floop-btn.on {
+  border-color: var(--acc);
+  color: var(--acc);
+  background: var(--acc-dim);
+}
+.fambient-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+/* ── flip clock (split-flap) ── */
+.wfc-overlay {
+  display: none;
+}
+.wfc-overlay.active {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  z-index: 2147482600;
+  align-items: center;
+  justify-content: center;
+  gap: 34px;
+  flex-direction: column;
+  background: var(--void);
+  font-family: var(--ui-font);
+  animation: wfcIn 0.4s var(--ease) both;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.wfc-overlay.active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(color-mix(in srgb, var(--ink) 6%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+@keyframes wfcIn {
+  from {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes wfcCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(22px) rotateX(14deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.wfc-overlay.active .wfc {
+  animation: wfcCardIn 0.5s var(--spring) both;
+}
+.wfc-overlay.active .wfc:nth-child(3) {
+  animation-delay: 0.07s;
+}
+.wfc-end {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2147482650;
+  padding: 11px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--mono-font);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+.wfc-btns {
+  display: flex;
+  gap: 10px;
+  position: relative;
+  z-index: 2;
+}
+.wfc-btns .wfc-end {
+  position: static;
+}
+.wfc-end.wfc-pause {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: var(--acc-ink);
+}
+.wfc-end.wfc-stop {
+  color: var(--acc);
+  border-color: var(--acc-dim);
+}
+.wfc-state {
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+.wfc-state .phase {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--acc-text);
+  font-family: var(--mono-font);
+}
+.wfc-state .sub {
+  margin-top: 7px;
+  font-size: 10px;
+  color: var(--ink-3);
+  font-weight: 700;
+  font-family: var(--mono-font);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.wfc-clock {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  perspective: 1200px;
+  position: relative;
+  z-index: 2;
+}
+.wfc-colon {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(22px, 6vw, 40px);
+}
+.wfc-colon i {
+  width: 9px;
+  height: 9px;
+  background: var(--acc);
+  animation: pulse 2s var(--ease) infinite;
+}
+.wfc {
+  --w: clamp(74px, 20vw, 132px);
+  --h: clamp(112px, 30vw, 196px);
+  --rr: var(--r-sm);
+  --f: min(calc(var(--h) * 0.58), calc(var(--w) * 0.66));
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  transform-style: preserve-3d;
+  perspective: 900px;
+}
+.wfc-top,
+.wfc-bottom,
+.wfc-flip {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  transform: translateZ(0);
+}
+.wfc-top {
+  top: 0;
+  border-radius: var(--rr) var(--rr) 0 0;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  border-bottom: 0;
+}
+.wfc-bottom {
+  bottom: 0;
+  border-radius: 0 0 var(--rr) var(--rr);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-top: 0;
+}
+.wfc span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: var(--h);
+  line-height: var(--h);
+  text-align: center;
+  font-family: var(--display-font);
+  font-weight: 600;
+  font-variation-settings: 'ROND' 100;
+  font-size: var(--f);
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+.wfc-top span,
+.wfc-flip.top span {
+  top: 0;
+}
+.wfc-bottom span,
+.wfc-flip.bottom span {
+  top: calc(var(--h) * -0.5);
+}
+.wfc-flip {
+  z-index: 3;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+}
+.wfc.go .wfc-flip {
+  pointer-events: none;
+}
+.wfc-flip.top {
+  top: 0;
+  border-radius: var(--rr) var(--rr) 0 0;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  transform-origin: center bottom;
+  transform: rotateX(0deg);
+  visibility: hidden;
+}
+.wfc-flip.bottom {
+  bottom: 0;
+  border-radius: 0 0 var(--rr) var(--rr);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-top: 0;
+  transform-origin: center top;
+  transform: rotateX(90deg);
+  visibility: hidden;
+}
+.wfc.go .wfc-flip.top,
+.wfc.go .wfc-flip.bottom {
+  visibility: visible;
+}
+.wfc.go .wfc-flip.top {
+  animation: wfcFoldTop 0.3s cubic-bezier(0.37, 0, 0.63, 1) forwards;
+}
+.wfc.go .wfc-flip.bottom {
+  animation: wfcFoldBottom 0.3s cubic-bezier(0.37, 0, 0.63, 1) 0.3s forwards;
+}
+@keyframes wfcFoldTop {
+  from {
+    transform: rotateX(0deg);
+  }
+  to {
+    transform: rotateX(-90deg);
+  }
+}
+@keyframes wfcFoldBottom {
+  from {
+    transform: rotateX(90deg);
+  }
+  to {
+    transform: rotateX(0deg);
+  }
+}
+.wfc-seam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  transform: translateY(-0.5px);
+  background: var(--line-2);
+  z-index: 4;
+}
+
+/* ── timer dock + drawer ── */
+.timer-dock {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--rail-nav-h) + 10px);
+  transform: translateX(-50%) translateY(20px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  background: color-mix(in srgb, var(--card-2) 92%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1200;
+  transition: opacity 0.3s, transform 0.3s;
+  max-width: calc(100vw - 24px);
+}
+.timer-dock.show {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(-50%) translateY(0);
+}
+.timer-dock .dtime-box {
+  cursor: pointer;
+  text-align: center;
+  padding: 0 6px;
+  min-width: 84px;
+  padding-right: 12px;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  border-left: none;
+  border-top: none;
+  border-bottom: none;
+}
+.timer-dock .dtime {
+  font-family: var(--display-font);
+  font-size: 23px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: var(--ink);
+}
+.timer-dock .dphase {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--acc);
+  font-family: var(--mono-font);
+  margin-top: 5px;
+}
+.timer-dock .dmeta {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  padding: 0 4px;
+  background: transparent;
+  border: none;
+  text-align: left;
+}
+.timer-dock .dtask {
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--mono-font);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.timer-dock .dicon-btn {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 15px;
+}
+.timer-dock .dicon-btn:hover,
+.timer-dock .dicon-btn.active {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+.timer-dock .dicon-btn:active {
+  transform: scale(0.9);
+}
+.timer-dock .dbtn.main {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--acc);
+  border: none;
+  color: var(--acc-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.timer-dock .dbtn.main:active {
+  transform: scale(0.9);
+}
+
+.ddrawer {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--rail-nav-h) + 74px);
+  transform: translateX(-50%);
+  width: min(400px, calc(100vw - 24px));
+  padding: 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  background: color-mix(in srgb, var(--card-2) 94%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  z-index: 1201;
+  max-height: 62dvh;
+  overflow-y: auto;
+  animation: ddrawerIn 0.25s var(--ease) both;
+}
+@keyframes ddrawerIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+.ddrawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.ddrawer-title {
+  font-family: var(--mono-font);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--ink-3);
+}
+.ddrawer-close {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--border-2);
+  background: transparent;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.ddrawer-presets {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.dpreset-chip {
+  padding: 6px 11px;
+  border-radius: 6px;
+  font-family: var(--mono-font);
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.dpreset-chip.active {
+  border-color: var(--acc);
+  background: var(--acc-dim);
+  color: var(--acc);
+}
+.dpreset-chip:active {
+  transform: scale(0.94);
+}
+.ddrawer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.ddrawer-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.ddrawer-box > div {
+  display: flex;
+  gap: 4px;
+}
+.ddrawer-lbl {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.ddrawer-btn {
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border-2);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ddrawer-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ddrawer-action {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-2);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.ddrawer-action.active {
+  border-color: var(--acc);
+  color: var(--acc);
+  background: var(--acc-dim);
+}
+.ddrawer-action:active {
+  transform: scale(0.96);
+}
+.ddrawer-sound {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--card-2);
+  border: 1px solid var(--border);
+}
+.ddrawer-sound-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.ddrawer-sound-mode {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--acc);
+}
+.ddrawer-sound-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+.dsound-btn {
+  padding: 6px;
+  border-radius: 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.dsound-btn.active {
+  border-color: var(--acc);
+  background: var(--acc-dim);
+  color: var(--acc);
+}
+
+/* 24-seg bar (grid) — scoped; .nt-seg flex variant belongs to today.css */
+.nt-fclock .fseg,
+.fseg.big {
+  display: grid;
+  grid-template-columns: repeat(24, 1fr);
+  gap: 3px;
+  width: 100%;
+}
+.nt-fclock .fseg i,
+.fseg.big i {
+  height: 8px;
+  border-radius: 1px;
+  background: var(--line-2);
+  transition: background 0.3s;
+}
+.nt-fclock .fseg i.on,
+.fseg.big i.on {
+  background: var(--acc);
+}
+.fseg.big i {
+  height: 10px;
+}

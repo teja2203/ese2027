@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EMBER — ESE2027 Study OS · redesign prototype</title>
+<style>
+:root{
+  --bg:#100E0C; --bg-2:#171411; --panel:#1B1714; --raised:#221C18;
+  --line:rgba(242,234,224,.08); --line-2:rgba(242,234,224,.16);
+  --ink:#F2EAE0; --ink-2:#B9AFA2; --ink-3:#7A7166;
+  --ember:#FF6A2B; --ember-hot:#FFB03A; --ember-dim:rgba(255,106,43,.12);
+  --steel:#59C2D8; --leaf:#58C47C; --warn:#E8B84B;
+  --spring:cubic-bezier(.34,1.56,.64,1); --ease:cubic-bezier(.2,.7,.2,1);
+  --disp:'Space Grotesk','Segoe UI',sans-serif;
+  --mono:'Cascadia Mono',Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scrollbar-width:none}
+body{background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden}
+.app{height:100vh;display:flex;flex-direction:column;max-width:960px;margin:0 auto;padding:0 18px;position:relative}
+
+/* ── top strip ─────────────────────────────── */
+.top{display:flex;align-items:center;gap:12px;padding:16px 4px 12px}
+.mark{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase}
+.mark .f{width:9px;height:18px;background:var(--ember);border-radius:1px;box-shadow:0 0 14px var(--ember);display:inline-block}
+.mark b{color:var(--ink)}
+.top .sp{flex:1}
+.chip{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);border:1px solid var(--line-2);padding:6px 10px;border-radius:5px;background:var(--bg-2);display:flex;align-items:center;gap:6px}
+.chip .dot{width:6px;height:6px;border-radius:1px}
+.chip.hot .dot{background:var(--ember);box-shadow:0 0 8px var(--ember)}
+.chip.hot{color:var(--ember-hot);border-color:rgba(255,176,58,.35)}
+.chip.cool .dot{background:var(--steel)}
+.chip.cool{color:var(--steel);border-color:rgba(89,194,216,.35)}
+
+/* ── screens ───────────────────────────────── */
+.screens{flex:1;overflow:hidden;position:relative}
+.scrn{position:absolute;inset:0;overflow-y:auto;padding:6px 4px 120px;opacity:0;pointer-events:none;transform:translateY(10px);transition:opacity .3s var(--ease),transform .3s var(--ease);scrollbar-width:none}
+.scrn.on{opacity:1;pointer-events:auto;transform:none}
+.scrn .enter>*{animation:rise .45s var(--spring) backwards}
+.scrn .enter>*:nth-child(1){animation-delay:.03s}.scrn .enter>*:nth-child(2){animation-delay:.07s}
+.scrn .enter>*:nth-child(3){animation-delay:.11s}.scrn .enter>*:nth-child(4){animation-delay:.15s}
+.scrn .enter>*:nth-child(5){animation-delay:.19s}.scrn .enter>*:nth-child(6){animation-delay:.23s}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* ── plates + chamfer ──────────────────────── */
+.plate{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 16px;margin-bottom:12px}
+.plate::before{content:"";position:absolute;top:-1px;right:-1px;width:14px;height:14px;background:var(--bg);border-bottom:1px solid var(--line);border-left:1px solid var(--line);border-radius:0 10px 0 4px}
+.ey{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.row{display:flex;align-items:center;gap:10px}
+.row .sp{flex:1}
+
+/* ── filament / wick ───────────────────────── */
+.fil{position:relative;height:14px;background:var(--bg-2);border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.fil .burn{position:absolute;left:0;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#5A2410,var(--ember) 70%,var(--ember-hot));border-radius:7px;transition:width .6s var(--ease)}
+.fil .head{position:absolute;top:-3px;bottom:-3px;width:6px;background:var(--ember-hot);box-shadow:0 0 16px 3px var(--ember);border-radius:3px;transition:left .6s var(--ease);animation:glim 1.6s infinite}
+@keyframes glim{0%,100%{opacity:1}50%{opacity:.55}}
+.fil .head{left:calc(50% - 3px)}
+.fil.hot .head{animation-duration:.7s}
+
+/* ── buttons ───────────────────────────────── */
+.btn{position:relative;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;border:none;cursor:pointer;border-radius:6px;padding:13px 20px;transition:transform .12s var(--spring),box-shadow .12s var(--ease),background .2s var(--ease),color .2s var(--ease)}
+.btn:active{transform:translateY(2px)}
+.btn:disabled{opacity:.4;pointer-events:none}
+.btn::after{content:"";position:absolute;top:2px;right:2px;width:8px;height:8px;background:var(--bg);clip-path:polygon(100% 0,100% 100%,0 0);opacity:.8}
+.ig{background:linear-gradient(180deg,var(--ember-hot),var(--ember));color:#1A0D05;box-shadow:0 2px 0 #8A3415,0 6px 18px rgba(255,106,43,.28)}
+.ig:hover{box-shadow:0 2px 0 #8A3415,0 8px 26px rgba(255,106,43,.4)}
+.ig:active{box-shadow:0 0 0 #8A3415,0 2px 6px rgba(255,106,43,.3)}
+.fg{background:transparent;color:var(--ink-2);border:1px solid var(--line-2)}
+.fg:hover{color:var(--ink);border-color:rgba(255,176,58,.5);background:var(--ember-dim)}
+.gh{background:none;color:var(--ink-3);padding:10px 8px}
+.gh:hover{color:var(--ember-hot)}
+.mini{font-size:9px;padding:8px 12px}
+.pill{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;background:var(--bg-2);border:1px solid var(--line-2);color:var(--ink-2);transition:transform .12s var(--spring)}
+.pill:active{transform:scale(.9)}
+
+/* ── dock ──────────────────────────────────── */
+.dock{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;z-index:40;display:flex;align-items:flex-end;gap:6px;background:var(--raised);border:1px solid var(--line-2);border-radius:16px;padding:8px 10px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.dbtn{background:none;border:none;color:var(--ink-3);display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 13px;border-radius:10px;cursor:pointer;font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;transition:color .2s,background .2s,transform .15s var(--spring)}
+.dbtn .ico{font-size:16px;line-height:1}
+.dbtn.on{color:var(--ink);background:var(--bg-2)}
+.dbtn.on .ico{color:var(--ember)}
+.dbtn:active{transform:scale(.92)}
+.dbtn.ign{background:linear-gradient(180deg,var(--ember-hot),var(--ember));color:#1A0D05;border-radius:12px;padding:13px 15px 11px;box-shadow:0 3px 0 #8A3415,0 8px 22px rgba(255,106,43,.35);transform:translateY(-8px)}
+.dbtn.ign .ico{color:#1A0D05;font-size:19px}
+.dbtn.ign.on{box-shadow:0 0 26px rgba(255,106,43,.6)}
+
+/* ── tasks / stamps ────────────────────────── */
+.task{display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px dashed var(--line);cursor:pointer;user-select:none}
+.task:last-child{border-bottom:none}
+.stamp{position:relative;width:22px;height:22px;border-radius:6px;border:1.5px solid var(--ink-3);flex-shrink:0;transition:all .18s var(--spring);background:transparent}
+.task.done .stamp{background:var(--ember);border-color:var(--ember);box-shadow:0 0 12px rgba(255,106,43,.5)}
+.task.done .stamp::after{content:"";position:absolute;left:6px;top:3px;width:6px;height:10px;border:solid #1A0D05;border-width:0 2.5px 2.5px 0;transform:rotate(42deg)}
+.task .tcode{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);min-width:64px}
+.task .txt{font-size:13.5px;flex:1}
+.task.done .txt{color:var(--ink-3);text-decoration:line-through}
+.task .tnum{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+
+/* session plate */
+.sess{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px;overflow:hidden}
+.sess::before{content:"";position:absolute;top:0;left:0;bottom:0;width:2px;background:var(--line-2)}
+.sess.lit::before{background:linear-gradient(180deg,var(--ember),var(--ember-hot))}
+.sess .shead{display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none}
+.sess .stime{font-family:var(--mono);font-size:10px;color:var(--ink-3);min-width:88px}
+.sess .sname{font-weight:700;font-size:14.5px}
+.sess .stag{font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:4px;border:1px solid var(--line-2);color:var(--ink-3)}
+.sess .stag.hot{border-color:rgba(255,176,58,.4);color:var(--ember-hot)}
+.sess .stag.cool{border-color:rgba(89,194,216,.35);color:var(--steel)}
+.sess .smeta{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.sess .smeta b{color:var(--ember-hot)}
+.sess .caret{color:var(--ink-3);transition:transform .25s var(--spring);font-size:11px}
+.sess.open .caret{transform:rotate(90deg)}
+.sess .sbody{display:none;padding-top:8px;border-top:1px dashed var(--line);margin-top:12px}
+.sess.open .sbody{display:block}
+.sess .sfil{margin-top:12px;height:8px}
+.sess .sfil .fil{height:8px;border-radius:4px}
+
+/* ── focus wick ────────────────────────────── */
+.focus-wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;text-align:center}
+.wick{position:relative;width:min(560px,88vw);height:10px;background:var(--bg-2);border:1px solid var(--line-2);border-radius:5px;overflow:visible}
+.wick .burn{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#5A2410,var(--ember),var(--ember-hot));border-radius:5px;transition:width 1s linear}
+.wick .head{position:absolute;top:-8px;width:8px;height:26px;background:var(--ember-hot);box-shadow:0 0 22px 6px rgba(255,106,43,.7);border-radius:4px;transition:left 1s linear;animation:glim 1.2s infinite}
+.wick .tick{position:absolute;top:14px;width:1px;height:5px;background:var(--line-2)}
+.bigtime{font-family:var(--disp);font-size:clamp(64px,16vw,110px);font-weight:600;letter-spacing:.01em;line-height:.9;color:var(--ink);font-variant-numeric:tabular-nums}
+.bigtime .s{color:var(--ink-3);font-size:.35em;vertical-align:super;margin-left:8px}
+.phase{font-family:var(--mono);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--ember-hot)}
+.phase.break{color:var(--steel)}
+.sounds{display:flex;gap:6px}
+.seg{border:1px solid var(--line-2);background:none;color:var(--ink-3);font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;border-radius:6px;cursor:pointer;transition:all .2s var(--ease)}
+.seg.on{background:var(--ember-dim);color:var(--ember-hot);border-color:rgba(255,176,58,.4)}
+.fctl{display:flex;gap:10px;align-items:center}
+
+/* ── progress ──────────────────────────────── */
+.gauge{margin-bottom:10px}
+.gauge .grow{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.gauge .gl{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.gauge .gv{font-family:var(--disp);font-size:18px;font-weight:600;color:var(--ember-hot);font-variant-numeric:tabular-nums}
+.emberfield{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}
+.em{aspect-ratio:1;border-radius:3px;background:var(--bg-2);border:1px solid var(--line)}
+.em.hot{background:var(--ember-dim);border-color:rgba(255,106,43,.3)}
+.em.hotter{background:var(--ember);box-shadow:0 0 8px rgba(255,106,43,.5)}
+.em.peak{background:var(--ember-hot);box-shadow:0 0 14px var(--ember);animation:glim 1.2s infinite}
+.ach{position:relative;display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px dashed var(--line);border-radius:6px}
+.ach:last-child{border-bottom:none}
+.ach .plaq{width:38px;height:38px;border-radius:8px;border:1px solid var(--line-2);background:var(--bg-2);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;position:relative}
+.ach.un .plaq{color:var(--ink-3);opacity:.5}
+.ach .plaq .gly{font-size:15px}
+.ach .an{font-size:13.5px;font-weight:700}
+.ach .ad{font-size:11.5px;color:var(--ink-3)}
+.ach .atr{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-3)}
+.ach.un{opacity:.55}
+.habit-row{display:flex;gap:6px}
+.hab{flex:1;aspect-ratio:1;max-width:34px;border-radius:6px;border:1px solid var(--line);background:var(--bg-2);position:relative}
+.hab.on{background:var(--ember-dim);border-color:rgba(255,106,43,.35)}
+.hab.on::after{content:"";position:absolute;inset:5px;background:var(--ember);border-radius:2px}
+.hab.today{box-shadow:0 0 10px rgba(255,106,43,.4)}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.bar-row .bl{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);min-width:52px}
+.bar-row .bt{flex:1;height:7px;background:var(--bg-2);border-radius:4px;border:1px solid var(--line);overflow:hidden}
+.bar-row .bf{height:100%;background:linear-gradient(90deg,var(--ember),var(--ember-hot));border-radius:4px}
+.bar-row .bv{font-family:var(--mono);font-size:9px;color:var(--ink-2);min-width:26px;text-align:right}
+
+/* ── you ───────────────────────────────────── */
+.sw{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px dashed var(--line)}
+.sw:last-child{border-bottom:none}
+.sw .sl{flex:1;font-size:13.5px;font-weight:600}
+.sw .sd{font-size:11px;color:var(--ink-3)}
+.tog{width:44px;height:24px;border-radius:12px;background:var(--bg-2);border:1px solid var(--line-2);cursor:pointer;position:relative;transition:background .25s var(--ease)}
+.tog .kn{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--ink-3);transition:all .25s var(--spring)}
+.tog.on{background:var(--ember-dim);border-color:rgba(255,176,58,.4)}
+.tog.on .kn{left:22px;background:var(--ember-hot);box-shadow:0 0 8px var(--ember)}
+.avatar{width:54px;height:54px;border-radius:14px;background:linear-gradient(160deg,var(--raised),var(--bg-2));border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-size:24px;font-weight:600;color:var(--ember-hot)}
+
+/* ── celebrations ──────────────────────────── */
+.spark{position:fixed;width:5px;height:5px;border-radius:50%;background:var(--ember-hot);box-shadow:0 0 8px var(--ember);pointer-events:none;z-index:90;animation:fly .7s var(--ease) forwards}
+@keyframes fly{to{opacity:0;transform:translate(var(--dx,30px),var(--dy,-30px)) scale(.3)}}
+.bloom{position:fixed;inset:0;background:radial-gradient(circle at 50% 60%,rgba(255,106,43,.22),transparent 60%);opacity:0;pointer-events:none;z-index:80;animation:blm 1.6s var(--ease)}
+@keyframes blm{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
+.shock{position:fixed;left:0;right:0;top:50%;height:3px;background:linear-gradient(90deg,transparent,var(--ember-hot),transparent);opacity:0;pointer-events:none;z-index:80;animation:shk 1s var(--ease)}
+@keyframes shk{0%{transform:scaleX(0);opacity:0}30%{opacity:1}100%{transform:scaleX(1);opacity:0}}
+.rite{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(16,14,12,.82);backdrop-filter:blur(4px);z-index:100}
+.rite.show{display:flex}
+.rite .inner{text-align:center;animation:rise .5s var(--spring) backwards}
+.rite .big{font-family:var(--disp);font-size:clamp(90px,24vw,180px);font-weight:600;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;text-shadow:0 0 60px rgba(255,106,43,.6)}
+.rite .cap{font-family:var(--mono);font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--ember-hot);margin-top:10px}
+.rite .drift{position:absolute;font-size:22px;color:var(--ember);opacity:0;animation:drift 1.8s var(--ease) forwards}
+@keyframes drift{0%{opacity:0;transform:translateY(30px)}30%{opacity:.9}100%{opacity:0;transform:translateY(-120px)}}
+.plate-stamp{position:fixed;left:50%;bottom:-160px;transform:translateX(-50%);z-index:100;background:var(--raised);border:1px solid rgba(255,176,58,.45);border-radius:12px;padding:16px 22px;display:flex;align-items:center;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 30px rgba(255,106,43,.15);transition:bottom .5s var(--spring)}
+.plate-stamp.show{bottom:90px}
+.plate-stamp .plaq{width:44px;height:44px;border-radius:10px;background:linear-gradient(160deg,var(--ember-hot),var(--ember));display:flex;align-items:center;justify-content:center;font-size:20px;color:#1A0D05}
+.plate-stamp .pt{font-weight:700;font-size:13.5px}
+.plate-stamp .ps{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ember-hot)}
+.demo{position:fixed;right:16px;bottom:92px;z-index:70;font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:var(--bg-2);border:1px solid var(--line-2);border-radius:6px;padding:8px 11px;cursor:pointer;opacity:.7}
+.demo:hover{opacity:1;color:var(--ember-hot)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="mark"><span class="f"></span><span>ESE<b>2027</b></span></div>
+    <span class="sp"></span>
+    <span class="chip hot"><span class="dot"></span>165d streak</span>
+    <span class="chip cool"><span class="dot"></span>synced</span>
+    <button class="chip" style="cursor:pointer" onclick="document.body.classList.toggle('light');this.style.filter='invert(1)'">● dark</button>
+  </header>
+
+  <main class="screens">
+    <!-- ── TODAY ── -->
+    <section class="scrn on" data-tab="today">
+      <div class="enter">
+      <div class="plate">
+        <div class="row"><div class="ey">Wednesday · 19 August 2026 — Day 165 · Sprint 3</div><span class="sp"></span><span class="ey" style="color:var(--ember-hot)">2 rest days banked</span></div>
+        <div style="margin:14px 0 10px"><div class="fil"><div class="burn" id="heroBurn" style="width:50%"></div><div class="head"></div></div></div>
+        <div class="row"><span class="ey">today burns at 50% — 4 of 8 embers lit</span><span class="sp"></span><span class="ey">next: Controls · Bode @ 19:00</span></div>
+      </div>
+
+      <div class="sess lit">
+        <div class="shead">
+          <span class="stime">06:30 – 08:00</span><span class="sname">Networks</span>
+          <span class="stag hot">CORE</span>
+          <span class="smeta"><b>2/2</b> · done</span><span class="caret">▶</span>
+        </div>
+        <div class="sbody">
+          <div class="task done"><span class="stamp"></span><span class="tcode">ESE-2027</span><span class="txt">OSI 7-layer deep drill — table + memory hooks</span><span class="tnum">#1</span></div>
+          <div class="task done"><span class="stamp"></span><span class="tcode">PYQ-2024</span><span class="txt">Routing vs switching — 12-question set</span><span class="tnum">#2</span></div>
+        </div>
+      </div>
+
+      <div class="sess lit open">
+        <div class="shead">
+          <span class="stime">08:30 – 10:00</span><span class="sname">Controls</span>
+          <span class="stag hot">CORE</span>
+          <span class="smeta"><b>1/2</b></span><span class="caret">▶</span>
+        </div>
+        <div class="sbody">
+          <div class="task done"><span class="stamp"></span><span class="tcode">PYQ</span><span class="txt">Bode plots — gain/phase margin set</span><span class="tnum">#3</span></div>
+          <div class="task"><span class="stamp"></span><span class="tcode">ESE-2027</span><span class="txt">Routh–Hurwitz — 3 problem deep-dive</span><span class="tnum">#4</span></div>
+        </div>
+      </div>
+
+      <div class="sess">
+        <div class="shead">
+          <span class="stime">10:30 – 12:00</span><span class="sname">EDC</span>
+          <span class="stag cool">REVISION</span>
+          <span class="smeta"><b>1/2</b></span><span class="caret">▶</span>
+        </div>
+        <div class="sbody">
+          <div class="task done"><span class="stamp"></span><span class="tcode">NOTES</span><span class="txt">Diode clampers — rewrite set 4</span><span class="tnum">#5</span></div>
+          <div class="task"><span class="stamp"></span><span class="tcode">REV</span><span class="txt">Transistor biasing — 20 min skim + flags</span><span class="tnum">#6</span></div>
+        </div>
+      </div>
+
+      <div class="row" style="justify-content:flex-end"><button class="btn fg mini" onclick="rite('SIGN OFF',2)">BANK REST DAY</button></div>
+      </div>
+    </section>
+
+    <!-- ── PLAN ── -->
+    <section class="scrn" data-tab="plan">
+      <div class="enter">
+      <div class="plate" style="padding:12px 14px">
+        <div class="row" style="gap:6px">
+          <button class="pill" onclick="dayTick(-1)">‹</button>
+          <div class="tickstrip" style="flex:1;display:flex;gap:6px;overflow-x:auto;padding:2px;scrollbar-width:none">
+            <button class="seg day" data-d="Mon 17">Mon 17</button>
+            <button class="seg day" data-d="Tue 18">Tue 18</button>
+            <button class="seg day on" data-d="Wed 19">Wed 19</button>
+            <button class="seg day" data-d="Thu 20">Thu 20</button>
+            <button class="seg day" data-d="Fri 21">Fri 21</button>
+            <button class="seg day" data-d="Sat 22">Sat 22</button>
+            <button class="seg day" data-d="Sun 23">Sun 23</button>
+          </div>
+          <button class="pill" onclick="dayTick(1)">›</button>
+        </div>
+      </div>
+
+      <div class="plate">
+        <div class="row"><span class="ey">Wednesday · 19 Aug</span><span class="sp"></span><span class="ey">§ 3 of 8 · 50%</span></div>
+        <div style="margin-top:10px"><div class="fil"><div class="burn" style="width:50%"></div><div class="head"></div></div></div>
+        <div class="row" style="margin-top:12px"><span class="stag hot" style="font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:4px;border:1px solid rgba(255,176,58,.4);color:var(--ember-hot)">SPRINT 3 · PEAK WEEK</span><span class="sp"></span><button class="btn gh mini" onclick="dayTick(0)">⤒ TODAY</button></div>
+      </div>
+
+      <div class="sess open">
+        <div class="shead">
+          <span class="stime">06:30 – 08:00</span><span class="sname">Networks</span>
+          <span class="stag hot">CORE</span>
+          <span class="smeta"><b>2/2</b></span><span class="caret">▶</span>
+        </div>
+        <div class="sbody">
+          <div class="task done"><span class="stamp"></span><span class="tcode">ESE-2027</span><span class="txt">OSI 7-layer deep drill</span></div>
+          <div class="task done"><span class="stamp"></span><span class="tcode">PYQ-2024</span><span class="txt">Routing vs switching set</span></div>
+        </div>
+      </div>
+      <div class="sess open">
+        <div class="shead">
+          <span class="stime">08:30 – 10:00</span><span class="sname">Controls</span>
+          <span class="stag hot">CORE</span>
+          <span class="smeta"><b>1/2</b></span><span class="caret">▶</span>
+        </div>
+        <div class="sbody">
+          <div class="task done"><span class="stamp"></span><span class="tcode">PYQ</span><span class="txt">Bode plots set</span></div>
+          <div class="task"><span class="stamp"></span><span class="tcode">ESE-2027</span><span class="txt">Routh–Hurwitz deep-dive</span></div>
+        </div>
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <button class="btn fg mini">‹ PREV DAY</button>
+        <button class="btn fg mini">NEXT DAY ›</button>
+      </div>
+      </div>
+    </section>
+
+    <!-- ── FOCUS ── -->
+    <section class="scrn" data-tab="focus">
+      <div class="focus-wrap">
+        <div class="row" style="gap:14px">
+          <span class="phase">WORK · 4TH CELL</span>
+          <button class="seg" id="loopBtn" onclick="this.classList.toggle('on');this.textContent=this.classList.contains('on')?'loop ∞':'loop'}">loop</button>
+        </div>
+        <div class="bigtime" id="bigTime">23:41<span class="s">/50:00</span></div>
+        <div class="wick">
+          <div class="burn" id="wickBurn" style="width:52.6%"></div>
+          <div class="head" id="wickHead" style="left:calc(52.6% - 4px)"></div>
+          <span class="tick" style="left:25%"></span><span class="tick" style="left:50%"></span><span class="tick" style="left:75%"></span>
+        </div>
+        <div class="ey" style="letter-spacing:.18em">SESSION WICK — burn it to the end</div>
+        <div class="fctl">
+          <button class="btn fg mini" id="pauseBtn" onclick="togglePause()">❚❚ PAUSE</button>
+          <button class="btn ig" id="startBtn" onclick="toggleStart(this)">◉ START</button>
+          <button class="btn fg mini" onclick="shock();rite('CELL DONE',3)">SKIP ⤏</button>
+        </div>
+        <div class="sounds">
+          <button class="seg" onclick="seg(this)">off</button>
+          <button class="seg" onclick="seg(this)">brown</button>
+          <button class="seg on" onclick="seg(this)">pink</button>
+          <button class="seg" onclick="seg(this)">528 hz</button>
+          <button class="seg" onclick="seg(this)">cells 50/10</button>
+        </div>
+        <div class="ey" style="color:var(--ink-3)">distraction log · sound engine · loop — ESC to exit</div>
+      </div>
+    </section>
+
+    <!-- ── PROGRESS ── -->
+    <section class="scrn" data-tab="progress">
+      <div class="enter">
+      <div class="plate">
+        <div class="row"><span class="ey">Campaign ember</span><span class="sp"></span><span class="ey">165d · 50 sessions</span></div>
+        <div style="margin:12px 0"><div class="fil hot"><div class="burn" style="width:62%"></div><div class="head"></div></div></div>
+        <div class="row"><span class="ey">62% to target</span><span class="sp"></span><span class="ey" style="color:var(--ember-hot)">burning steady</span></div>
+      </div>
+
+      <div class="plate">
+        <div class="ey" style="margin-bottom:10px">Last 35 days — the ember field</div>
+        <div class="emberfield" id="emberfield"></div>
+      </div>
+
+      <div class="plate">
+        <div class="row"><span class="ey">Engraved plates</span><span class="sp"></span><span class="ey">7 of 30 lit</span></div>
+        <div class="ach"><span class="plaq"><span class="gly">🔥</span></span><span class="an">First Blood</span><span class="ad">first focus session</span><span class="atr">02 JAN</span></div>
+        <div class="ach"><span class="plaq"><span class="gly">⚡</span></span><span class="an">7-Day Wick</span><span class="ad">7-day streak</span><span class="atr">09 JAN</span></div>
+        <div class="ach"><span class="plaq"><span class="gly">🔥</span></span><span class="an">50-Day Forge</span><span class="ad">50-day streak</span><span class="atr">28 FEB</span></div>
+        <div class="ach"><span class="plaq"><span class="gly">👑</span></span><span class="an">Century Burn</span><span class="ad">100-day streak</span><span class="atr">12 MAY</span></div>
+        <div class="ach un"><span class="plaq"><span class="gly">💯</span></span><span class="an">Perfection Cell</span><span class="ad">all tasks in one day</span><span class="atr">LOCKED</span></div>
+        <div class="ach un"><span class="plaq"><span class="gly">🏆</span></span><span class="an">Grand Test</span><span class="ad">first mock marathon</span><span class="atr">LOCKED</span></div>
+      </div>
+
+      <div class="plate">
+        <div class="row" style="margin-bottom:12px"><span class="ey">Habit ritual</span><span class="sp"></span><span class="ey">6/7 this week</span></div>
+        <div class="habit-row">
+          <div class="hab on"></div><div class="hab on"></div><div class="hab on"></div><div class="hab on"></div><div class="hab on"></div><div class="hab on"></div><div class="hab today"></div>
+        </div>
+      </div>
+
+      <div class="plate">
+        <div class="ey" style="margin-bottom:10px">Subject heat · 17 subjects</div>
+        <div class="bar-row"><span class="bl">Networks</span><div class="bt"><div class="bf" style="width:88%"></div></div><span class="bv">88</span></div>
+        <div class="bar-row"><span class="bl">Controls</span><div class="bt"><div class="bf" style="width:71%"></div></div><span class="bv">71</span></div>
+        <div class="bar-row"><span class="bl">EDC</span><div class="bt"><div class="bf" style="width:54%"></div></div><span class="bv">54</span></div>
+      </div>
+
+      <div class="plate" style="text-align:center;padding:22px">
+        <div class="ey">Session quality</div>
+        <div class="ey" style="margin-top:8px;color:var(--ink-3)">awaiting ratings — stamped when data arrives</div>
+      </div>
+      </div>
+    </section>
+
+    <!-- ── YOU ── -->
+    <section class="scrn" data-tab="you">
+      <div class="enter">
+      <div class="plate" style="display:flex;align-items:center;gap:16px">
+        <div class="avatar">T</div>
+        <div><div style="font-family:var(--disp);font-size:19px;font-weight:600">Teja</div>
+        <div class="ey" style="margin-top:3px">ESE 2027 · electrical · APTRANSCO side-goal</div></div>
+        <span class="sp"></span>
+        <button class="btn fg mini" onclick="rite('PROFILE',0)">EDIT</button>
+      </div>
+
+      <div class="plate">
+        <div class="row" style="margin-bottom:12px"><span class="ey">Mock forge</span><span class="sp"></span><span class="ey" style="color:var(--warn)">mocks enabled</span></div>
+        <div class="sess">
+          <div class="shead" style="cursor:default"><span class="sname">ESE Prelims GS · Mock 1</span><span class="stag hot">MOCK</span><span class="smeta"><b>63.5%</b></span></div>
+        </div>
+        <div class="row" style="margin-top:6px;justify-content:flex-end"><button class="btn fg mini">FORGE MOCK ▸</button></div>
+      </div>
+
+      <div class="plate">
+        <div class="ey" style="margin-bottom:6px">Switchboard</div>
+        <div class="sw"><div><div class="sl">Freeze day</div><div class="sd">holds streak on rest days</div></div><span class="tog on" onclick="this.classList.toggle('on')"><span class="kn"></span></span></div>
+        <div class="sw"><div><div class="sl">Sound engine</div><div class="sd">brown / pink / 528Hz focus bed</div></div><span class="tog on" onclick="this.classList.toggle('on')"><span class="kn"></span></span></div>
+        <div class="sw"><div><div class="sl">Haptic ticks</div><div class="sd">press feedback on tablet</div></div><span class="tog on" onclick="this.classList.toggle('on')"><span class="kn"></span></span></div>
+        <div class="sw"><div><div class="sl">Backup to cloud</div><div class="sd">supabase sync · last 23:41</div></div><span class="tog" onclick="this.classList.toggle('on')"><span class="kn"></span></span></div>
+        <div class="sw"><div><div class="sl">Celebration lab</div><div class="sd">preview rituals (below)</div></div><span class="tog on" onclick="this.classList.toggle('on')"><span class="kn"></span></span></div>
+      </div>
+
+      <div class="plate" style="text-align:center;padding:20px">
+        <div class="ey">EMBER OS · build 2026.08.19 · offline-first · the wick never goes out</div>
+        <div class="row" style="justify-content:center;gap:8px;margin-top:14px">
+          <button class="btn fg mini" onclick="sparkBurst()">SPARK</button>
+          <button class="btn fg mini" onclick="stamp('FIRST BLOOD','achievement · 02 JAN')">STAMP</button>
+          <button class="btn fg mini" onclick="rite('62%',1)">IGNITION</button>
+          <button class="btn fg mini" onclick="shock()">SHOCKWAVE</button>
+        </div>
+      </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="dock">
+    <button class="dbtn" data-t="today" onclick="go(this)"><span class="ico">◈</span>Today</button>
+    <button class="dbtn" data-t="plan" onclick="go(this)"><span class="ico">▤</span>Plan</button>
+    <button class="dbtn ign on" data-t="focus" onclick="go(this)"><span class="ico">◉</span>Focus</button>
+    <button class="dbtn" data-t="progress" onclick="go(this)"><span class="ico">◫</span>Progress</button>
+    <button class="dbtn" data-t="you" onclick="go(this)"><span class="ico">☰</span>You</button>
+  </nav>
+</div>
+
+<button class="demo" onclick="demoCycle()">DEMO ▸ celebrate</button>
+<div class="plate-stamp" id="stampEl"><div class="plaq" id="stampGly">⚡</div><div><div class="ps" id="stampEy">ACHIEVEMENT ENGRAVED</div><div class="pt" id="stampT">First Blood</div></div></div>
+<div class="rite" id="riteEl" onclick="this.classList.remove('show')">
+  <div class="inner"><div class="big" id="riteBig">100%</div><div class="cap" id="riteCap">DAY IGNITED</div></div>
+</div>
+
+<script>
+const dk = { 'Mon 17':'MON','Tue 18':'TUE','Wed 19':'WED','Thu 20':'THU','Fri 21':'FRI','Sat 22':'SAT','Sun 23':'SUN' }
+function go(btn){
+  document.querySelectorAll('.dbtn').forEach(b=>b.classList.toggle('on',b===btn))
+  const t = btn.dataset.t
+  document.querySelectorAll('.scrn').forEach(s=>s.classList.toggle('on',s.dataset.tab===t))
+  if(t==='focus'&&!fTicking) resetWick()
+}
+function seg(el){ el.parentElement.querySelectorAll('.seg').forEach(s=>s.classList.remove('on')); el.classList.add('on') }
+document.querySelectorAll('.day').forEach(d=>d.addEventListener('click',()=>{
+  document.querySelectorAll('.day').forEach(x=>x.classList.remove('on')); d.classList.add('on')
+}))
+
+/* task stamp + spark */
+document.querySelectorAll('.task').forEach(t=>t.addEventListener('click',e=>{
+  const wasDone=t.classList.contains('done')
+  t.classList.toggle('done')
+  if(!wasDone){
+    const r=t.getBoundingClientRect()
+    for(let i=0;i<7;i++){
+      const s=document.createElement('span'); s.className='spark'
+      s.style.left=(r.left+Math.random()*r.width)+'px'; s.style.top=(r.top+12)+'px'
+      const ang=Math.random()*Math.PI*2, d=22+Math.random()*26
+      s.style.setProperty('--dx',Math.cos(ang)*d+'px'); s.style.setProperty('--dy',Math.sin(ang)*d-8+'px')
+      document.body.appendChild(s); setTimeout(()=>s.remove(),750)
+    }
+    updateHero()
+  }
+}))
+function updateHero(){
+  const n=document.querySelectorAll('.task.done').length, tot=document.querySelectorAll('.task').length
+  const pct=Math.round(n/tot*100)
+  const b=document.getElementById('heroBurn')
+  if(b){ b.style.width=pct+'%'; document.querySelector('.fil .head').style.left='calc('+pct+'% - 3px)'; if(pct>=100) setTimeout(()=>rite('100%',1),350) }
+}
+
+/* wick timer */
+let fTicking=false, fLeft=23*60+41, fPaused=false, fInt=null
+function resetWick(){ fLeft=23*60+41; fPaused=false; if(fInt){clearInterval(fInt);fInt=null}; paint() }
+function paint(){
+  const pct=fLeft/(50*60)
+  document.getElementById('wickBurn').style.width=(100-pct)+'%'
+  document.getElementById('wickHead').style.left='calc('+(100-pct)+'% - 4px)'
+  document.getElementById('bigTime').innerHTML=String(Math.floor(fLeft/60)).padStart(2,'0')+':'+String(fLeft%60).padStart(2,'0')+'<span class="s">/50:00</span>'
+}
+function toggleStart(btn){
+  if(!fTicking){ fTicking=true; btn.textContent='◉ BURNING'; btn.classList.add('on'); fInt=setInterval(()=>{ if(!fPaused){ fLeft--; paint(); if(fLeft<=0){ clearInterval(fInt); fTicking=false; btn.textContent='◉ START'; shock(); setTimeout(()=>rite('CELL DONE',3),200) } } },1000) }
+  else { fTicking=false; clearInterval(fInt); fInt=null; btn.textContent='◉ START'; }
+}
+function togglePause(){ fPaused=!fPaused; document.getElementById('pauseBtn').textContent=fPaused?'▶ RESUME':'❚❚ PAUSE' }
+
+/* celebrations */
+function sparkBurst(){
+  for(let i=0;i<16;i++){
+    const s=document.createElement('span'); s.className='spark'
+    s.style.left=(window.innerWidth/2-8+Math.random()*16)+'px'; s.style.top=(window.innerHeight*0.4)+'px'
+    const ang=Math.random()*Math.PI*2, d=60+Math.random()*110
+    s.style.setProperty('--dx',Math.cos(ang)*d+'px'); s.style.setProperty('--dy',Math.sin(ang)*d+'px')
+    s.style.animationDuration=(0.5+Math.random()*0.4)+'s'
+    document.body.appendChild(s); setTimeout(()=>s.remove(),1000)
+  }
+}
+function shock(){
+  const s=document.createElement('div'); s.className='shock'; document.body.appendChild(s); setTimeout(()=>s.remove(),1100)
+}
+function stamp(title,sub,gly){
+  document.getElementById('stampT').textContent=title; document.getElementById('stampEy').textContent=sub
+  const e=document.getElementById('stampEl'); e.classList.add('show'); setTimeout(()=>e.classList.remove('show'),3400)
+}
+function rite(big,cap){
+  document.getElementById('riteBig').textContent=big
+  const caps=['SIGN OFF','DAY IGNITED','CELL DONE','DAY IGNITED','IGNITION']
+  document.getElementById('riteCap').textContent=caps[cap]
+  const el=document.getElementById('riteEl'); el.classList.add('show')
+  for(let i=0;i<14;i++){
+    const d=document.createElement('span'); d.className='drift'; d.textContent=['✦','•','◈','·','✸','◦'][i%6]
+    d.style.left=(18+Math.random()*64)+'%'; d.style.animationDelay=(Math.random()*0.5)+'s'
+    el.appendChild(d); setTimeout(()=>d.remove(),2400)
+  }
+  setTimeout(()=>el.classList.remove('show'),2200)
+}
+function dayTick(d){ const days=[...document.querySelectorAll('.day')]; const cur=days.findIndex(x=>x.classList.contains('on')); const nxt=Math.max(0,Math.min(days.length-1,cur+d)); days.forEach(x=>x.classList.remove('on')); days[nxt].classList.add('on') }
+
+/* ember field */
+const field=document.getElementById('emberfield')
+for(let i=0;i<35;i++){ const e=document.createElement('div'); e.className='em'+(i===34?' peak':i%3===0?' hotter':i%2?' hot':''); field.appendChild(e) }
+
+let demos=0
+function demoCycle(){
+  const seq=[sparkBurst,()=>shock(),()=>stamp('CENTURY BURN','achievement · 100-day streak','👑'),()=>rite('100%',1)]
+  seq[demos%seq.length](); demos++
+}
+</script>
+</body>
+</html>

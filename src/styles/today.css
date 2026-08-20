@@ -1,0 +1,547 @@
+/* ══════════════════════════════════════════════════════════════
+   today.css — Today screen + celebration overlay (Nothing system).
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── greeting ── */
+.nt-greet {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 22px 18px 6px;
+}
+.nt-greet .k {
+  color: var(--ink-3);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+}
+.nt-greet .h {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 34px;
+}
+.nt-greet .h .day {
+  color: var(--acc);
+}
+
+/* ── hero ── */
+.nt-hero {
+  margin: 14px 16px 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+.nt-hero .top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.nt-hero .now {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink-2);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+}
+.nt-hero .now .live {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--acc);
+  box-shadow: 0 0 0 0 var(--acc);
+  animation: live-pulse 2.2s var(--ease) infinite;
+}
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--acc) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+.nt-hero .slot {
+  color: var(--ink-3);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-align: right;
+}
+.nt-hero .body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+.nt-hero .subject {
+  font-size: 23px;
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+}
+.nt-hero .desc {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.nt-seg {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+.nt-seg i {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line-2);
+  transition: background 0.25s var(--ease);
+}
+.nt-seg i.on {
+  background: var(--acc);
+}
+.nt-segrow {
+  display: flex;
+  justify-content: space-between;
+  color: var(--ink-3);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+.nt-segrow b {
+  color: var(--ink);
+  font-weight: 400;
+  font-size: 12px;
+}
+.nt-hero .cta {
+  margin-top: 4px;
+  width: 100%;
+}
+.nt-hero .cta.audio {
+  margin-top: 0;
+}
+
+/* ── buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: var(--r);
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+.btn-acc {
+  background: var(--acc);
+  color: var(--acc-ink);
+}
+.btn-acc:hover {
+  background: var(--acc-2);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--line-2);
+}
+.btn-ghost:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+/* ── metrics grid ── */
+.nt-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 14px 16px 0;
+}
+.nt-metrics .cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 13px 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.nt-metrics .cell .n {
+  font-size: 24px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.nt-metrics .cell .n small {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.nt-metrics .l {
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  color: var(--ink-3);
+}
+.fire-cell.on-fire .n {
+  color: var(--acc);
+}
+
+/* ── spine ── */
+.nt-spine {
+  margin: 16px 16px 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  padding: 14px 14px 6px;
+}
+.nt-spine .head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.nt-spine .head .t {
+  font-weight: 600;
+  font-size: 14px;
+}
+.nt-spine .head .c {
+  color: var(--ink-3);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+.nt-spine .sub {
+  margin-top: 3px;
+  color: var(--ink-4);
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+}
+.tasklist {
+  margin-top: 8px;
+}
+.taskrow {
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid var(--line);
+}
+.taskrow:first-child {
+  border-top: none;
+}
+.task-toggle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  padding: 13px 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+.task-toggle .chk {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--line-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--acc-ink);
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.task-toggle .chk.on {
+  background: var(--acc);
+  border-color: var(--acc);
+}
+.task-toggle .txt {
+  font-size: 13px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+.taskrow.done .txt {
+  color: var(--ink-4);
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-4);
+}
+.shakybtn {
+  flex-shrink: 0;
+  width: 42px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--mono-font);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-4);
+  transition: color 0.15s ease;
+}
+.shakybtn.on {
+  color: var(--acc);
+}
+
+/* ── whisper ── */
+.nt-whisper {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 18px 16px 8px;
+  padding: 14px 16px;
+  background: none;
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r);
+  cursor: pointer;
+  text-align: left;
+}
+.nt-whisper .q {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+.nt-whisper .a {
+  margin-top: 6px;
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  color: var(--ink-4);
+}
+
+/* ── pixel burst ── */
+.nt-spark {
+  position: fixed;
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: var(--acc);
+  pointer-events: none;
+  z-index: 200;
+}
+
+/* ── ice shatter showcase ── */
+.ice-fly-in {
+  animation: ice-fly-in 0.45s var(--spring) forwards;
+}
+@keyframes ice-fly-in {
+  0% {
+    transform: translateX(38vw) scale(0.4) rotate(-14deg);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0) scale(1.35) rotate(0deg);
+  }
+}
+.frost-flame {
+  color: var(--acc);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--acc) 45%, transparent);
+  filter: saturate(0.55) brightness(1.25);
+}
+.ice-shatter {
+  filter: none;
+  color: transparent !important;
+}
+.ice-shard {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  background: var(--ink-3);
+  border-radius: 1px;
+  animation: shard-fly 0.6s var(--ease) forwards;
+  pointer-events: none;
+}
+@keyframes shard-fly {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot));
+    opacity: 0;
+  }
+}
+.fire-glow {
+  color: var(--acc);
+  text-shadow: 0 0 16px color-mix(in srgb, var(--acc) 70%, transparent);
+}
+
+/* ── celebration overlay ── */
+.celebrate {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(10px);
+  animation: celebrate-fade 0.24s ease;
+}
+@keyframes celebrate-fade {
+  from {
+    opacity: 0;
+  }
+}
+.celebrate-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(400px, 100%);
+  padding: 26px 24px 20px;
+  border: 2px solid var(--line-2);
+  border-radius: var(--r-lg);
+  background: var(--bg-2);
+  text-align: center;
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.55);
+  animation: celebrate-rise 0.5s var(--spring) both;
+}
+@keyframes celebrate-rise {
+  from {
+    transform: translateY(18px) scale(0.96);
+    opacity: 0;
+  }
+}
+.medallion {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.medallion .halo {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+}
+.medallion .burst {
+  position: absolute;
+  inset: -14px;
+  background:
+    repeating-conic-gradient(from 0deg, var(--acc) 0deg 6deg, transparent 6deg 30deg);
+  border-radius: 50%;
+  animation: burst-spin 9s linear infinite;
+  opacity: 0.5;
+  mask-image: radial-gradient(circle, transparent 55%, black 62%);
+}
+@keyframes burst-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.medallion .core {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: var(--acc);
+  color: var(--acc-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  z-index: 1;
+}
+.celebrate-eyebrow {
+  color: var(--acc);
+  font-size: 9px;
+  letter-spacing: 0.26em;
+}
+.celebrate-title {
+  font-size: 22px;
+  line-height: 1.2;
+}
+.celebrate-stamp {
+  display: flex;
+  gap: 6px;
+}
+.celebrate-seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--acc);
+  color: var(--acc);
+}
+.celebrate-sub {
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.55;
+}
+.celebrate-next {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: left;
+}
+.celebrate-next .nlabel {
+  color: var(--ink-4);
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
+}
+.celebrate-next .ntitle {
+  font-size: 12px;
+  font-weight: 600;
+}
+.celebrate-next .nt-seg {
+  margin: 2px 0;
+}
+.celebrate-next .nmeta {
+  color: var(--ink-4);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+.celebrate .celebrate-cta {
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* ── entrance stagger (legacy .stagger) ── */
+.stagger > * {
+  animation: rise-in 0.4s var(--spring) backwards;
+}
+.stagger > *:nth-child(1) {
+  animation-delay: 0.03s;
+}
+.stagger > *:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.stagger > *:nth-child(3) {
+  animation-delay: 0.13s;
+}
+.stagger > *:nth-child(4) {
+  animation-delay: 0.18s;
+}
+.stagger > *:nth-child(5) {
+  animation-delay: 0.23s;
+}
+@keyframes rise-in {
+  from {
+    transform: translateY(9px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stagger > * {
+    animation: none;
+  }
+}

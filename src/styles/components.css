@@ -1,0 +1,309 @@
+/* ══════════════════════════════════════════════════════════════
+   components.css — shared component classes (Nothing system).
+   Everything is token-driven; no hardcoded colors except the
+   intentional red accent which IS the token system's signal color.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── typography helpers ── */
+.mono {
+  font-family: var(--mono-font);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+.display {
+  font-family: var(--display-font);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+.label {
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ── ripple ── */
+.press {
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.ripple {
+  position: absolute;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  transform: scale(0);
+  animation: ripple 0.55s var(--ease) forwards;
+  pointer-events: none;
+  z-index: 1;
+}
+@keyframes ripple {
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* ── page header ── */
+.nt-pagehead {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 16px 14px;
+}
+.nt-pagehead-kicker {
+  font-family: var(--mono-font);
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  color: var(--acc);
+}
+.nt-pagehead h1 {
+  font-size: 26px;
+}
+.nt-pagehead-sub {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* ── top deck ── */
+.top-deck {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.td-left,
+.td-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.td-right {
+  justify-content: flex-end;
+}
+.nt-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r);
+  color: var(--ink-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.nt-icon:hover {
+  background: var(--surface-lift);
+  color: var(--ink);
+}
+.nt-icon svg {
+  width: 17px;
+  height: 17px;
+}
+.nt-brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  font-family: var(--display-font);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+.nt-brand-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.nt-brand .sl {
+  color: var(--acc);
+}
+.nt-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, color 0.15s ease;
+  line-height: 1;
+}
+.nt-tag:hover {
+  border-color: var(--line-2);
+  color: var(--ink);
+}
+.nt-tag small {
+  font-size: 8px;
+  color: var(--ink-3);
+}
+.nt-tag .display {
+  font-size: 12px;
+}
+.fire-pill {
+  border-color: color-mix(in srgb, var(--acc) 45%, transparent);
+  color: var(--acc);
+}
+.fire-pill svg {
+  width: 12px;
+  height: 12px;
+  fill: var(--acc);
+}
+.ice-pill {
+  border-color: color-mix(in srgb, var(--acc) 30%, transparent);
+  color: var(--ink-3);
+  opacity: 0.8;
+}
+.notif-pill {
+  position: relative;
+}
+.notif-badge {
+  position: absolute;
+  top: 1px;
+  right: 0;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--acc);
+  color: var(--acc-ink);
+  font-family: var(--mono-font);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+}
+.notif-badge[hidden] {
+  display: none;
+}
+
+/* ── bottom nav rail ── */
+.navrail {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: 40;
+  width: 100%;
+  max-width: 100%;
+  height: var(--rail-nav-h);
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(10px);
+}
+.navbtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-3);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  position: relative;
+  transition: color 0.15s ease;
+}
+.navbtn svg {
+  width: 18px;
+  height: 18px;
+}
+.navbtn.active {
+  color: var(--ink);
+}
+.navbtn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 5px;
+  width: 14px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--acc);
+}
+.navbtn:not(.active):hover {
+  color: var(--ink-2);
+}
+
+/* ── cards ── */
+.card {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  padding: 14px;
+}
+.card-2 {
+  background: var(--bg-2);
+}
+
+/* ── generic small helpers ── */
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.muted {
+  color: var(--ink-3);
+}
+.noselect {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── empty/porting placeholders ── */
+.porting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 40vh;
+  padding: 32px;
+  text-align: center;
+  color: var(--ink-3);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-lg);
+  margin: 0 16px;
+}
+.porting .display {
+  font-size: 22px;
+  color: var(--ink-2);
+}

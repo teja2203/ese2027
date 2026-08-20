@@ -1,0 +1,303 @@
+/* ══════════════════════════════════════════════════════════════
+   you.css — YOU tab (identity card · accordions · theme grid)
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── identity card (L1) ── */
+.nt-you {
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  margin-bottom: 14px;
+}
+.ytop {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.yav {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--acc);
+  color: var(--bg);
+  font-size: 22px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.ymeta {
+  min-width: 0;
+}
+.yname {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+}
+.ysub {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+.ystats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.yst {
+  text-align: center;
+}
+.yst .n {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.yst .n i {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--ink-3);
+  margin-left: 1px;
+}
+.yst .l {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-top: 3px;
+}
+
+/* ── accordions (L2) ── */
+.nt-acc {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-2);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.acchead {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+.acchead .ai {
+  color: var(--ink-2);
+  display: flex;
+  flex: none;
+}
+.acchead .at {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.acchead .ab {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--acc);
+  background: var(--acc-dim);
+  border-radius: 6px;
+  padding: 3px 8px;
+  flex: none;
+}
+.acchead .acar {
+  color: var(--ink-3);
+  display: flex;
+  transition: transform 0.2s var(--ease);
+  flex: none;
+}
+.acchead .acar.open {
+  transform: rotate(90deg);
+}
+.accbody {
+  padding: 2px 14px 14px;
+  border-top: 1px solid var(--line);
+}
+.accbody > div {
+  padding-top: 12px;
+}
+
+/* ── settings rows ── */
+.nt-setrow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 2px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--line);
+  cursor: pointer;
+  text-align: left;
+}
+.nt-setrow:first-child {
+  border-top: none;
+}
+.nt-setrow.static {
+  cursor: default;
+}
+.nt-setrow .sl {
+  min-width: 0;
+  flex: 1;
+}
+.nt-setrow .slt {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.nt-setrow .sld {
+  font-size: 10.5px;
+  color: var(--ink-3);
+  margin-top: 3px;
+  line-height: 1.45;
+}
+.nt-setrow .sr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--acc);
+  flex: none;
+}
+.nt-setrow .sr svg {
+  color: var(--ink-3);
+}
+
+/* ── mini toggle (legacy toggleUI) ── */
+.nt-sw {
+  width: 44px;
+  height: 25px;
+  border-radius: 13px;
+  border: 1.5px solid var(--line-2);
+  background: var(--surface-2);
+  position: relative;
+  display: inline-block;
+  flex: none;
+  transition: all 0.18s ease;
+}
+.nt-sw i {
+  position: absolute;
+  top: 2.5px;
+  left: 3px;
+  width: 15px;
+  height: 15px;
+  border-radius: 8px;
+  background: var(--ink-3);
+  transition: left 0.18s ease, background 0.18s ease;
+}
+.nt-sw.on {
+  border-color: var(--acc);
+  background: var(--acc-dim);
+}
+.nt-sw.on i {
+  left: 23px;
+  background: var(--acc);
+}
+
+/* ── theme picker (L3) ── */
+.nt-themerow {
+  padding: 14px 0 4px;
+}
+.ntl {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+}
+.ntd {
+  font-size: 10.5px;
+  color: var(--ink-4);
+  margin-top: 3px;
+}
+.theme-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.theme-card {
+  position: relative;
+  text-align: left;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: var(--card-2);
+  cursor: pointer;
+}
+.theme-card.on {
+  border-color: var(--acc);
+}
+.theme-card .swatch {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.theme-card .swatch i {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  border: 1px solid var(--line-2);
+}
+.theme-card .tname {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.theme-card .tdesc {
+  display: block;
+  font-size: 9.5px;
+  color: var(--ink-3);
+  margin-top: 2px;
+  line-height: 1.35;
+}
+.theme-card .tick {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--acc);
+  opacity: 0;
+}
+.theme-card.on .tick {
+  opacity: 1;
+}
+
+/* ── footer ── */
+.nt-youfoot {
+  margin-top: 18px;
+  padding: 14px 0 26px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--ink-4);
+  line-height: 1.9;
+}
+.nt-youfoot .sl {
+  color: var(--acc);
+}

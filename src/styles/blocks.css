@@ -1,0 +1,545 @@
+/* ══════════════════════════════════════════════════════════════
+   blocks.css — BLOCKS tab (Nothing tokens; monochrome + red stakes)
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── native guard offline card (K1) ── */
+.native-block-manager {
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.blocks-empty {
+  padding: 34px 18px;
+  text-align: center;
+}
+.be-glyph {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+}
+.be-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--ink-2);
+}
+.be-sub {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  margin-top: 6px;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.be-hint {
+  margin-top: 14px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--acc);
+}
+
+/* ── section header ── */
+.bl-sec {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 18px 2px 8px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.bl-miniacc {
+  padding: 7px 14px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--acc);
+  background: var(--acc-dim);
+  color: var(--acc);
+}
+
+/* ── permission banner (K2) ── */
+.bl-banner {
+  margin-bottom: 6px;
+}
+.bl-permrow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--acc);
+  cursor: pointer;
+  margin-bottom: 8px;
+  text-align: left;
+}
+.bl-permtxt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.bl-warn {
+  color: var(--acc);
+  flex: none;
+}
+.bl-grant {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--acc);
+  border: 1px solid var(--acc);
+  border-radius: 6px;
+  padding: 4px 8px;
+  flex: none;
+}
+
+/* ── rows / app rows ── */
+.bl-row,
+.bl-approw {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px 11px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  cursor: pointer;
+  margin-bottom: 8px;
+  text-align: left;
+}
+.bl-row {
+  border-width: 1px;
+}
+.bl-av {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink-2);
+  flex: none;
+}
+.bl-amain {
+  min-width: 0;
+  flex: 1;
+}
+.bl-at {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bl-aname {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bl-asub {
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+.bl-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  color: var(--ink-3);
+  flex: none;
+}
+.bl-badge.hot {
+  background: var(--acc-dim);
+  border-color: transparent;
+  color: var(--acc);
+}
+.bl-seg {
+  margin-top: 7px;
+}
+.bl-seg i {
+  height: 4px;
+}
+.bl-strictline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--acc);
+  margin-top: 3px;
+}
+.bl-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+.bl-ico {
+  background: none;
+  border: none;
+  color: var(--ink-3);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bl-rowhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.bl-chev {
+  color: var(--ink-3);
+  flex: none;
+}
+.bl-dotline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.bl-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+}
+.bl-empty {
+  font-size: 12px;
+  color: var(--ink-3);
+  padding: 20px;
+  text-align: center;
+}
+
+/* ── sheets ── */
+.bl-sheet {
+  padding-bottom: 28px;
+}
+.bl-sheet-title {
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+.bl-sheetbody {
+  padding: 0 16px 18px;
+  overflow-y: auto;
+}
+.bl-lock {
+  padding: 24px 14px;
+  border-radius: 12px;
+  background: var(--acc-dim);
+  border: 1.5px solid var(--acc);
+  text-align: center;
+}
+.bl-lock-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.bl-lock-sub {
+  font-size: 10.5px;
+  color: var(--ink-3);
+  margin-top: 6px;
+}
+.bl-togglerow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  margin-bottom: 8px;
+}
+.bl-offbtn {
+  width: 100%;
+  padding: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid var(--acc);
+  color: var(--acc);
+  background: none;
+}
+.bl-info {
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  margin: 0 2px 10px;
+}
+.bl-addappbtn {
+  width: 100%;
+  padding: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid var(--acc);
+  background: var(--acc-dim);
+  color: var(--acc);
+  margin-top: 4px;
+}
+.bl-inputwrap {
+  position: relative;
+  margin-bottom: 12px;
+}
+.bl-inputico {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-3);
+}
+.bl-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 36px;
+  border: 1px solid var(--line-2);
+  border-radius: 11px;
+  background: var(--card-2);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  outline: none;
+}
+.bl-input:focus {
+  border-color: var(--acc);
+}
+.bl-listhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 2px 2px 6px;
+}
+.bl-listlabel {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--acc-text);
+}
+.bl-dellink {
+  background: none;
+  border: none;
+  color: var(--ink-3);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  padding: 4px;
+}
+.bl-siterow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px 9px 12px;
+  border-radius: 10px;
+  background: var(--acc-dim);
+  border: 1.5px solid var(--acc);
+  margin-bottom: 6px;
+}
+.bl-sitename {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.bl-addbtn {
+  padding: 6px 14px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  border-radius: 7px;
+  cursor: pointer;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  flex: none;
+}
+.bl-addbtn.added {
+  border-color: var(--acc);
+  background: var(--acc-dim);
+  color: var(--acc);
+}
+.bl-removebtn {
+  padding: 7px 14px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--line-2);
+  background: none;
+  color: var(--ink-3);
+  flex: none;
+}
+.bl-sughead {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 14px 2px 6px;
+}
+.bl-appmeta {
+  min-width: 0;
+  flex: 1;
+}
+.bl-done {
+  width: 100%;
+  padding: 12px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 16px;
+}
+
+/* ── app sheet hero ── */
+.bl-hero {
+  padding: 16px 14px;
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.bl-herobignum {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+.bl-herokey {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+  margin-top: 5px;
+}
+.bl-heroref {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-2);
+  text-align: right;
+}
+.bl-streakline {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--ink-2);
+}
+.bl-flame {
+  font-size: 12px;
+}
+.bl-limitrow {
+  justify-content: space-between;
+}
+.bl-limitval {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--acc);
+}
+
+/* ── strict picker + limit wheel ── */
+.bl-strictq {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: center;
+  margin-bottom: 4px;
+}
+.bl-wheel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0 0;
+  position: relative;
+  height: 150px;
+  overflow-y: auto;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.bl-wheeltall {
+  height: 190px;
+}
+.bl-wheellist {
+  width: 120px;
+  text-align: center;
+}
+.bl-wheelitem {
+  padding: 9px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-3);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.bl-wheelitem.on {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--acc);
+}
+.bl-wheelunit {
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-3);
+  margin: 0 0 12px;
+}
+.bl-wheelsug {
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+  margin-bottom: 14px;
+}
+.bl-strictinfo {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-2);
+  margin: 2px 0 16px;
+}

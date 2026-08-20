@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Direction F — Amber · warm luxury</title>
+<style>
+:root{
+  --bg:#14120F; --panel:#1B1814; --elev:#211D18;
+  --line:rgba(233,227,218,.09); --line-2:rgba(233,227,218,.18);
+  --ink:#EFE9E0; --mute:#9C948A; --faint:#6E675F;
+  --gold:#C99B4B; --gold-hot:#E0B45E; --gold-dim:rgba(201,155,75,.13);
+  --leaf:#7FB98F; --bad:#D26A5A;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --serif:Georgia,'Times New Roman',serif;
+  --sans:'Segoe UI',system-ui,sans-serif;
+  --mono:'Cascadia Mono',Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.5}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(700px 500px at 85% -10%,rgba(201,155,75,.07),transparent 60%),radial-gradient(500px 400px at -10% 110%,rgba(201,155,75,.04),transparent 60%)}
+.app{max-width:920px;margin:0 auto;padding:0 22px 120px;position:relative;z-index:1}
+
+/* top */
+.top{display:flex;align-items:center;gap:10px;padding:24px 4px 12px}
+.mark{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink)}
+.mark .medal{width:16px;height:16px;border:1.5px solid var(--gold);border-radius:50%;position:relative}
+.mark .medal::after{content:"";position:absolute;left:3px;top:3px;right:3px;bottom:3px;border:1px solid var(--gold);border-radius:50%;opacity:.6}
+.mark b{color:var(--gold);font-weight:600}
+.top .sp{flex:1}
+.chip{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:7px 13px}
+.chip.gold{color:var(--gold-hot);border-color:rgba(201,155,75,.35)}
+.chip .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--leaf);margin-right:6px;box-shadow:0 0 8px rgba(127,185,143,.5)}
+
+/* hero — serif display */
+.hero{padding:40px 4px 26px}
+.hero .ey{font-family:var(--mono);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--faint)}
+.hero h1{font-family:var(--serif);font-size:clamp(46px,9vw,74px);font-weight:400;letter-spacing:-.01em;line-height:1.02;margin-top:12px}
+.hero h1 em{font-style:italic;color:var(--gold)}
+.hero .sub{margin-top:14px;font-size:14px;color:var(--mute)}
+.hero .sub b{color:var(--gold-hot);font-weight:600}
+
+/* gauge — gold filigree */
+.gauge{position:relative;margin:26px 4px 30px}
+.gauge .rail{height:2px;background:var(--line-2);position:relative;margin:0 6px}
+.gauge .rail i{position:absolute;left:0;top:-1px;height:4px;width:50%;background:linear-gradient(90deg,var(--gold),var(--gold-hot));box-shadow:0 0 12px rgba(201,155,75,.5);transition:width .8s var(--ease)}
+.gauge .rail i::after{content:"";position:absolute;right:-3px;top:-2px;width:8px;height:8px;border-radius:50%;background:var(--gold-hot);box-shadow:0 0 14px rgba(201,155,75,.8)}
+.gauge .marks{display:flex;justify-content:space-between;margin-top:10px;font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;color:var(--faint)}
+.gauge .marks span.on{color:var(--gold)}
+
+/* cards — leather plates */
+.card{background:linear-gradient(180deg,var(--elev),var(--panel));border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:14px;position:relative;transition:border-color .3s}
+.card:hover{border-color:var(--line-2)}
+.card.live{border-color:rgba(201,155,75,.35);box-shadow:0 0 0 1px rgba(201,155,75,.15),0 12px 40px -18px rgba(201,155,75,.25)}
+.card .chead{display:flex;align-items:center;gap:14px;cursor:pointer;user-select:none}
+.card .time{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--gold);min-width:110px}
+.card .nm{font-size:16px;font-weight:600;letter-spacing:.01em}
+.card .tg{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);border:1px solid var(--line-2);padding:4px 10px;border-radius:999px}
+.card .tg.gold{color:var(--gold-hot);border-color:rgba(201,155,75,.4);background:var(--gold-dim)}
+.card .cnt{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--mute);font-variant-numeric:tabular-nums}
+.card .cnt b{color:var(--gold-hot);font-size:14px}
+.card .chev{color:var(--faint);transition:transform .35s var(--ease);font-size:10px}
+.card.open .chev{transform:rotate(90deg)}
+.card .cbody{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.card.open .cbody{display:block}
+.task{display:flex;align-items:center;gap:13px;padding:11px 2px;cursor:pointer;user-select:none}
+.task+.task{border-top:1px dashed var(--line)}
+.task .st{width:20px;height:20px;border:1.5px solid var(--line-2);border-radius:50%;flex-shrink:0;position:relative;transition:all .25s var(--ease)}
+.task.done .st{border-color:var(--gold)}
+.task.done .st::after{content:"";position:absolute;left:6px;top:3.5px;width:5px;height:8px;border:solid var(--gold);border-width:0 1.5px 1.5px 0;transform:rotate(42deg)}
+.task .cd{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);min-width:66px}
+.task .tx{font-size:13.5px}
+.task.done .tx{color:var(--faint);text-decoration:line-through;text-decoration-color:rgba(201,155,75,.5)}
+
+/* nav — ivory rail */
+.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:50;display:flex;gap:4px;background:rgba(33,29,24,.92);border:1px solid var(--line-2);border-radius:999px;padding:7px;backdrop-filter:blur(16px);box-shadow:0 20px 60px rgba(0,0,0,.55)}
+.nbtn{display:flex;align-items:center;gap:7px;background:none;border:none;color:var(--faint);font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:10px 16px;border-radius:999px;cursor:pointer;transition:all .25s var(--ease)}
+.nbtn .i{font-size:13px}
+.nbtn:active{transform:scale(.95)}
+.nbtn.on{background:var(--gold-dim);color:var(--gold-hot)}
+.nbtn.ct{background:linear-gradient(180deg,var(--gold-hot),var(--gold));color:#201811;font-weight:700}
+.nbtn.ct:hover{box-shadow:0 4px 20px -4px rgba(201,155,75,.5)}
+
+/* celebrations — wax & candlelight */
+.wax{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.4);z-index:95;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 40% 35%,var(--gold-hot),var(--gold) 55%,#8F6A2C);display:flex;align-items:center;justify-content:center;opacity:0;box-shadow:0 0 80px rgba(201,155,75,.55),inset -8px -10px 24px rgba(40,28,8,.55);transition:all .55s cubic-bezier(.34,1.56,.64,1)}
+.wax.show{transform:translate(-50%,-50%) scale(1);opacity:1}
+.wax .wt{font-family:var(--serif);font-style:italic;font-size:15px;color:#2A1D0A;text-align:center;line-height:1.2}
+.light{position:fixed;inset:0;pointer-events:none;z-index:80;opacity:0;background:radial-gradient(circle at 50% 60%,rgba(224,180,94,.22),transparent 55%);animation:light 2s var(--ease)}
+@keyframes light{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
+.motes{position:fixed;inset:0;pointer-events:none;z-index:85}
+.mote{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--gold-hot);opacity:0;box-shadow:0 0 10px rgba(224,180,94,.8);animation:rise 2.4s var(--ease) forwards}
+@keyframes rise{0%{opacity:0;transform:translateY(40px)}20%{opacity:.9}100%{opacity:0;transform:translateY(-140px)}}
+.demo{position:fixed;right:18px;bottom:100px;z-index:70;font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);background:var(--panel);border:1px solid var(--line-2);border-radius:999px;padding:9px 15px;cursor:pointer}
+.demo:hover{color:var(--gold-hot)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <span class="mark"><span class="medal"></span>ESE<b>2027</b></span>
+    <span class="sp"></span>
+    <span class="chip gold"><span class="dot" style="background:var(--gold);box-shadow:0 0 8px rgba(201,155,75,.6)"></span>165d streak</span>
+    <span class="chip"><span class="dot"></span>synced</span>
+  </header>
+
+  <section class="hero">
+    <div class="ey">Wednesday · 19 August 2026</div>
+    <h1>The nineteenth<br/>day of <em>burning</em>.</h1>
+    <div class="sub">Sprint 3 · peak week · <b>4 of 8</b> embers lit · 2 rest days banked</div>
+  </section>
+
+  <div class="gauge">
+    <div class="rail"><i style="width:50%"></i></div>
+    <div class="marks"><span class="on">0</span><span class="on">2</span><span class="on">4</span><span class="on">6</span><span class="on">8</span></div>
+  </div>
+
+  <div class="card live open">
+    <div class="chead">
+      <span class="time">06:30 – 08:00</span><span class="nm">Networks</span>
+      <span class="tg gold">core</span><span class="cnt"><b>2</b>/2</span><span class="chev">▸</span>
+    </div>
+    <div class="cbody">
+      <div class="task done"><span class="st"></span><span class="cd">ESE-2027</span><span class="tx">OSI 7-layer deep drill — table + memory hooks</span></div>
+      <div class="task done"><span class="st"></span><span class="cd">PYQ-2024</span><span class="tx">Routing vs switching — 12-question set</span></div>
+    </div>
+  </div>
+
+  <div class="card open">
+    <div class="chead">
+      <span class="time">08:30 – 10:00</span><span class="nm">Controls</span>
+      <span class="tg">core</span><span class="cnt"><b>1</b>/2</span><span class="chev">▸</span>
+    </div>
+    <div class="cbody">
+      <div class="task done"><span class="st"></span><span class="cd">PYQ</span><span class="tx">Bode plots — gain/phase margin set</span></div>
+      <div class="task"><span class="st"></span><span class="cd">ESE-2027</span><span class="tx">Routh–Hurwitz — 3 problem deep-dive</span></div>
+    </div>
+  </div>
+
+  <div class="card open">
+    <div class="chead">
+      <span class="time">10:30 – 12:00</span><span class="nm">EDC</span>
+      <span class="tg">revision</span><span class="cnt"><b>1</b>/2</span><span class="chev">▸</span>
+    </div>
+    <div class="cbody">
+      <div class="task done"><span class="st"></span><span class="cd">NOTES</span><span class="tx">Diode clampers — rewrite set 4</span></div>
+      <div class="task"><span class="st"></span><span class="cd">REV</span><span class="tx">Transistor biasing — 20 min skim + flags</span></div>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nbtn on"><span class="i">◈</span>Today</button>
+  <button class="nbtn"><span class="i">▦</span>Plan</button>
+  <button class="nbtn ct"><span class="i">◉</span>Focus</button>
+  <button class="nbtn"><span class="i">◫</span>Progress</button>
+  <button class="nbtn"><span class="i">⚙</span>You</button>
+</nav>
+
+<button class="demo" onclick="demo()">demo ▸ celebrate</button>
+<div class="wax" id="wax"><div class="wt">100 DAYS<br/>STREAK</div></div>
+
+<script>
+document.querySelectorAll('.task').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('done')))
+document.querySelectorAll('.card .chead').forEach(h=>h.addEventListener('click',()=>h.parentElement.classList.toggle('open')))
+function wax(){const e=document.getElementById('wax');e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2800)}
+function light(){const l=document.createElement('div');l.className='light';document.body.appendChild(l);setTimeout(()=>l.remove(),2100)}
+function motes(){const m=document.createElement('div');m.className='motes';for(let i=0;i<14;i++){const d=document.createElement('span');d.className='mote';d.style.left=(14+Math.random()*72)+'%';d.style.top=(46+Math.random()*30)+'%';d.style.animationDelay=(Math.random()*0.8)+'s';m.appendChild(d)}document.body.appendChild(m);setTimeout(()=>m.remove(),3300)}
+let d=0
+function demo(){[motes,light,wax][d++%3]()}
+</script>
+</body>
+</html>

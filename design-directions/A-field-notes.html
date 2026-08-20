@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Direction A — Field Notes</title>
+<style>
+:root{
+  --paper:#F4F1E8; --paper-2:#ECE8DC; --ink:#232019; --ink-2:#5C5748; --ink-3:#8A8574;
+  --red:#C0392B; --red-ink:#8E2A20; --rule:#D8D2C0; --rule-strong:#BDB5A0;
+  --amber:#B97F2D; --green:#4F7A4C;
+  --serif: Georgia, 'Times New Roman', serif;
+  --mono: 'Cascadia Mono', Consolas, monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--serif);line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:32px 26px 96px}
+
+/* ruled page background */
+.ruled{background-image:repeating-linear-gradient(transparent,transparent 31px,var(--rule) 31px,var(--rule) 32px)}
+
+.masthead{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:18px}
+.masthead .date{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.masthead .title{font-size:38px;font-weight:700;letter-spacing:.01em;line-height:1.05}
+.masthead .title em{font-style:italic;color:var(--red)}
+
+.meta{display:flex;gap:22px;margin:14px 0 22px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.meta b{color:var(--ink);font-weight:700}
+.meta .strike{color:var(--green)}
+.meta .strike::before{content:"✓ ";}
+
+.hdr{display:flex;align-items:baseline;gap:10px;margin:30px 0 4px;border-bottom:1px solid var(--rule-strong);padding-bottom:6px}
+.hdr h2{font-size:22px;font-weight:700;letter-spacing:.02em}
+.hdr .no{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.hdr .pct{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--red);font-weight:700}
+
+.prose-note{font-size:15px;color:var(--ink-2);font-style:italic;margin:12px 0 6px}
+
+.slot{margin-bottom:16px}
+.slot-head{display:flex;align-items:center;gap:10px;padding:10px 0 6px}
+.slot-head .time{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--red);min-width:74px}
+.slot-head .name{font-size:19px;font-weight:700}
+.slot-head .tag{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--red);color:var(--red-ink);padding:2px 6px;border-radius:2px}
+.slot-head .tag.rest{border-color:var(--ink-3);color:var(--ink-3)}
+.slot-head .tick{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.slot-head .tick.done{color:var(--green);font-weight:700}
+
+.tasks{border-left:2px solid var(--rule-strong);margin-left:36px;padding-left:16px}
+.task{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px dotted var(--rule-strong);cursor:pointer;user-select:none}
+.task:last-child{border-bottom:none}
+.task .chk{width:15px;height:15px;border:1.5px solid var(--ink-2);margin-top:4px;flex-shrink:0;position:relative;transition:background .15s}
+.task.done .chk{background:var(--red);border-color:var(--red)}
+.task.done .chk::after{content:"";position:absolute;left:3px;top:1px;width:6px;height:9px;border:solid var(--paper);border-width:0 2px 2px 0;transform:rotate(42deg)}
+.task .txt{flex:1;font-size:15.5px}
+.task .txt .sub{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-right:8px}
+.task.done .txt{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--red)}
+
+.footer-note{margin-top:34px;padding-top:10px;border-top:2px solid var(--ink);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);display:flex;justify-content:space-between}
+
+@media (max-width:520px){
+  .masthead{flex-direction:column;gap:4px}
+  .masthead .title{font-size:30px}
+  .tasks{margin-left:20px;padding-left:12px}
+}
+</style>
+</head>
+<body class="ruled">
+<div class="wrap">
+  <header class="masthead">
+    <span class="date">Wed · 19 August 2026</span>
+    <h1 class="title">The <em>Day</em> Book</h1>
+  </header>
+
+  <div class="meta">
+    <span>Streak <b>165 days</b></span>
+    <span>Focus <b>50 sessions</b></span>
+    <span>Cells <b>3 × 50/10</b></span>
+    <span class="strike">Rest shift applied</span>
+  </div>
+
+  <div class="hdr">
+    <h2>Today's Brief</h2>
+    <span class="no">§ 3 of 8 sessions</span>
+    <span class="pct">4 of 8 done — 50%</span>
+  </div>
+  <p class="prose-note">“One deep set beats three shallow passes.” — pencilled margin note</p>
+
+  <section class="slot">
+    <div class="slot-head">
+      <span class="time">06:30 — 08:00</span>
+      <span class="name">Networks</span>
+      <span class="tag">Core</span>
+      <span class="tick done">2/2 done</span>
+    </div>
+    <div class="tasks">
+      <div class="task done"><span class="chk"></span><span class="txt"><span class="sub">ESE 2027</span>OSI 7-layer deep drill — table + memory hooks</span></div>
+      <div class="task done"><span class="chk"></span><span class="txt"><span class="sub">PYQ 2024</span>Routing vs switching — 12-question set</span></div>
+    </div>
+  </section>
+
+  <section class="slot">
+    <div class="slot-head">
+      <span class="time">08:30 — 10:00</span>
+      <span class="name">Controls</span>
+      <span class="tag">Core</span>
+      <span class="tick">1/2 done</span>
+    </div>
+    <div class="tasks">
+      <div class="task done"><span class="chk"></span><span class="txt"><span class="sub">PYQ</span>Bode plots — gain/phase margin set</span></div>
+      <div class="task"><span class="chk"></span><span class="txt"><span class="sub">ESE 2027</span>Routh–Hurwitz — 3 problem deep-dive</span></div>
+    </div>
+  </section>
+
+  <section class="slot">
+    <div class="slot-head">
+      <span class="time">10:30 — 12:00</span>
+      <span class="name">EDC</span>
+      <span class="tag">Revision · Rest</span>
+      <span class="tick">1/2 done</span>
+    </div>
+    <div class="tasks">
+      <div class="task done"><span class="chk"></span><span class="txt"><span class="sub">NOTES</span>Diode clampers — rewrite set 4</span></div>
+      <div class="task"><span class="chk"></span><span class="txt"><span class="sub">REV</span>Transistor biasing — 20 min skim + flags</span></div>
+    </div>
+  </section>
+
+  <div class="footer-note">
+    <span>ESE 2027 — Sprint 3</span>
+    <span>Next: Controls · Bode plots @ 19:00</span>
+  </div>
+</div>
+<script>
+document.querySelectorAll('.task').forEach(t=>{
+  t.addEventListener('click',()=>t.classList.toggle('done'))
+})
+</script>
+</body>
+</html>

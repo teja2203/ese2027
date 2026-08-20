@@ -24,14 +24,29 @@
 
 # Local scratch / one-off review mockups
 scratch/
+*.log
+*.png
+*.dump
+window_dump*.txt
+window_dump*.xml
+old_block_screen.txt
+old_shorts_block_screen.txt
+regain_ui_dump.xml
+shorts_dump.xml
+splash-intro.html
+splash-preview*.html
+today-*-preview.html
 prototype.html
-splash-preview.html
-today-nothing-preview.html
-today-redesign-preview.html
+project-theme.css
+implementation_plan.md
+study-os-redesign-prompt.md
+1786868400000
 
-# Node (not needed for this static site, but harmless to ignore)
+# Node — Vite build output & deps
 node_modules/
 npm-debug.log*
+dist/
+*.tsbuildinfo
 
 # OS junk
 .DS_Store

@@ -1,0 +1,786 @@
+/* ══════════════════════════════════════════════════════════════
+   premium.css — NOTHING PREMIUM craft layer.
+   Spec: design/nothing-premium/SPEC.md (approved 2026-08-19).
+   No token changes, no layout changes — only press physics,
+   celebration rituals, micro-interactions, states.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 01 · button physics ── */
+.btn {
+  transition:
+    background 0.18s var(--ease),
+    border-color 0.18s var(--ease),
+    color 0.18s var(--ease),
+    box-shadow 0.18s var(--ease),
+    transform 0.13s var(--spring);
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn-acc:hover {
+  background: var(--acc);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--acc) 45%, transparent),
+    0 6px 22px -8px color-mix(in srgb, var(--acc) 55%, transparent);
+  transform: translateY(-1px);
+}
+.btn-acc:active {
+  background: var(--acc-2);
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.45),
+    0 0 0 1px color-mix(in srgb, var(--acc) 45%, transparent);
+}
+.btn-acc .lbl {
+  display: inline-block;
+  transition: transform 0.13s var(--spring);
+}
+.btn-acc:active .lbl {
+  transform: translateY(1px);
+}
+.btn-acc:focus-visible,
+.btn-icon:focus-visible,
+.nt-icon:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--acc);
+}
+.btn-ghost:hover {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent);
+}
+.btn-ghost:active {
+  background: color-mix(in srgb, var(--acc) 9%, transparent);
+  border-color: color-mix(in srgb, var(--acc) 45%, transparent);
+  color: var(--ink);
+  transform: scale(0.98);
+}
+.btn-ghost:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 40%, transparent);
+}
+.btn-icon {
+  position: relative;
+}
+.btn-icon::before,
+.btn-icon::after {
+  content: '';
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--ink-3);
+  transition:
+    width 0.18s var(--spring),
+    height 0.18s var(--spring),
+    border-color 0.18s var(--ease);
+  pointer-events: none;
+  z-index: 1;
+}
+.btn-icon::before {
+  top: 6px;
+  left: 6px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.btn-icon::after {
+  bottom: 6px;
+  right: 6px;
+  border-top: 0;
+  border-left: 0;
+}
+.btn-icon:hover::before,
+.btn-icon:hover::after {
+  border-color: var(--ink);
+}
+.btn-icon:active::before,
+.btn-icon:active::after {
+  width: 4px;
+  height: 4px;
+  border-color: var(--acc);
+}
+.btn-icon:active,
+.nt-icon:active {
+  transform: scale(0.96);
+}
+.nt-tag:active,
+.navbtn:active {
+  transform: scale(0.96);
+}
+
+/* ── 02 · nav — active dot lights ── */
+.navbtn.active::after {
+  box-shadow: 0 0 8px color-mix(in srgb, var(--acc) 75%, transparent);
+  animation: dot-pop 0.3s var(--spring);
+}
+@keyframes dot-pop {
+  from {
+    transform: scaleX(0.4);
+  }
+}
+
+/* ── 03 · task rows — chk pix-in + tick line + acc strike ── */
+.task-toggle .chk.on {
+  animation: chk-pop 0.28s var(--spring);
+}
+@keyframes chk-pop {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.14);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.task-toggle:active .chk {
+  transform: scale(0.9);
+}
+.taskrow {
+  position: relative;
+}
+.taskrow.done::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--acc);
+  transform-origin: left;
+  animation: tick-line 0.35s var(--ease);
+  pointer-events: none;
+}
+@keyframes tick-line {
+  from {
+    transform: scaleX(0);
+  }
+}
+.taskrow.done .txt {
+  text-decoration-color: var(--acc);
+  opacity: 0.82;
+}
+
+/* ── 04 · hold button — LED segment cascade ── */
+.hold-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.holdsegs {
+  display: inline-flex;
+  gap: 3px;
+}
+.holdsegs i {
+  width: 4px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--surface-lift);
+  transition: background 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+.holdsegs i.on {
+  background: var(--acc);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--acc) 65%, transparent);
+  animation: seg-in 0.22s var(--spring);
+}
+@keyframes seg-in {
+  from {
+    transform: scaleY(0.4);
+  }
+}
+
+/* ── 05 · celebration — LED stamp ceremony ── */
+.celebrate {
+  position: fixed;
+  overflow: hidden;
+}
+/* red flash at mount */
+.celebrate::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 40%,
+    color-mix(in srgb, var(--acc) 16%, transparent),
+    transparent 72%
+  );
+  animation: pre-flash 0.9s var(--ease) forwards;
+  pointer-events: none;
+}
+@keyframes pre-flash {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/* signal line sweep (Nothing LED notification language) */
+.celebrate::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--acc) 30%,
+    var(--acc-2) 50%,
+    var(--acc) 70%,
+    transparent
+  );
+  opacity: 0;
+  animation: sig-sweep 1s var(--ease) 0.25s forwards;
+  pointer-events: none;
+}
+@keyframes sig-sweep {
+  0% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+/* plate: corner tick + stamp motions */
+.celebrate-stage {
+  position: relative;
+}
+.celebrate-stage::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 16px;
+  height: 16px;
+  border-top: 2px solid var(--acc);
+  border-right: 2px solid var(--acc);
+  animation: corner-tick 0.5s var(--ease) 0.35s backwards;
+}
+@keyframes corner-tick {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+.medallion .core {
+  animation: core-pop 0.5s var(--spring) 0.12s backwards;
+}
+@keyframes core-pop {
+  from {
+    transform: scale(0.4);
+  }
+}
+.celebrate-title {
+  animation: title-stamp 0.55s var(--spring) 0.2s backwards;
+}
+@keyframes title-stamp {
+  0% {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  45% {
+    transform: scale(1.045);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ── 06 · micro-motion — cards & sticky headers ── */
+.card {
+  transition: border-color 0.18s var(--ease), transform 0.12s var(--spring);
+}
+.card:active {
+  transform: scale(0.995);
+  border-color: var(--line-2);
+}
+
+/* ── 07 · universal press physics (all interactive elements) ── */
+.press,
+button:not(:disabled),
+[role='button']:not(:disabled) {
+  transition:
+    transform 0.13s var(--spring),
+    background 0.18s var(--ease),
+    border-color 0.18s var(--ease),
+    color 0.18s var(--ease);
+}
+.press:active,
+button:active:not(:disabled),
+[role='button']:active:not(:disabled) {
+  transform: scale(0.97);
+}
+button:disabled,
+[role='button']:disabled {
+  opacity: 0.38;
+  cursor: default;
+  transform: none !important;
+}
+/* hold buttons keep their LED row from scaling the label */
+.hold-wrap {
+  pointer-events: none;
+}
+
+/* ── 08 · ritual: pomodoro-complete digit flash ── */
+.wfc-clock {
+  position: relative;
+}
+.wfc-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: 18px;
+  background: var(--acc);
+  opacity: 0;
+  pointer-events: none;
+}
+.wfc-flash.on {
+  animation: wfc-flash 0.3s var(--ease);
+}
+@keyframes wfc-flash {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ── 09 · ritual: session 24-seg cascade ── */
+.nt-seg.fseg.cascade i {
+  animation: seg-cascade 0.55s var(--spring) backwards;
+  animation-delay: calc(var(--i, 0) * 35ms);
+}
+@keyframes seg-cascade {
+  0% {
+    background: transparent;
+    box-shadow: none;
+  }
+  35% {
+    background: var(--acc);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--acc) 55%, transparent);
+  }
+  100% {
+    background: var(--seg-bg, transparent);
+    box-shadow: none;
+  }
+}
+
+/* ── 10 · state: first-run whisper + run-button signal ── */
+.nt-fwhisper {
+  font-family: var(--mono-font);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  margin-top: 10px;
+  animation: whisper-in 0.7s var(--ease) 0.3s backwards;
+}
+@keyframes whisper-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+.fkey.run.pulse {
+  position: relative;
+}
+.fkey.run.pulse::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--acc) 60%, transparent);
+  animation: run-pulse 1.6s var(--ease) infinite;
+  pointer-events: none;
+}
+@keyframes run-pulse {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.92);
+  }
+  60% {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+}
+
+/* ── 11 · ritual: day-complete FULL SIGNAL ── */
+.celebrate.full-signal .celebrate-stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--acc) 14%, transparent),
+    transparent 78%
+  );
+  animation: sig-fade 1.8s var(--ease) forwards;
+  pointer-events: none;
+}
+@keyframes sig-fade {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ── 12 · ritual: streak milestone stamp + 100-day LED glow ── */
+.yst .n.stamp {
+  animation: streak-stamp 0.55s var(--spring) backwards;
+  transform-origin: bottom center;
+}
+@keyframes streak-stamp {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.yst .n.led100 {
+  color: var(--acc);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--acc) 55%, transparent);
+}
+
+/* ── 13 · reduced motion: rituals degrade to 150ms fades ── */
+@media (prefers-reduced-motion: reduce) {
+  .wfc-flash.on,
+  .nt-seg.fseg.cascade i,
+  .celebrate::before,
+  .celebrate::after,
+  .celebrate-stage::before,
+  .celebrate.full-signal .celebrate-stage::after {
+    animation: none !important;
+    opacity: 1;
+  }
+  .fkey.run.pulse::after {
+    animation: none;
+    opacity: 0;
+  }
+  .yst .n.stamp {
+    animation: none;
+  }
+  .press:active,
+  button:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* ── 14 · celebration FX layers (premium-prototype.html lab, SPEC §2) ── */
+.fx-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: color-mix(in srgb, var(--acc) 12%, transparent);
+  animation: fx-flash 0.32s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes fx-flash {
+  from {
+    opacity: 1;
+  }
+}
+.fx-sigline {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  z-index: 300;
+  background: var(--acc);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--acc) 90%, transparent);
+  animation: fx-sigline 0.68s var(--ease) forwards;
+  pointer-events: none;
+}
+@keyframes fx-sigline {
+  0% {
+    transform: translateY(-30vh);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(30vh);
+    opacity: 0;
+  }
+}
+.fx-stampnum {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.fx-stampnum span {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(84px, 22vw, 150px);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  animation: fx-stampnum 1.42s var(--spring) forwards;
+}
+@keyframes fx-stampnum {
+  0% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+  12% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  55% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+.fx-ledcol {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 18vh;
+  animation: fx-ledcol-fade 1.35s var(--ease) forwards;
+  pointer-events: none;
+}
+.fx-ledcol i {
+  width: 6px;
+  height: 70%;
+  transform-origin: bottom;
+  background: var(--acc);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--acc) 70%, transparent);
+  animation: fx-ledcol-rise 0.85s var(--spring) both;
+  animation-delay: calc(var(--i) * 0.05s);
+}
+@keyframes fx-ledcol-fade {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes fx-ledcol-rise {
+  from {
+    transform: scaleY(0);
+  }
+}
+.fx-pixburst {
+  position: fixed;
+  z-index: 300;
+  pointer-events: none;
+}
+.fx-pixburst i {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--acc);
+  transform: translate(-50%, -50%);
+  animation: fx-pix 0.5s var(--spring) both;
+  animation-delay: var(--dl, 0ms);
+}
+@keyframes fx-pix {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.7);
+  }
+}
+
+/* reduced motion: FX layers collapse to nothing */
+@media (prefers-reduced-motion: reduce) {
+  .fx-flash,
+  .fx-sigline,
+  .fx-stampnum,
+  .fx-ledcol,
+  .fx-pixburst {
+    display: none;
+  }
+}
+
+/* ── 15 · overlay design system (Nothing craft) ── */
+.nt-overlay-card {
+  background: var(--bg-2);
+  border: 2px solid var(--line-2);
+  border-radius: var(--r-lg);
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.55);
+  color: var(--ink);
+  font-family: var(--ui-font);
+}
+.nt-overlay-eyebrow {
+  color: var(--acc);
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.nt-overlay-title {
+  font-family: var(--display-font);
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.15;
+  color: var(--ink);
+}
+.nt-overlay-sub {
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.nt-overlay-meta {
+  color: var(--ink-4);
+  font-family: var(--mono-font);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.nt-overlay-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 14px -4px;
+}
+.nt-overlay-tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nt-overlay-signal {
+  display: inline-block;
+  width: 22px;
+  height: 2px;
+  background: var(--acc);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--acc) 60%, transparent);
+}
+.nt-overlay-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border-radius: var(--r);
+  font-family: var(--mono-font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 0.18s var(--ease),
+    border-color 0.18s var(--ease),
+    transform 0.13s var(--spring);
+  border: 2px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+}
+.nt-overlay-key:hover {
+  border-color: var(--ink);
+}
+.nt-overlay-key:active {
+  transform: scale(0.97);
+}
+.nt-overlay-key.primary {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: var(--acc-ink);
+  box-shadow: 0 6px 22px -8px color-mix(in srgb, var(--acc) 55%, transparent);
+}
+.nt-overlay-key.primary:hover {
+  transform: translateY(-1px);
+}
+.nt-overlay-key.ghost {
+  background: color-mix(in srgb, var(--acc) 9%, transparent);
+  border-color: color-mix(in srgb, var(--acc) 45%, transparent);
+}
+.nt-overlay-key:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--acc);
+}
+.nt-overlay-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 10px 12px;
+  color: var(--ink);
+  font-family: var(--ui-font);
+  font-size: 13px;
+}
+.nt-overlay-input:focus {
+  outline: none;
+  border-color: var(--acc);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--acc) 30%, transparent);
+}
+.nt-overlay-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.nt-overlay-row + .nt-overlay-row {
+  margin-top: 8px;
+}
+.nt-overlay-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+.nt-overlay-actions > * {
+  flex: 1;
+}

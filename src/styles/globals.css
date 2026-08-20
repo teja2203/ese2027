@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+/* Map the token layer onto Tailwind v4 theme keys so shadcn components
+   and utilities (bg-background, text-foreground, border-border…) work. */
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--bg-2);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--acc);
+  --color-primary-foreground: var(--acc-ink);
+  --color-secondary: var(--surface-lift);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface);
+  --color-muted-foreground: var(--ink-3);
+  --color-accent: var(--surface-lift);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: var(--acc);
+  --color-destructive-foreground: var(--acc-ink);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--acc);
+  --radius-lg: var(--r-lg);
+  --radius-md: var(--r);
+  --radius-sm: var(--r-sm);
+
+  --font-display: var(--display-font);
+  --font-ui: var(--ui-font);
+  --font-mono: var(--mono-font);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  --color-acc: var(--acc);
+  --color-acc-2: var(--acc-2);
+  --color-acc-dim: var(--acc-dim);
+  --color-bg-2: var(--bg-2);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--ui-font);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    max-width: 100%;
+    margin: 0;
+    min-height: 100vh;
+    padding-bottom: calc(var(--rail-nav-h) + var(--rail-timer-h) + 24px);
+    overflow-x: hidden;
+  }
+  button,
+  [role='button'],
+  a {
+    -webkit-touch-callout: none;
+  }
+  ::selection {
+    background: var(--acc);
+    color: var(--acc-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--acc);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Preserve offline-first state as well as preferences during Android backup. -->
+    <include domain="sharedpref" path="."/>
+    <include domain="database" path="."/>
+    <include domain="file" path="."/>
+    <include domain="external" path="Documents/ESE2027/backups"/>
+</full-backup-content>

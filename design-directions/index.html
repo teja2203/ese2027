@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ESE2027 — UI Direction Picker</title>
+<style>
+:root{--bg:#0F0F0F;--card:#171717;--line:#262626;--ink:#F0EFED;--ink-2:#A5A29C;--ink-3:#6E6B66;--acc:#D71921}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+h1{font-size:26px;font-weight:700;letter-spacing:-.01em}
+p.lead{color:var(--ink-2);margin:8px 0 26px;max-width:640px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;margin-bottom:34px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.card .k{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.card .k.a{color:#C0392B}.card .k.b{color:#F5B841}.card .k.c{color:#5B8DEF}
+.card h2{font-size:18px;font-weight:700}
+.card p{font-size:13.5px;color:var(--ink-2);flex:1}
+.card .axes{font-size:12px;color:var(--ink-3);border-top:1px solid var(--line);padding-top:10px}
+.card .open{display:inline-block;margin-top:4px;background:var(--ink);color:var(--bg);font-weight:700;font-size:12.5px;text-decoration:none;padding:9px 14px;border-radius:9px;text-align:center}
+.card .open:hover{background:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+td.dim{color:var(--ink-2)}
+.reco{margin-top:30px;background:rgba(215,25,33,.08);border:1px solid rgba(215,25,33,.4);border-radius:12px;padding:16px 18px;font-size:13.5px;color:var(--ink-2)}
+.reco b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ESE2027 — UI directions</h1>
+  <p class="lead">Round 2 — the high-end directions (D/E/F), grounded in ui-ux-pro-max research + 21st.dev references. Same app, same content, same 5-tab structure. Open each preview, try the interactions (tap tasks, expand sessions, hit DEMO ▸), then pick one.</p>
+
+  <div class="cards">
+    <div class="card" style="border-color:rgba(109,90,230,.45)">
+      <span class="k" style="color:#8B7BFF">D — Nocturne ★ recommended</span>
+      <h2>Cinematic dark, pro-tool precision</h2>
+      <p>Layered deep blacks, hairline borders, indigo-violet signal, gradient numerals, glassy blur nav. Linear/Arc/Verne-grade. Celebrations: ripple, aurora sweep, bloom, engraved bottom-sheet.</p>
+      <div class="axes">Differs: cinematic depth · glass + blur · gradient display type · aurora motion</div>
+      <a class="open" href="D-nocturne.html" target="_blank">Open D →</a>
+    </div>
+    <div class="card">
+      <span class="k" style="color:#E63946">E — Mono-Luxe</span>
+      <h2>Editorial minimal, type-first</h2>
+      <p>Near-black, huge tabular numerals, hairline rules, one signal red. No cards, no borders between content — spacing and typography do the work. Celebrations: numeral swell, wax seal.</p>
+      <div class="axes">Differs: cardless editorial · oversized type · asymmetric grid · type-only rituals</div>
+      <a class="open" href="E-mono-luxe.html" target="_blank">Open E →</a>
+    </div>
+    <div class="card">
+      <span class="k" style="color:#C99B4B">F — Amber</span>
+      <h2>Warm luxury, literary feel</h2>
+      <p>Warm stone blacks, serif italic headlines, gold signal, filigree gauge, pill ivory rail. Feels like a bound journal under lamp-light. Celebrations: candlelight bloom, rising motes, wax seal.</p>
+      <div class="axes">Differs: warm temperature · serif display · gold semantics · candlelight motion</div>
+      <a class="open" href="F-amber.html" target="_blank">Open F →</a>
+    </div>
+  </div>
+
+  <table>
+    <tr><th>Axis</th><th>D · Nocturne</th><th>E · Mono-Luxe</th><th>F · Amber</th></tr>
+    <tr><td>Mood</td><td>precise, premium, focused</td><td>editorial, disciplined</td><td>warm, ceremonial</td></tr>
+    <tr><td>Theme</td><td>dark only (layered blacks)</td><td>dark only</td><td>dark only (warm stone)</td></tr>
+    <tr><td>Type</td><td>Inter-style + gradient display</td><td>huge tabular numerals</td><td>serif italic + mono labels</td></tr>
+    <tr><td>Signal</td><td>indigo-violet</td><td>crimson</td><td>gold</td></tr>
+    <tr><td>Surfaces</td><td>glass cards + hairline borders</td><td>cardless — type + rules</td><td>leather plates + filigree</td></tr>
+    <tr><td>Motion</td><td>Expo-out, ripple, aurora sweep</td><td>spring swell, seal stamp</td><td>candlelight, rising motes</td></tr>
+    <tr><td>Risks</td><td class="dim">blur perf on old tablet; violet ≠ exam urgency</td><td class="dim">least glanceable; very austere</td><td class="dim">serif display on small screens; gold contrast care</td></tr>
+  </table>
+
+  <div class="reco">
+    <b>Recommendation: D — Nocturne</b> — highest "wow" per pixel, most professional, safest on the Android WebView (glass blur is optional; layers degrade gracefully), and its celebration language (ripple → sweep → bloom → engraved sheet) scales to every state. E is the strongest if you want pure minimalism; F if you want warmth.
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DAYLIGHT — ESE2027 Study OS · redesign prototype</title>
+<style>
+:root{
+  --bg:#0B0D10; --glass:rgba(255,255,255,.05); --glass-2:rgba(255,255,255,.08);
+  --glass-solid:rgba(15,17,20,.92);
+  --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16);
+  --ink:#EDE8DE; --mute:#9AA0A8; --faint:#5C636E;
+  --gold:#F5B84C; --gold-hot:#F5E6C4; --gold-dim:rgba(245,184,76,.12);
+  --steel:#5F8EA9; --steel-dim:rgba(95,142,169,.12);
+  --red:#E85A4A; --red-dim:rgba(232,90,74,.1);
+  --ease:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.34,1.56,.64,1);
+  --sans:'Segoe UI',system-ui,sans-serif;
+  --mono:'Cascadia Mono',Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.5;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:
+  radial-gradient(560px 420px at 50% -12%,rgba(245,184,76,.07),transparent 60%),
+  radial-gradient(420px 340px at 6% 108%,rgba(95,142,169,.05),transparent 60%)}
+.stage{position:relative;height:100vh;max-width:640px;margin:0 auto;perspective:1400px;z-index:1}
+
+/* ── top wick ── */
+.wick{position:absolute;top:0;left:50%;transform:translateX(-50%);width:min(440px,80vw);padding:18px 0 10px;z-index:5;display:flex;align-items:center;gap:12px}
+.wick .rail{flex:1;height:2px;background:var(--line-2);position:relative;border-radius:2px}
+.wick .rail i{position:absolute;left:0;top:-1px;height:4px;border-radius:2px;background:linear-gradient(90deg,#8A6A2F,var(--gold));box-shadow:0 0 10px rgba(245,184,76,.5);transition:width .8s var(--ease)}
+.wick .rail i::after{content:"";position:absolute;right:-3px;top:-2px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 12px var(--gold)}
+.wick .lbl{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-variant-numeric:tabular-nums}
+.wick .lbl b{color:var(--gold)}
+.wick .lbl.hot b{color:var(--gold-hot)}
+
+/* ── the vessel ── */
+.vessel{position:absolute;top:58px;bottom:76px;left:50%;transform:translateX(-50%);width:min(520px,92vw);background:var(--glass);border:1px solid var(--line);border-radius:22px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);overflow:hidden;transition:transform .5s var(--ease),opacity .5s var(--ease),border-color .5s;z-index:4;box-shadow:0 30px 80px -30px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08)}
+.vessel.flipped{transform:translateX(-50%) rotateY(180deg)}
+.vessel::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(245,184,76,.05),transparent 30%)}
+.vin{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
+.vin .head{padding:22px 24px 6px;display:flex;align-items:baseline;gap:12px}
+.vin .head .dt{font-family:var(--mono);font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:var(--faint)}
+.vin .head .pct{margin-left:auto;font-family:var(--sans);font-size:13px;font-weight:600;color:var(--gold);font-variant-numeric:tabular-nums}
+.vin .scroll{flex:1;overflow-y:auto;padding:8px 18px 30px;scrollbar-width:none}
+.vin .scroll::-webkit-scrollbar{display:none}
+.vin h2{font-size:clamp(26px,6vw,34px);font-weight:600;letter-spacing:-.02em;padding:4px 6px 16px}
+
+/* light segments */
+.seg{margin:0 0 10px;border:1px solid var(--line);border-radius:16px;background:rgba(12,14,17,.55);position:relative;overflow:hidden;transition:border-color .4s,box-shadow .4s}
+.seg::after{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--lit,0%);background:linear-gradient(90deg,rgba(245,184,76,.05),rgba(245,184,76,.16));transition:width .7s var(--ease);pointer-events:none}
+.seg.live{border-color:rgba(245,184,76,.4);box-shadow:0 0 34px -10px rgba(245,184,76,.4)}
+.seg.done{border-color:rgba(245,184,76,.28)}
+.seg.rest{border-color:rgba(95,142,169,.3)}
+.seg.rest::after{background:linear-gradient(90deg,rgba(95,142,169,.04),rgba(95,142,169,.14))}
+.seg .shead{position:relative;z-index:1;display:flex;align-items:center;gap:13px;padding:14px 16px;cursor:pointer;user-select:none}
+.seg .stime{font-family:var(--mono);font-size:10px;color:var(--faint);min-width:84px;letter-spacing:.05em;font-variant-numeric:tabular-nums}
+.seg .snm{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+.seg .tag{font-family:var(--mono);font-size:8px;letter-spacing:.14em;text-transform:uppercase;padding:3.5px 8px;border-radius:999px;border:1px solid var(--line-2);color:var(--mute)}
+.seg.live .tag{color:var(--gold);border-color:rgba(245,184,76,.4);background:var(--gold-dim)}
+.seg.rest .tag{color:var(--steel);border-color:rgba(95,142,169,.35);background:var(--steel-dim)}
+.seg .scnt{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums}
+.seg .scnt b{color:var(--ink);font-size:12.5px}
+.seg.live .scnt b{color:var(--gold)}
+.seg .chev{color:var(--faint);font-size:9px;transition:transform .35s var(--ease)}
+.seg.open .chev{transform:rotate(90deg)}
+.seg .sbody{position:relative;z-index:1;display:none;padding:4px 16px 14px;border-top:1px solid var(--line)}
+.seg.open .sbody{display:block}
+.task{display:flex;align-items:center;gap:12px;padding:11px 2px;cursor:pointer;user-select:none;position:relative}
+.task+.task{border-top:1px dashed var(--line)}
+.task .st{width:19px;height:19px;border-radius:6px;border:1.5px solid var(--line-2);flex-shrink:0;position:relative;transition:all .3s var(--ease)}
+.task.done .st{background:var(--gold);border-color:var(--gold);box-shadow:0 0 10px rgba(245,184,76,.5)}
+.task.done .st::after{content:"";position:absolute;left:5.5px;top:2.5px;width:5px;height:9px;border:solid #0B0D10;border-width:0 2px 2px 0;transform:rotate(42deg)}
+.task .cd{font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);min-width:62px}
+.task .tx{font-size:13.5px}
+.task.done .tx{color:var(--mute);text-decoration:line-through;text-decoration-color:rgba(245,184,76,.45)}
+
+/* ignite — lives inside the active segment */
+.ignite{position:absolute;right:14px;bottom:-1px;z-index:2;display:none;align-items:center;gap:8px;font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;background:linear-gradient(180deg,#F7C76E,var(--gold));color:#171104;border:none;border-radius:12px 12px 4px 4px;padding:9px 16px 11px;cursor:pointer;box-shadow:0 6px 22px -4px rgba(245,184,76,.55),0 0 0 1px rgba(245,184,76,.4);transition:transform .15s var(--spring),box-shadow .2s}
+.seg.live .ignite{display:flex}
+.ignite:active{transform:translateY(2px) scale(.98)}
+.ignite .fl{font-size:12px}
+.ignite .fill{width:44px;height:3px;background:rgba(23,17,4,.25);border-radius:2px;position:relative;overflow:hidden}
+.ignite .fill i{position:absolute;left:0;top:0;bottom:0;background:#171104;border-radius:2px;transition:width 1s linear}
+
+/* ritual row — vessel bottom */
+.ritual{display:flex;align-items:center;gap:10px;margin:14px 0 8px;padding:12px 16px;border:1px dashed var(--line-2);border-radius:14px}
+.ritual .rl{font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.ritual .dots{display:flex;gap:6px;flex:1;justify-content:flex-end}
+.ritual .dots span{width:14px;height:14px;border-radius:50%;border:1px solid var(--line-2);cursor:pointer;transition:all .3s var(--spring)}
+.ritual .dots span.on{background:var(--gold);border-color:var(--gold);box-shadow:0 0 8px rgba(245,184,76,.5)}
+.rating{margin-top:6px;display:none;align-items:center;gap:8px;padding:12px 16px;border:1px solid var(--line-2);border-radius:14px;font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.rating.show{display:flex}
+.rating .stars{margin-left:auto;display:flex;gap:6px}
+.rating .stars span{width:22px;height:14px;border-radius:3px;background:var(--line-2);cursor:pointer;transition:background .3s}
+.rating .stars span.on{background:var(--gold);box-shadow:0 0 8px rgba(245,184,76,.4)}
+
+/* ── week (flip side) ── */
+.week{position:absolute;inset:0;background:var(--glass-solid);border:1px solid var(--line);border-radius:22px;backdrop-filter:blur(18px);transform:rotateY(180deg);opacity:0;pointer-events:none;transition:transform .5s var(--ease),opacity .5s;overflow:hidden;z-index:3}
+.vessel.flipped .week{opacity:1;pointer-events:auto}
+.week .whead{padding:22px 24px 6px;display:flex;align-items:baseline}
+.week .whead .dt{font-family:var(--mono);font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:var(--faint)}
+.week .wscroll{height:calc(100% - 90px);overflow-y:auto;padding:10px 18px 30px;scrollbar-width:none}
+.wday{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;margin-bottom:8px;background:rgba(12,14,17,.55);cursor:pointer;transition:border-color .3s;user-select:none}
+.wday:hover{border-color:var(--line-2)}
+.wday.hot{border-color:rgba(245,184,76,.4)}
+.wday.rest{border-color:rgba(95,142,169,.3)}
+.wday .wn{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);min-width:52px}
+.wday .wd{font-size:13.5px;font-weight:600;flex:1}
+.wday .wl{width:52px;height:4px;border-radius:2px;background:var(--line-2);overflow:hidden}
+.wday .wl i{display:block;height:100%;background:var(--gold);border-radius:2px}
+.wday.hot .wn{color:var(--gold)}
+
+/* ── edge glyphs ── */
+.edge{position:absolute;bottom:18px;z-index:20;width:46px;height:46px;border-radius:14px;background:var(--glass);border:1px solid var(--line-2);backdrop-filter:blur(14px);color:var(--mute);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;transition:all .25s var(--ease)}
+.edge:hover{color:var(--ink);border-color:rgba(245,184,76,.4)}
+.edge:active{transform:scale(.92)}
+.edge.l{left:calc(50% - 300px)}
+.edge.r{right:calc(50% - 300px)}
+.edge .tip{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);white-space:nowrap}
+
+/* ── cabinet ── */
+.cab{position:fixed;top:0;right:0;bottom:0;width:min(420px,92vw);z-index:60;background:var(--glass-solid);border-left:1px solid var(--line-2);backdrop-filter:blur(22px);transform:translateX(105%);transition:transform .45s var(--ease);display:flex;flex-direction:column;box-shadow:-30px 0 80px rgba(0,0,0,.6)}
+.cab.open{transform:none}
+.cab .cab-head{padding:22px 22px 10px;display:flex;align-items:center;gap:10px}
+.cab .cab-head .dt{font-family:var(--mono);font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:var(--faint)}
+.cab .x{margin-left:auto;width:34px;height:34px;border-radius:10px;border:1px solid var(--line-2);background:var(--glass);color:var(--mute);cursor:pointer;font-size:13px}
+.cab .shelves{display:flex;gap:6px;padding:4px 22px 12px}
+.cab .shelf{flex:1;padding:11px 8px;border:1px solid var(--line);border-radius:12px;background:var(--glass);color:var(--faint);font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .25s;position:relative}
+.cab .shelf.on{color:var(--gold);border-color:rgba(245,184,76,.4);background:var(--gold-dim)}
+.cab .shelf .lamps{position:absolute;top:4px;right:7px;display:flex;gap:2px}
+.cab .shelf .lamps i{width:4px;height:4px;border-radius:50%;background:var(--line-2)}
+.cab .shelf .lamps i.lit{background:var(--gold);box-shadow:0 0 6px var(--gold)}
+.cab .cab-body{flex:1;overflow-y:auto;padding:6px 22px 30px;scrollbar-width:none}
+.shelf-page{display:none}
+.shelf-page.on{display:block}
+.gauge{margin-bottom:16px}
+.gauge .grow{display:flex;justify-content:space-between;margin-bottom:6px}
+.gauge .gl{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.gauge .gv{font-size:16px;font-weight:600;color:var(--gold);font-variant-numeric:tabular-nums}
+.gauge .gline{height:5px;border-radius:3px;background:var(--line);overflow:hidden}
+.gauge .gline i{display:block;height:100%;background:linear-gradient(90deg,#8A6A2F,var(--gold));border-radius:3px}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.grid .c{aspect-ratio:1;border-radius:8px;background:var(--glass);border:1px solid var(--line)}
+.grid .c.lit{background:var(--gold-dim);border-color:rgba(245,184,76,.35)}
+.grid .c.hot{background:var(--gold);box-shadow:0 0 10px rgba(245,184,76,.5)}
+.trophy{display:flex;align-items:center;gap:13px;padding:12px 4px;border-bottom:1px dashed var(--line)}
+.trophy:last-child{border-bottom:none}
+.trophy .tp{width:38px;height:38px;border-radius:12px;border:1px solid var(--line-2);background:var(--glass);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.trophy.lit .tp{border-color:rgba(245,184,76,.5);background:var(--gold-dim);box-shadow:0 0 12px rgba(245,184,76,.25)}
+.trophy .tn{font-size:13.5px;font-weight:600}
+.trophy .td{font-size:11px;color:var(--faint)}
+.trophy .tt{margin-left:auto;font-family:var(--mono);font-size:8.5px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase}
+.trophy.un{opacity:.45}
+.setrow{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px dashed var(--line)}
+.setrow:last-child{border-bottom:none}
+.setrow .sl{flex:1;font-size:13.5px;font-weight:500}
+.setrow .sd{display:block;font-size:11px;color:var(--faint)}
+.tog{width:42px;height:23px;border-radius:12px;background:var(--line);cursor:pointer;position:relative;transition:background .3s;border:none}
+.tog .kn{position:absolute;top:2.5px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--mute);transition:all .3s var(--spring)}
+.tog.on{background:var(--gold-dim)}
+.tog.on .kn{left:21px;background:var(--gold);box-shadow:0 0 8px rgba(245,184,76,.6)}
+
+/* ── focus morph ── */
+.focus{position:fixed;inset:0;z-index:70;background:rgba(9,11,14,.9);backdrop-filter:blur(26px);opacity:0;pointer-events:none;transition:opacity .4s var(--ease);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px}
+.focus.open{opacity:1;pointer-events:auto}
+.focus .fseg{font-family:var(--mono);font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);display:flex;gap:14px;align-items:center}
+.focus .fseg .fdot{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 12px var(--gold);animation:glim 1.4s infinite}
+@keyframes glim{0%,100%{opacity:1}50%{opacity:.4}}
+.focus .ftime{font-size:clamp(72px,18vw,128px);font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1;text-shadow:0 0 60px rgba(245,184,76,.25)}
+.focus .ftime small{font-size:.3em;color:var(--faint);letter-spacing:.02em}
+.focus .fline{width:min(520px,80vw);height:3px;background:var(--line);border-radius:2px;position:relative;overflow:visible}
+.focus .fline i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#8A6A2F,var(--gold));border-radius:2px;transition:width 1s linear}
+.focus .fline .fh{position:absolute;top:-5px;width:13px;height:13px;border-radius:50%;background:var(--gold);box-shadow:0 0 16px var(--gold);transition:left 1s linear}
+.focus .fbtns{display:flex;gap:10px;align-items:center}
+.fbtn{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;padding:13px 22px;border-radius:12px;border:1px solid var(--line-2);background:var(--glass);color:var(--mute);cursor:pointer;transition:all .2s var(--ease)}
+.fbtn:active{transform:scale(.95)}
+.fbtn:hover{color:var(--ink)}
+.fbtn.main{background:linear-gradient(180deg,#F7C76E,var(--gold));color:#171104;border:none;box-shadow:0 8px 30px -6px rgba(245,184,76,.5)}
+.fbtn.main:active{transform:translateY(2px) scale(.98)}
+.fbtn.danger{color:var(--red);border-color:rgba(232,90,74,.4);background:var(--red-dim)}
+.fsel{display:flex;gap:6px}
+.fsel .fseg-btn{border:1px solid var(--line-2);background:none;color:var(--faint);font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;padding:9px 14px;border-radius:10px;cursor:pointer;transition:all .2s}
+.fsel .fseg-btn.on{color:var(--gold);border-color:rgba(245,184,76,.4);background:var(--gold-dim)}
+.fclose{position:absolute;top:26px;right:26px;width:40px;height:40px;border-radius:12px;border:1px solid var(--line-2);background:var(--glass);color:var(--mute);cursor:pointer;font-size:14px}
+
+/* ── celebrations ── */
+.mote{position:fixed;width:5px;height:5px;border-radius:50%;background:var(--gold-hot);box-shadow:0 0 10px var(--gold);pointer-events:none;z-index:95;animation:mote 1.2s var(--ease) forwards}
+@keyframes mote{to{opacity:0;transform:translateY(-46px) scale(.4)}}
+.sweep{position:fixed;inset:0;pointer-events:none;z-index:90;opacity:0;background:linear-gradient(180deg,transparent 20%,rgba(245,184,76,.16) 50%,transparent 80%);animation:sweepy 1.5s var(--ease)}
+@keyframes sweepy{0%{opacity:0;transform:translateY(-100%)}25%{opacity:1}100%{opacity:0;transform:translateY(100%)}}
+.fulllight{position:fixed;inset:0;z-index:88;display:none;align-items:center;justify-content:center;background:rgba(9,11,14,.86);backdrop-filter:blur(10px)}
+.fulllight.show{display:flex}
+.fulllight .num{font-size:clamp(110px,30vw,200px);font-weight:600;letter-spacing:-.04em;color:var(--gold-hot);text-shadow:0 0 80px rgba(245,184,76,.6);animation:numbloom 1s var(--spring);font-variant-numeric:tabular-nums}
+@keyframes numbloom{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+.fulllight .cap{font-family:var(--mono);font-size:10px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);text-align:center;margin-top:16px}
+.plate{position:fixed;right:-440px;top:50%;transform:translateY(-50%);z-index:92;width:min(380px,90vw);background:var(--glass-solid);border:1px solid rgba(245,184,76,.45);border-radius:20px;padding:20px 24px;transition:right .5s var(--spring);box-shadow:-20px 0 70px rgba(0,0,0,.6),0 0 40px -10px rgba(245,184,76,.4)}
+.plate.show{right:24px}
+.plate .ey{font-family:var(--mono);font-size:8.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold)}
+.plate h3{font-size:17px;font-weight:600;margin-top:8px}
+.plate .ps{font-size:12.5px;color:var(--mute);margin-top:4px}
+.plate .engrave{position:absolute;top:14px;right:16px;font-size:22px;color:var(--gold);text-shadow:0 0 14px rgba(245,184,76,.6)}
+.demo{position:fixed;left:14px;bottom:82px;z-index:75;font-family:var(--mono);font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);background:var(--glass);border:1px solid var(--line);border-radius:10px;padding:9px 13px;cursor:pointer;opacity:.75}
+.demo:hover{opacity:1;color:var(--gold)}
+@media (max-width:700px){.edge.l{left:14px}.edge.r{right:14px}.edge .tip{display:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="wick">
+    <span class="lbl">day <b>165</b></span>
+    <div class="rail"><i id="wickFill" style="width:50%"></i></div>
+    <span class="lbl hot"><b>4/8</b></span>
+  </div>
+
+  <!-- VESSEL (front: today) -->
+  <div class="vessel" id="vessel">
+    <div class="vin">
+      <div class="head">
+        <span class="dt">Wednesday · 19 August 2026</span>
+        <span class="pct" id="dayPct">50%</span>
+      </div>
+      <div class="scroll" id="dayScroll">
+        <h2>Today</h2>
+
+        <div class="seg done open">
+          <div class="shead"><span class="stime">06:30 – 08:00</span><span class="snm">Networks</span><span class="tag">done</span><span class="scnt"><b>2</b>/2</span><span class="chev">▸</span></div>
+          <div class="sbody">
+            <div class="task done"><span class="st"></span><span class="cd">ESE-2027</span><span class="tx">OSI 7-layer deep drill — table + hooks</span></div>
+            <div class="task done"><span class="st"></span><span class="cd">PYQ-2024</span><span class="tx">Routing vs switching — 12-question set</span></div>
+          </div>
+        </div>
+
+        <div class="seg live open" id="liveSeg">
+          <div class="shead"><span class="stime">08:30 – 10:00</span><span class="snm">Controls</span><span class="tag">now</span><span class="scnt"><b>1</b>/2</span><span class="chev">▸</span></div>
+          <button class="ignite" onclick="openFocus()"><span class="fl">◉</span>Ignite<span class="fill"><i id="ignFill" style="width:46%"></i></span></button>
+          <div class="sbody">
+            <div class="task done"><span class="st"></span><span class="cd">PYQ</span><span class="tx">Bode plots — gain/phase margin set</span></div>
+            <div class="task"><span class="st"></span><span class="cd">ESE-2027</span><span class="tx">Routh–Hurwitz — 3 problem deep-dive</span></div>
+          </div>
+        </div>
+
+        <div class="seg rest open">
+          <div class="shead"><span class="stime">10:30 – 12:00</span><span class="snm">EDC</span><span class="tag">revision</span><span class="scnt"><b>1</b>/2</span><span class="chev">▸</span></div>
+          <div class="sbody">
+            <div class="task done"><span class="st"></span><span class="cd">NOTES</span><span class="tx">Diode clampers — rewrite set 4</span></div>
+            <div class="task"><span class="st"></span><span class="cd">REV</span><span class="tx">Transistor biasing — 20 min skim + flags</span></div>
+          </div>
+        </div>
+
+        <div class="ritual">
+          <span class="rl">habit ritual</span>
+          <div class="dots"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span></div>
+        </div>
+        <div class="rating show" id="rating">
+          <span class="rl" style="font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)">evening quality</span>
+          <div class="stars"><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WEEK (back of the flip) -->
+    <div class="week">
+      <div class="whead"><span class="dt">The week — pull a day forward</span></div>
+      <div class="wscroll">
+        <div class="wday hot"><span class="wn">WED</span><span class="wd">19 August · today</span><span class="wl"><i style="width:50%"></i></span></div>
+        <div class="wday"><span class="wn">THU</span><span class="wd">20 August · Networks, Controls</span><span class="wl"><i style="width:0%"></i></span></div>
+        <div class="wday"><span class="wn">FRI</span><span class="wd">21 August · EDC, Maths</span><span class="wl"><i style="width:0%"></i></span></div>
+        <div class="wday rest"><span class="wn">SAT</span><span class="wd">22 August · cooldown (rest)</span><span class="wl"><i style="width:0%"></i></span></div>
+        <div class="wday"><span class="wn">SUN</span><span class="wd">23 August · Mock Marathon</span><span class="wl"><i style="width:0%"></i></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- edges -->
+  <button class="edge l" onclick="flip()">⇄<span class="tip">week</span></button>
+  <button class="edge r" onclick="cabinet()">◫<span class="tip">cabinet</span></button>
+  <button class="demo" onclick="demo()">demo ▸</button>
+</div>
+
+<!-- FOCUS MORPH -->
+<div class="focus" id="focus">
+  <button class="fclose" onclick="closeFocus()">✕</button>
+  <div class="fseg"><span class="fdot"></span>Controls · work · cell 4</div>
+  <div class="ftime" id="ftime">23:41<small> / 50:00</small></div>
+  <div class="fline"><i id="fburn" style="width:52.6%"></i><span class="fh" id="fhead" style="left:calc(52.6% - 6px)"></span></div>
+  <div class="fbtns">
+    <button class="fbtn" id="fPause" onclick="fPause()">❚❚ pause</button>
+    <button class="fbtn main" id="fStart" onclick="fStart()">◉ start</button>
+    <button class="fbtn danger" onclick="fSkip()">skip cell</button>
+  </div>
+  <div class="fsel">
+    <button class="fseg-btn" onclick="fseg(this)">off</button>
+    <button class="fseg-btn" onclick="fseg(this)">brown</button>
+    <button class="fseg-btn on" onclick="fseg(this)">pink</button>
+    <button class="fseg-btn" onclick="fseg(this)">528 hz</button>
+    <button class="fseg-btn" onclick="fseg(this)">50/10</button>
+  </div>
+  <div style="font-family:var(--mono);font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint)">strict mode · distraction log · loop</div>
+</div>
+
+<!-- CABINET -->
+<div class="cab" id="cab">
+  <div class="cab-head"><span class="dt">Cabinet</span><button class="x" onclick="cabinet()">✕</button></div>
+  <div class="shelves">
+    <button class="shelf on" data-s="record" onclick="shelf(this)">Record<span class="lamps"><i class="lit"></i><i class="lit"></i><i></i></span></button>
+    <button class="shelf" data-s="trophy" onclick="shelf(this)">Trophy<span class="lamps"><i class="lit"></i><i class="lit"></i><i class="lit"></i><i></i></span></button>
+    <button class="shelf" data-s="self" onclick="shelf(this)">Self</button>
+  </div>
+  <div class="cab-body">
+    <div class="shelf-page on" id="pg-record">
+      <div class="gauge"><div class="grow"><span class="gl">campaign ember</span><span class="gv">62%</span></div><div class="gline"><i style="width:62%"></i></div></div>
+      <div class="gauge"><div class="grow"><span class="gl">week</span><span class="gv">4/5</span></div><div class="gline"><i style="width:80%"></i></div></div>
+      <div style="font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:8px">ember field · 35 days</div>
+      <div class="grid" id="field"></div>
+      <div style="margin-top:18px">
+        <div class="gauge"><div class="grow"><span class="gl">subjects</span><span class="gv">17</span></div></div>
+        <div class="gauge"><div class="grow"><span class="gl">sessions</span><span class="gv">50</span></div></div>
+        <div class="gauge"><div class="grow"><span class="gl">streak</span><span class="gv">165d</span></div></div>
+      </div>
+    </div>
+    <div class="shelf-page" id="pg-trophy">
+      <div class="trophy lit"><span class="tp">⚡</span><div><div class="tn">First Blood</div><div class="td">first focus session</div></div><span class="tt">02 JAN</span></div>
+      <div class="trophy lit"><span class="tp">🔥</span><div><div class="tn">Century Burn</div><div class="td">100-day streak</div></div><span class="tt">12 MAY</span></div>
+      <div class="trophy lit"><span class="tp">👑</span><div><div class="tn">Mock Forge</div><div class="td">first grand test</div></div><span class="tt">08 JUN</span></div>
+      <div class="trophy un"><span class="tp">💯</span><div><div class="tn">Perfection Cell</div><div class="td">all tasks, one day</div></div><span class="tt">locked</span></div>
+      <div class="trophy un"><span class="tp">🏆</span><div><div class="tn">Grand Test</div><div class="td">mock marathon</div></div><span class="tt">locked</span></div>
+    </div>
+    <div class="shelf-page" id="pg-self">
+      <div class="setrow"><div><div class="sl">Freeze day</div><div class="sd">holds streak on rest days</div></div><button class="tog on" onclick="this.classList.toggle('on')"><span class="kn"></span></button></div>
+      <div class="setrow"><div><div class="sl">Sound engine</div><div class="sd">brown / pink / 528 Hz</div></div><button class="tog on" onclick="this.classList.toggle('on')"><span class="kn"></span></button></div>
+      <div class="setrow"><div><div class="sl">Sync to cloud</div><div class="sd">supabase · last 23:41</div></div><button class="tog on" onclick="this.classList.toggle('on')"><span class="kn"></span></button></div>
+      <div class="setrow"><div><div class="sl">Profile</div><div class="sd">Teja · ESE 2027 · electrical</div></div><button class="tog" onclick="this.classList.toggle('on')"><span class="kn"></span></button></div>
+    </div>
+  </div>
+</div>
+
+<!-- celebrations -->
+<div class="fulllight" id="fulllight"><div><div class="num" id="flNum">100%</div><div class="cap">the day is full of light</div></div></div>
+<div class="plate" id="plate"><span class="engrave" id="plGlyph">👑</span><div class="ey">Achievement · engraved</div><h3 id="plTitle">Century Burn</h3><div class="ps" id="plSub">100-day streak · 12 MAY · midnight</div></div>
+
+<script>
+/* tasks → light */
+document.querySelectorAll('.task').forEach(t=>t.addEventListener('click',()=>{
+  const was=t.classList.contains('done'); t.classList.toggle('done'); if(!was) lightSeg(t)
+}))
+document.querySelectorAll('.seg .shead').forEach(h=>h.addEventListener('click',e=>{
+  if(e.target.closest('.ignite')) return; h.parentElement.classList.toggle('open')
+}))
+document.querySelectorAll('.ritual .dots span').forEach(d=>d.addEventListener('click',()=>d.classList.toggle('on')))
+document.querySelectorAll('.rating .stars span').forEach(s=>s.addEventListener('click',()=>{s.parentElement.querySelectorAll('span').forEach(x=>x.classList.remove('on'));s.classList.add('on')}))
+
+function lightSeg(t){
+  const seg=t.closest('.seg'); const tasks=[...seg.querySelectorAll('.task')]
+  const done=tasks.filter(x=>x.classList.contains('done')).length, pct=Math.round(done/tasks.length*100)
+  seg.style.setProperty('--lit',pct+'%')
+  motes(t,4)
+  if(done===tasks.length&&!seg.classList.contains('done')){ seg.classList.add('done'); pulse(seg) }
+  updDay()
+}
+function updDay(){
+  const all=[...document.querySelectorAll('.seg')].filter(s=>!s.classList.contains('rest'))
+  const tasks=all.flatMap(s=>[...s.querySelectorAll('.task')]), done=tasks.filter(t=>t.classList.contains('done')).length
+  const pct=Math.round(done/tasks.length*100)
+  document.getElementById('dayPct').textContent=pct+'%'
+  document.getElementById('wickFill').style.width=pct+'%'
+  if(pct>=100) setTimeout(fullLight,300)
+}
+function pulse(el){ el.style.boxShadow='0 0 44px -8px rgba(245,184,76,.55)'; setTimeout(()=>{el.style.boxShadow=''},800) }
+function motes(el,n){
+  const r=el.getBoundingClientRect()
+  for(let i=0;i<n;i++){const m=document.createElement('span');m.className='mote';
+    m.style.left=(r.left+r.width*Math.random())+'px';m.style.top=(r.top+r.height*Math.random())+'px'
+    document.body.appendChild(m);setTimeout(()=>m.remove(),1300)}
+}
+function sweep(){const s=document.createElement('div');s.className='sweep';document.body.appendChild(s);setTimeout(()=>s.remove(),1600)}
+
+/* flip ↔ week */
+function flip(){document.getElementById('vessel').classList.toggle('flipped')}
+
+/* cabinet */
+function cabinet(){document.getElementById('cab').classList.toggle('open')}
+function shelf(b){document.querySelectorAll('.shelf').forEach(s=>s.classList.remove('on'));b.classList.add('on')
+  document.querySelectorAll('.shelf-page').forEach(p=>p.classList.remove('on'));document.getElementById('pg-'+b.dataset.s).classList.add('on')}
+
+/* focus morph */
+let ftick=false,fleft=23*60+41,fpaused=false,fint=null
+function openFocus(){document.getElementById('focus').classList.add('open');paint()}
+function closeFocus(){document.getElementById('focus').classList.remove('open');if(fint){clearInterval(fint);fint=null;ftick=false;document.getElementById('fStart').textContent='◉ start'}}
+function paint(){
+  const pct=fleft/(50*60)
+  document.getElementById('fburn').style.width=(100-pct)+'%'
+  document.getElementById('fhead').style.left='calc('+(100-pct)+'% - 6px)'
+  document.getElementById('ftime').innerHTML=String(Math.floor(fleft/60)).padStart(2,'0')+':'+String(fleft%60).padStart(2,'0')+'<small> / 50:00</small>'
+}
+function fStart(){const b=document.getElementById('fStart')
+  if(!ftick){ftick=true;b.textContent='◉ burning';b.classList.add('on');fint=setInterval(()=>{if(!fpaused){fleft--;paint();if(fleft<=0){clearInterval(fint);ftick=false;b.textContent='◉ start';sweep();setTimeout(fullLight,250)}}},1000)}
+  else{ftick=false;clearInterval(fint);fint=null;b.textContent='◉ start'}}
+function fPause(){fpaused=!fpaused;document.getElementById('fPause').textContent=fpaused?'▶ resume':'❚❚ pause'}
+function fSkip(){closeFocus();sweep()}
+function fseg(el){el.parentElement.querySelectorAll('.fseg-btn').forEach(s=>s.classList.remove('on'));el.classList.add('on')}
+
+/* celebrations */
+function fullLight(){const e=document.getElementById('fulllight');e.classList.add('show');for(let i=0;i<18;i++){const m=document.createElement('span');m.className='mote';m.style.left=(12+Math.random()*76)+'%';m.style.top=(38+Math.random()*30)+'%';m.style.animationDuration=(0.8+Math.random()*0.8)+'s';e.appendChild(m);setTimeout(()=>m.remove(),1900)}setTimeout(()=>e.classList.remove('show'),2200)}
+function plate(title,sub,gly){document.getElementById('plTitle').textContent=title;document.getElementById('plSub').textContent=sub;document.getElementById('plGlyph').textContent=gly;document.getElementById('plate').classList.add('show');setTimeout(()=>document.getElementById('plate').classList.remove('show'),3800)}
+let d=0
+function demo(){[()=>plate('Century Burn','100-day streak · 12 MAY · midnight','👑'),fullLight,sweep,()=>motes(document.querySelector('.seg.live'),8)][d++%4]()}
+
+/* ember field */
+const field=document.getElementById('field')
+for(let i=0;i<35;i++){const c=document.createElement('div');c.className='c'+(i===34?' hot':i%3===0?' lit':'');field.appendChild(c)}
+</script>
+</body>
+</html>
